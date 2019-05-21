@@ -6,6 +6,7 @@ import lu.uni.svv.StressTesting.utils.Settings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -86,16 +87,16 @@ public class RMSchedulerRange extends RMScheduler{
 	
 	@Override
 	public double getEvaluatedValue() {
-		
 		double fitness = 0.0;
-		for (int id=0; id<selectedMisses.length; id++){
-			if (!(Settings.TASK_FITNESS == 0 || (id+1) == Settings.TASK_FITNESS)) continue;
-			
-			for (int x=0; x<selectedMisses[id].size(); x++) {
-				int value = (Integer)selectedMisses[id].get(x);
-				double norm = value / (problem.QUANTA_LENGTH*0.1);
-				fitness = fitness + (Math.exp(norm) / (Math.exp(norm)+1));
+		if (Settings.TASK_FITNESS==0){
+			for (int id=0; id<selectedMisses.length; id++){
+				Collections.reverse(selectedMisses[id]);
+				fitness += (Integer)selectedMisses[id].get(0);
 			}
+		}
+		else{
+			Collections.reverse(selectedMisses[Settings.TASK_FITNESS-1]);
+			fitness = (Integer)selectedMisses[Settings.TASK_FITNESS-1].get(0);
 		}
 		
 		return fitness;
