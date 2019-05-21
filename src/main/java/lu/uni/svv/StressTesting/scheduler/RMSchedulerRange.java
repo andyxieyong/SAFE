@@ -90,13 +90,15 @@ public class RMSchedulerRange extends RMScheduler{
 		double fitness = 0.0;
 		if (Settings.TASK_FITNESS==0){
 			for (int id=0; id<selectedMisses.length; id++){
-				Collections.reverse(selectedMisses[id]);
-				fitness += (Integer)selectedMisses[id].get(0);
+				Collections.sort(selectedMisses[Settings.TASK_FITNESS-1]);
+				int idx = selectedMisses[Settings.TASK_FITNESS-1].size()-1;
+				fitness += (Integer)selectedMisses[Settings.TASK_FITNESS-1].get(idx);
 			}
 		}
 		else{
-			Collections.reverse(selectedMisses[Settings.TASK_FITNESS-1]);
-			fitness = (Integer)selectedMisses[Settings.TASK_FITNESS-1].get(0);
+			Collections.sort(selectedMisses[Settings.TASK_FITNESS-1]);
+			int idx = selectedMisses[Settings.TASK_FITNESS-1].size()-1;
+			fitness = (Integer)selectedMisses[Settings.TASK_FITNESS-1].get(idx);
 		}
 		
 		return fitness;
