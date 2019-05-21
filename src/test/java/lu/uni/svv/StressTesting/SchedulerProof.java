@@ -2,14 +2,11 @@ package lu.uni.svv.StressTesting;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.logging.Level;
-import java.math.BigDecimal;
 
 import junit.framework.TestCase;
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
-import lu.uni.svv.StressTesting.scheduler.RMSchedulerEx;
 import lu.uni.svv.StressTesting.scheduler.RMSchedulerNorm;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
@@ -56,11 +53,11 @@ public class SchedulerProof extends TestCase
 			e.printStackTrace();
 		}
 		scheduler.run(solution);
-
-		BigDecimal value = scheduler.getEvaluatedValue();
+		
+		double value = scheduler.getEvaluatedValue();
 		double cpu = scheduler.getCPUusages();
 
-		solution.setObjectiveDecimal(0, value);
+		solution.setObjective(0, value);
 		solution.setDeadlines(scheduler.getMissedDeadlineString());
 
 		

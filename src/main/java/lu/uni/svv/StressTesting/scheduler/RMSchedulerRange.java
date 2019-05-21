@@ -4,10 +4,8 @@ import lu.uni.svv.StressTesting.datatype.Task;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.utils.Settings;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 
@@ -87,19 +85,20 @@ public class RMSchedulerRange extends RMScheduler{
 	}
 	
 	@Override
-	public BigDecimal getEvaluatedValue() {
-		BigDecimal result = new BigDecimal("0.0");
+	public double getEvaluatedValue() {
+		
+		double fitness = 0.0;
 		for (int id=0; id<selectedMisses.length; id++){
 			if (!(Settings.TASK_FITNESS == 0 || (id+1) == Settings.TASK_FITNESS)) continue;
 			
 			for (int x=0; x<selectedMisses[id].size(); x++) {
 				int value = (Integer)selectedMisses[id].get(x);
-				BigDecimal a = (value > 0) ? new BigDecimal("2") : new BigDecimal("0.5");
-				result = result.add(a.pow(Math.abs(value)));
+				double norm = value / (problem.QUANTA_LENGTH*0.1);
+				fitness = fitness + (Math.exp(norm) / (Math.exp(norm)+1));
 			}
 		}
 		
-		return result;
+		return fitness;
 	}
 	
 	@Override

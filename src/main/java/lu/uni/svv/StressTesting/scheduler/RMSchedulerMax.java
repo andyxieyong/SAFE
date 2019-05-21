@@ -4,7 +4,6 @@ import lu.uni.svv.StressTesting.datatype.Task;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.utils.Settings;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 
 
@@ -40,13 +39,13 @@ public class RMSchedulerMax extends RMScheduler{
 	}
 	
 	@Override
-	public BigDecimal getEvaluatedValue() {
-		BigDecimal result = new BigDecimal("0.0");
+	public double getEvaluatedValue() {
+		double result = 0.0;
 		for (int x=0; x<maximumMissed.length; x ++) {
 			int ID = x + 1;
 			if (Settings.TASK_FITNESS == 0 || ID == Settings.TASK_FITNESS) {
-				BigDecimal a = (maximumMissed[x] > 0) ? new BigDecimal("2") : new BigDecimal("0.5");
-				result = result.add(a.pow(Math.abs(maximumMissed[x])));
+				double a = (maximumMissed[x] > 0) ? 2: 0.5;
+				result = result + Math.pow(a, Math.abs(maximumMissed[x]));
 			}
 		}
 		return result;

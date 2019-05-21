@@ -7,6 +7,7 @@ import org.uma.jmetal.util.comparator.ObjectiveComparator.Ordering;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 /**
@@ -50,7 +51,7 @@ public class SolutionListComparatorAvg<S extends Solution<?>> implements Compara
 	 */
 	@Override
 	public int compare(S solution1, S solution2) {
-		int result;
+		double result;
 		if (solution1 == null) {
 			if (solution2 == null) {
 				result = 0;
@@ -66,27 +67,28 @@ public class SolutionListComparatorAvg<S extends Solution<?>> implements Compara
 			throw new JMetalException("The solution2 has " + solution2.getNumberOfObjectives()+ " objectives "
 					+ "and the objective to sort is " + objectiveId) ;
 		} else {
-			FitnessList objective1 = ((TimeListSolution)solution1).getObjectiveDecimalList(this.objectiveId);
-			FitnessList objective2 = ((TimeListSolution)solution2).getObjectiveDecimalList(this.objectiveId);
-
-			BigDecimal avgSolution1 = AverageList(objective1);
-			BigDecimal avgSolution2 = AverageList(objective2);
-			if (order == Ordering.ASCENDING) {
-				result = avgSolution1.compareTo(avgSolution2);
-			} else {
-				result = avgSolution2.compareTo(avgSolution1);
-			}
+			FitnessList objective1 = ((TimeListSolution)solution1).getObjectiveList(this.objectiveId);
+			FitnessList objective2 = ((TimeListSolution)solution2).getObjectiveList(this.objectiveId);
 			
+			double avgSolution1 = AverageList(objective1);
+			double avgSolution2 = AverageList(objective2);
+			if (order == Ordering.ASCENDING) {
+				result = avgSolution1 - avgSolution2;
+			} else {
+				result = avgSolution2 - avgSolution1;
+			}
 		}
-		return result ;
+		if (result > 0) return 1;
+		else if (result < 0) return -1;
+		return 0;
 	}
 	
-	public BigDecimal AverageList(FitnessList list){
-		BigDecimal avg = new BigDecimal("0.0");
+	public double AverageList(FitnessList list){
+		double avg = 0.0;
 		for (int x=0; x<list.size(); x++){
-			avg = avg.add(list.get(x));
+			avg = avg + list.get(x);
 		}
-		avg = avg.divide(new BigDecimal(list.size()));
+		avg = avg / list.size();
 		return avg;
 	}
 }

@@ -4,7 +4,6 @@ import lu.uni.svv.StressTesting.datatype.FitnessList;
 import lu.uni.svv.StressTesting.datatype.SummaryItem;
 import lu.uni.svv.StressTesting.datatype.TimeList;
 import lu.uni.svv.StressTesting.utils.Settings;
-import org.omg.IOP.TAG_INTERNET_IOP;
 import org.uma.jmetal.algorithm.impl.AbstractGeneticAlgorithm;
 import org.uma.jmetal.operator.CrossoverOperator;
 import org.uma.jmetal.operator.MutationOperator;
@@ -16,8 +15,6 @@ import org.uma.jmetal.util.comparator.ObjectiveComparator.Ordering;
 
 import lu.uni.svv.StressTesting.utils.GAWriter;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -90,20 +87,44 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		return population;
 	}
 	
+	protected int findIndex(List<S> population, long id){
+		int target = 0;
+		for(int x=0; x<population.size(); x++){
+			if ( ((TimeListSolution)population.get(x)).ID == id ){
+				target = x;
+				break;
+			}
+		}
+		return target;
+	}
+	
+	protected List<S> replacementParents(List<S> population, List<S> parents, List<S> offsprings) {
+		List<S> pool = new ArrayList<S>();
+		pool.addAll(parents);
+		pool.addAll(offsprings);
+		
+		pool.sort(comparator);
+		
+		int idx = findIndex(population, ((TimeListSolution)parents.get(0)).ID);
+		int idx2 = findIndex(population, ((TimeListSolution)parents.get(1)).ID);
+		population.set(idx2, pool.get(1));
+		population.set(idx, pool.get(0));
+		
+		return population;
+	}
+	
 	@Override
 	protected List<S> reproduction(List<S> matingPopulation) {
-		List<S> offspringPopulation = new ArrayList<S>(1);
-		
 		List<S> parents = new ArrayList<S>(2);
 		parents.add(matingPopulation.get(0));
 		parents.add(matingPopulation.get(1));
 		
-		List<S> offspring = crossoverOperator.execute(parents);
-		mutationOperator.execute(offspring.get(0));
+		List<S> offsprings = crossoverOperator.execute(parents);
+		for (int k=0; k<offsprings.size(); k++) {
+			mutationOperator.execute(offsprings.get(k));
+		}
 		
-		offspringPopulation.add(offspring.get(0));
-		
-		return offspringPopulation;
+		return offsprings;
 	}
 	
 	@Override
@@ -193,7 +214,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		// print fitness
 		filename = String.format("/samples/fitness/%d.csv", _solution.ID);
 		
-		FitnessList fitnessList = _solution.getObjectiveDecimalList(0);
+		FitnessList fitnessList = _solution.getObjectiveList(0);
 		StringBuilder sb = new StringBuilder();
 		sb.append("SampleID,Fitness,MissingDeadlines\n");
 		for (int x=0; x<fitnessList.size(); x++) {
@@ -228,23 +249,32 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	@Override
 	public void initProgress() {
 		iterations = 1;
-		JMetalLogger.logger.info("initialized Progress");
+//		JMetalLogger.logger.info("initialized Progress");
 		initSummary();
+//		JMetalLogger.logger.info("initSummary executed");
 		loggingSumary();
+//		JMetalLogger.logger.info("loggingSumary executed");
 		printPopulation();
+//		JMetalLogger.logger.info("printPopulation executed");
 		initByproduct();
+//		JMetalLogger.logger.info("initByproduct executed");
 		printByproduct();
+//		JMetalLogger.logger.info("printByproduct executed");
 		printExecutions(true);
+//		JMetalLogger.logger.info("printExecutions executed");
 	}
 	
 	@Override
 	public void updateProgress() {
 		iterations++;
-		JMetalLogger.logger.info("move to next evaluation: " + iterations);
 		loggingSumary();
+//		JMetalLogger.logger.info("loggingSumary executed");
 		printPopulation();
+//		JMetalLogger.logger.info("printPopulation executed");
 		printByproduct();
+//		JMetalLogger.logger.info("printByproduct executed");
 		printExecutions(false);
+//		JMetalLogger.logger.info("printExecutions executed");
 	}
 	
 	@Override
@@ -269,10 +299,13 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		JMetalLogger.logger.info("evaluated initial population");
 		initProgress();
 		while (!isStoppingConditionReached()) {
+			JMetalLogger.logger.info("move to next evaluation: " + iterations);
+			
 			matingPopulation = selection(population);
 			offspringPopulation = reproduction(matingPopulation);
 			offspringPopulation = evaluatePopulation(offspringPopulation);
-			population = replacement(population, offspringPopulation);
+//			population = replacement(population, offspringPopulation);
+			population = replacementParents(population, matingPopulation, offspringPopulation);
 			updateProgress();
 		}
 		
@@ -284,13 +317,13 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		for (S solution : population) {
 			if (Settings.N_SAMPLE_WCET==0) {
 				String pattern = "{%2d} fitness: %.32e";
-				String str = String.format(pattern, ((TimeListSolution) solution).ID, ((TimeListSolution) solution).getObjectiveDecimal(0));
+				String str = String.format(pattern, ((TimeListSolution) solution).ID, ((TimeListSolution) solution).getObjective(0));
 				writer.fine(str);
 			}
 			else{
 				StringBuilder sb = new StringBuilder();
 				long SolutionID = ((TimeListSolution) solution).ID;
-				FitnessList list = ((TimeListSolution) solution).getObjectiveDecimalList(0);
+				FitnessList list = ((TimeListSolution) solution).getObjectiveList(0);
 				
 				sb.append(String.format("{%2d} fitness: [",SolutionID));
 				for(int x=0; x<list.size(); x++){
@@ -378,13 +411,13 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		Collections.sort(population, comparator);
 		if (Settings.N_SAMPLE_WCET==0){
 			for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
-				SummaryItem item = new SummaryItem(((TimeListSolution)population.get(0)).getObjectiveDecimal(objIdx), new BigDecimal(0));
+				SummaryItem item = new SummaryItem(((TimeListSolution)population.get(0)).getObjective(objIdx), 0);
 				summaries.get(objIdx).add(item);
 			}
 		}
 		else{
 			for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
-				FitnessList list = ((TimeListSolution)population.get(0)).getObjectiveDecimalList(objIdx);
+				FitnessList list = ((TimeListSolution)population.get(0)).getObjectiveList(objIdx);
 				summaries.get(objIdx).add(list);
 			}
 		}

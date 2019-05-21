@@ -3,15 +3,9 @@ package lu.uni.svv.StressTesting.search.model;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Formatter;
-import java.util.List;
 
-import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.uma.jmetal.solution.Solution;
 import org.uma.jmetal.util.pseudorandom.JMetalRandom;
@@ -37,7 +31,7 @@ public class TimeListSolution implements Solution<TimeList>{
 	public long ID = 0L;
 	
 	private TimeList[] variables;   // list of variabls in chromosomes
-	private BigDecimal[] objectives;	// for saving the result of evaluation
+	private double[] objectives;	// for saving the result of evaluation
 	private FitnessList[] objectivesList;	// for saving the result of evaluation
 	protected TestingProblem problem;
 	protected JMetalRandom randomGenerator;
@@ -58,22 +52,25 @@ public class TimeListSolution implements Solution<TimeList>{
 		// Copy function will initialize all values.
 	}
 	
+	private void initialize(TestingProblem _problem){
+		ID = TimeListSolution.UUID++;
+		
+		this.problem = _problem;
+		this.randomGenerator = JMetalRandom.getInstance() ;
+		
+		objectives = new double[problem.getNumberOfObjectives()] ;
+		for(int x=0; x<objectives.length; x++) objectives[x] = 0.0;
+		
+		objectivesList = new FitnessList[problem.getNumberOfObjectives()];
+		for(int x=0; x<objectivesList.length; x++) objectivesList[x] = new FitnessList();
+	}
 	/**
 	 * Create solution following Testing problem
 	 * @param _problem
 	 */
 	public TimeListSolution(TestingProblem _problem)
 	{
-		ID = TimeListSolution.UUID++;
-		
-		this.problem = _problem;
-		this.randomGenerator = JMetalRandom.getInstance() ;
-		
-		objectives = new BigDecimal[problem.getNumberOfObjectives()] ;
-		for(int x=0; x<objectives.length; x++) objectives[x] = new BigDecimal(0);
-		
-		objectivesList = new FitnessList[problem.getNumberOfObjectives()];
-		for(int x=0; x<objectivesList.length; x++) objectivesList[x] = new FitnessList();
+		initialize(_problem);
 		
 		//Encoding chromosomes
 		variables = new TimeList[problem.getNumberOfVariables()] ;
@@ -85,15 +82,7 @@ public class TimeListSolution implements Solution<TimeList>{
 	
 	public TimeListSolution(TestingProblem _problem, TimeList[] _variables)
 	{
-		ID = TimeListSolution.UUID++;
-		
-		this.problem = _problem;
-		
-		objectives = new BigDecimal[problem.getNumberOfObjectives()] ;
-		for(int x=0; x<objectives.length; x++) objectives[x] = new BigDecimal(0);
-		
-		objectivesList = new FitnessList[problem.getNumberOfObjectives()];
-		for(int x=0; x<objectivesList.length; x++) objectivesList[x] = new FitnessList();
+		initialize(_problem);
 		
 		//Encoding chromosomes
 		variables = new TimeList[problem.getNumberOfVariables()] ;
@@ -108,18 +97,7 @@ public class TimeListSolution implements Solution<TimeList>{
 	 */
 	@Override
 	public Solution<TimeList> copy() {
-		TimeListSolution solution = new TimeListSolution();
-		solution.ID = TimeListSolution.UUID++;
-		
-		// Initialize member variables
-		solution.problem = this.problem;
-		solution.randomGenerator = JMetalRandom.getInstance();
-		
-		solution.objectives = new BigDecimal[this.problem.getNumberOfObjectives()] ;
-		for(int x=0; x<objectives.length; x++) solution.objectives[x] = new BigDecimal(0);
-		
-		solution.objectivesList = new FitnessList[problem.getNumberOfObjectives()];
-		for(int x=0; x<objectivesList.length; x++) solution.objectivesList[x] = new FitnessList();
+		TimeListSolution solution = new TimeListSolution(this.problem);
 		
 		//Encoding chromosomes
 		solution.variables = new TimeList[this.problem.getNumberOfVariables()] ;
@@ -133,34 +111,24 @@ public class TimeListSolution implements Solution<TimeList>{
 	/**
 	 * Getter, Setter, and utils for Objectives member
 	 */
-	public void setObjectiveDecimal(int index, BigDecimal value) {
-		this.objectives[index] = value;
-	}
-	
-	public void setObjectiveDecimalList(int index, FitnessList values) {
+	public void setObjectiveList(int index, FitnessList values) {
 		this.objectivesList[index] = values;
 	}
-	public FitnessList getObjectiveDecimalList(int index) {
+	public FitnessList getObjectiveList(int index) {
 		return this.objectivesList[index];
 	}
 	
-	public BigDecimal getObjectiveDecimal(int index) {
-		return this.objectives[index];
-	}
-	public BigDecimal[] getObjectivesDecimal() {
-		return this.objectives;
-	}
 	@Override
 	public void setObjective(int index, double value) {
-		//Do nothing
+		this.objectives[index] = value;
 	}
 	@Override
 	public double getObjective(int index) {
-		return 0.0;
+		return this.objectives[index];
 	}
 	@Override
 	public double[] getObjectives() {
-		return null;
+		return this.objectives;
 	}
 	@Override
 	public int getNumberOfObjectives() {

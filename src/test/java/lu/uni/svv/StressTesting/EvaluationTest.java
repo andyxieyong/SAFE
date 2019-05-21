@@ -6,7 +6,6 @@ import lu.uni.svv.StressTesting.scheduler.RMSchedulerEx;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
 
-import java.math.BigDecimal;
 
 public class EvaluationTest extends TestCase {
 	
@@ -47,7 +46,7 @@ public class EvaluationTest extends TestCase {
 			TimeListSolution solution = new TimeListSolution(problem);
 			scheduler.run(solution);
 			
-			BigDecimal value = scheduler.getEvaluatedValue();
+			double value = scheduler.getEvaluatedValue();
 			
 			System.out.println(String.format("%.32e - Chromosome: %s", value, solution.getVariableValueString()));
 			

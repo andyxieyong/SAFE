@@ -3,7 +3,6 @@ package lu.uni.svv.StressTesting.search.model;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +16,7 @@ import org.uma.jmetal.problem.impl.AbstractGenericProblem;
 
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
 import lu.uni.svv.StressTesting.search.model.TaskDescriptor.TaskType;
+import org.uma.jmetal.util.JMetalLogger;
 
 
 /**
@@ -107,14 +107,15 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		else{// Sampling Works
 			evaluateWithSampling(solution, scheduler);
 		}
+		
 	}
 	
 	private void evaluateDirect(TimeListSolution solution, RMScheduler scheduler) {
 		scheduler.run(solution);
-		BigDecimal value = scheduler.getEvaluatedValue();
+		double value = scheduler.getEvaluatedValue();
 		double cpu = scheduler.getCPUusages();
 		
-		solution.setObjectiveDecimal(0, value);
+		solution.setObjective(0, value);
 		solution.setDeadlines(scheduler.getMissedDeadlineString());
 		solution.setByproduct(scheduler.getByproduct());
 		
@@ -122,7 +123,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	}
 	
 	private void evaluateWithSampling(TimeListSolution solution, RMScheduler scheduler) {
-		BigDecimal value = null;
+		double value = 0.0;
 		FitnessList fitnessList = new FitnessList();
 		StringBuilder deadlines = new StringBuilder();
 		StringBuilder byproduct = new StringBuilder();
@@ -161,8 +162,9 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 				sb.append(samples.get(taskID));
 			}
 			sampledata.info(sb.toString());
+			JMetalLogger.logger.info("\t[" + sampleID + "/" + Settings.N_SAMPLE_WCET+ " sample] evaluated");
 		}
-		solution.setObjectiveDecimalList(0, fitnessList);
+		solution.setObjectiveList(0, fitnessList);
 		solution.setDeadlines(deadlines.toString());
 		solution.setByproduct(byproduct.toString());
 		solution.setDetailExecution(executions.toString());
