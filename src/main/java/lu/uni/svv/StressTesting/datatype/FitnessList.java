@@ -1,0 +1,16 @@
+package lu.uni.svv.StressTesting.datatype;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+
+public class FitnessList extends ArrayList<BigDecimal> {
+	
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	
+	// reference https://programming.guide/java/generic-array-creation.html
+	// sentence, to make a generic array
+}
