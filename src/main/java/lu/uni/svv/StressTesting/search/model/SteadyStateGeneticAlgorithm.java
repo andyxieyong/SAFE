@@ -93,12 +93,12 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		parents.add(matingPopulation.get(0));
 		parents.add(matingPopulation.get(1));
 		
-		List<S> offsprings = crossoverOperator.execute(parents);
-		for (int k=0; k<offsprings.size(); k++) {
-			mutationOperator.execute(offsprings.get(k));
-		}
+		List<S> offspring = crossoverOperator.execute(parents);
+		mutationOperator.execute(offspring.get(0));
 		
-		return offsprings;
+		List<S> offspringPopulation = new ArrayList<S>(1);
+		offspringPopulation.add(offspring.get(0));
+		return offspringPopulation;
 	}
 	
 	@Override
