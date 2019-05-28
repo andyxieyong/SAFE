@@ -26,12 +26,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	private Comparator<S> comparator;
 	private int maxIterations;
 	private int iterations;
-	private GAWriter writer;
 	private GAWriter byproduct;
-	private GAWriter detailWriter;
-	
-	private String name;
-	private String basepath;
 	
 	/**
 	 * Constructor
@@ -50,23 +45,17 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		this.crossoverOperator = crossoverOperator;
 		this.mutationOperator = mutationOperator;
 		this.selectionOperator = selectionOperator;
-		this.basepath = basepath;
-		this.name = name;
 		
 		if (Settings.N_SAMPLE_WCET==0)
 			comparator = new SolutionComparator<S>(0, Ordering.DESCENDING);
 		else
 			comparator = new SolutionListComparatorAvg<S>(0, Ordering.DESCENDING);
 		
-		writer = new GAWriter(String.format("iterations/iterations_%s.log", name), Level.FINE, null, basepath);
 		byproduct = new GAWriter(String.format("minimums/minimumMissed_%s.csv", name), Level.FINE, null, basepath);
-		detailWriter = new GAWriter(String.format("executions/run%s.csv", name), Level.FINE, null, basepath);
 	}
 	
 	protected void close(){
-		writer.close();
 		byproduct.close();
-		detailWriter.close();
 	}
 	
 	@Override
@@ -96,21 +85,6 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 			}
 		}
 		return target;
-	}
-	
-	protected List<S> replacementParents(List<S> population, List<S> parents, List<S> offsprings) {
-		List<S> pool = new ArrayList<S>();
-		pool.addAll(parents);
-		pool.addAll(offsprings);
-		
-		pool.sort(comparator);
-		
-		int idx = findIndex(population, ((TimeListSolution)parents.get(0)).ID);
-		int idx2 = findIndex(population, ((TimeListSolution)parents.get(1)).ID);
-		population.set(idx2, pool.get(1));
-		population.set(idx, pool.get(0));
-		
-		return population;
 	}
 	
 	@Override
@@ -249,32 +223,17 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	@Override
 	public void initProgress() {
 		iterations = 1;
-//		JMetalLogger.logger.info("initialized Progress");
-		initSummary();
-//		JMetalLogger.logger.info("initSummary executed");
-		loggingSumary();
-//		JMetalLogger.logger.info("loggingSumary executed");
-		printPopulation();
-//		JMetalLogger.logger.info("printPopulation executed");
+		JMetalLogger.logger.info("initialized Progress");
 		initByproduct();
-//		JMetalLogger.logger.info("initByproduct executed");
 		printByproduct();
-//		JMetalLogger.logger.info("printByproduct executed");
-		printExecutions(true);
-//		JMetalLogger.logger.info("printExecutions executed");
+
 	}
 	
 	@Override
 	public void updateProgress() {
 		iterations++;
-		loggingSumary();
-//		JMetalLogger.logger.info("loggingSumary executed");
-		printPopulation();
-//		JMetalLogger.logger.info("printPopulation executed");
+		JMetalLogger.logger.info("move to next evaluation: " + iterations);
 		printByproduct();
-//		JMetalLogger.logger.info("printByproduct executed");
-		printExecutions(false);
-//		JMetalLogger.logger.info("printExecutions executed");
 	}
 	
 	@Override
@@ -299,43 +258,14 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		JMetalLogger.logger.info("evaluated initial population");
 		initProgress();
 		while (!isStoppingConditionReached()) {
-			JMetalLogger.logger.info("move to next evaluation: " + iterations);
-			
 			matingPopulation = selection(population);
 			offspringPopulation = reproduction(matingPopulation);
 			offspringPopulation = evaluatePopulation(offspringPopulation);
-//			population = replacement(population, offspringPopulation);
-			population = replacementParents(population, matingPopulation, offspringPopulation);
+			population = replacement(population, offspringPopulation);
 			updateProgress();
 		}
 		
 		close();
-	}
-	
-	public void printPopulation() {
-		writer.fine("--------- Iteration: " + iterations + "----------------");
-		for (S solution : population) {
-			if (Settings.N_SAMPLE_WCET==0) {
-				String pattern = "{%2d} fitness: %.32e";
-				String str = String.format(pattern, ((TimeListSolution) solution).ID, ((TimeListSolution) solution).getObjective(0));
-				writer.fine(str);
-			}
-			else{
-				StringBuilder sb = new StringBuilder();
-				long SolutionID = ((TimeListSolution) solution).ID;
-				FitnessList list = ((TimeListSolution) solution).getObjectiveList(0);
-				
-				sb.append(String.format("{%2d} fitness: [",SolutionID));
-				for(int x=0; x<list.size(); x++){
-					sb.append(String.format("%.32e", list.get(x)));
-					if (x != list.size()-1)
-						sb.append(",");
-				}
-				sb.append("]\n");
-				writer.fine(sb.toString());
-			}
-			
-		}
 	}
 	
 	public void initByproduct(){
@@ -353,78 +283,23 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	
 	public void printByproduct() {
 		StringBuilder sb = new StringBuilder();
-		String text = ((TimeListSolution)population.get(0)).getByproduct();
+		String text = ((TimeListSolution) population.get(0)).getByproduct();
 		
-		if (Settings.N_SAMPLE_WCET==0){
+		if (Settings.N_SAMPLE_WCET == 0) {
 			sb.append(iterations);
 			sb.append(",");
 			sb.append(text);
-		}
-		else{
+		} else {
 			String[] lines = text.split("\n");
-			for(int x=1; x<lines.length; x++){
+			for (int x = 1; x < lines.length; x++) {
 				sb.append(iterations);
 				sb.append(",");
 				sb.append(lines[x]);
-				if (x!=lines.length-1)
+				if (x != lines.length - 1)
 					sb.append("\n");
 			}
 		}
 		
 		byproduct.info(sb.toString());
-	}
-	
-	public void printExecutions(boolean _init){
-		TimeListSolution solution = (TimeListSolution)population.get(0);
-		String executionsStr = solution.getDetailExecution();
-		String[] lines = executionsStr.split("\n");
-		
-		for(int x=0; x<lines.length; x++){
-			if (lines[x].length()==0) continue;
-			if (x==0){
-				if (_init==false) continue;
-				detailWriter.info("Iteration," + lines[x]);
-			}
-			else{
-				detailWriter.info(iterations + "," + lines[x]);
-			}
-		}
-	}
-	
-	/*******************************************
-	 * Related showing results
-	 *******************************************/
-	List<Collection> summaries = null;
-	
-	private void initSummary() {
-		summaries = new ArrayList<Collection>();
-		for (int x = 0; x < problem.getNumberOfObjectives(); x++) {
-			if (Settings.N_SAMPLE_WCET==0)
-				summaries.add(new ArrayList<SummaryItem>());
-			else
-				summaries.add(new ArrayList<FitnessList>());
-		}
-		
-	}
-	
-	private void loggingSumary() {
-		Collections.sort(population, comparator);
-		if (Settings.N_SAMPLE_WCET==0){
-			for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
-				SummaryItem item = new SummaryItem(((TimeListSolution)population.get(0)).getObjective(objIdx), 0);
-				summaries.get(objIdx).add(item);
-			}
-		}
-		else{
-			for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
-				FitnessList list = ((TimeListSolution)population.get(0)).getObjectiveList(objIdx);
-				summaries.get(objIdx).add(list);
-			}
-		}
-		
-	}
-	
-	public List<Collection> getSummaries() {
-		return summaries;
 	}
 }

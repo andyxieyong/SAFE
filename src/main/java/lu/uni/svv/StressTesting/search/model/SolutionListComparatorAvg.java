@@ -67,28 +67,17 @@ public class SolutionListComparatorAvg<S extends Solution<?>> implements Compara
 			throw new JMetalException("The solution2 has " + solution2.getNumberOfObjectives()+ " objectives "
 					+ "and the objective to sort is " + objectiveId) ;
 		} else {
-			FitnessList objective1 = ((TimeListSolution)solution1).getObjectiveList(this.objectiveId);
-			FitnessList objective2 = ((TimeListSolution)solution2).getObjectiveList(this.objectiveId);
-			
-			double avgSolution1 = AverageList(objective1);
-			double avgSolution2 = AverageList(objective2);
+			double objective1 = ((TimeListSolution)solution1).getObjective(this.objectiveId);
+			double objective2 = ((TimeListSolution)solution2).getObjective(this.objectiveId);
+
 			if (order == Ordering.ASCENDING) {
-				result = avgSolution1 - avgSolution2;
+				result = objective1 - objective2;
 			} else {
-				result = avgSolution2 - avgSolution1;
+				result = objective2 - objective1;
 			}
 		}
 		if (result > 0) return 1;
 		else if (result < 0) return -1;
 		return 0;
-	}
-	
-	public double AverageList(FitnessList list){
-		double avg = 0.0;
-		for (int x=0; x<list.size(); x++){
-			avg = avg + list.get(x);
-		}
-		avg = avg / list.size();
-		return avg;
 	}
 }

@@ -125,10 +125,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	private void evaluateWithSampling(TimeListSolution solution, RMScheduler scheduler) {
 		double value = 0.0;
 		FitnessList fitnessList = new FitnessList();
-		StringBuilder deadlines = new StringBuilder();
 		StringBuilder byproduct = new StringBuilder();
-		StringBuilder executions = new StringBuilder();  // best(e-d) execution info
-		StringBuilder sampled = new StringBuilder();  // Sampled information.
 		String header = taskHeader("", this.getNumberOfVariables());
 		
 		// Sample
@@ -138,6 +135,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		
 		// generate sample
 		for (int sampleID = 0; sampleID < Settings.N_SAMPLE_WCET; sampleID++) {
+			JMetalLogger.logger.info(String.format("   [%d/%d] sample evaluating", sampleID+1, Settings.N_SAMPLE_WCET));
 			HashMap<Integer, Long> samples = this.getSampling(uncertainTasks);
 			
 			scheduler.initialize();
@@ -149,28 +147,31 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			String prefix = String.format("%d", sampleID);
 			
 			fitnessList.add(scheduler.getEvaluatedValue());
-			deadlines.append(addPrefix(scheduler.getMissedDeadlineString(), pretitle, prefix, titleFlag));
 			byproduct.append(addPrefix(header + scheduler.getByproduct(), pretitle, prefix, titleFlag));
-			executions.append(addPrefix(scheduler.getExecutedTasksString(), pretitle, prefix, titleFlag));
-			sampled.append(addPrefix(scheduler.getSampledWCET(), pretitle, prefix, titleFlag));
 			
 			// print a sample data for one copied chromosome
 			StringBuilder sb = new StringBuilder();
-			sb.append(Integer.toString((scheduler.hasDeadlineMisses()==true)?1:0));
+			sb.append((scheduler.hasDeadlineMisses())?1:0);
 			for (int taskID : uncertainTasks){
 				sb.append(',');
 				sb.append(samples.get(taskID));
 			}
 			sampledata.info(sb.toString());
-			JMetalLogger.logger.info("\t[" + sampleID + "/" + Settings.N_SAMPLE_WCET+ " sample] evaluated");
 		}
+		solution.setObjective(0, AverageList(fitnessList));
 		solution.setObjectiveList(0, fitnessList);
-		solution.setDeadlines(deadlines.toString());
 		solution.setByproduct(byproduct.toString());
-		solution.setDetailExecution(executions.toString());
-		solution.setSampledWCET(sampled.toString());
 		
 		sampledata.close();
+	}
+	
+	public double AverageList(FitnessList list){
+		double avg = 0.0;
+		for (int x=0; x<list.size(); x++){
+			avg = avg + list.get(x);
+		}
+		avg = avg / list.size();
+		return avg;
 	}
 	
 	private String getUncertainTasksString(String header, List<Integer> uncertainTasks){
