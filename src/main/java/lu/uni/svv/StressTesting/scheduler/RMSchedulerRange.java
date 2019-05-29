@@ -58,47 +58,20 @@ public class RMSchedulerRange extends RMScheduler{
 	protected double evaluateDeadlineMiss(Task _T, int _missed) {
 		if (_missed > maximumMissed[_T.ID-1]) maximumMissed[_T.ID-1] = _missed;
 		
-		if (!(Settings.TASK_FITNESS == 0 || _T.ID == Settings.TASK_FITNESS)) return 0.0;
-		
-		int best = maximumMissed[_T.ID-1];
-		if (best==_missed) {
-			bestExecutions.add(_T);
-			bestExecutions.removeIf(x->( (int)(x.FinishedTime - (x.ArrivedTime+x.Deadline)) < best ));
-		}
-		
-		// P = (best - X ) / |best| ==> X = best - (best * P)
-		int limit = best - (int)(Settings.FITNESS_RANGE * Math.abs(best));
-		if (_missed >= limit)
-			selectedMisses[_T.ID-1].add(_missed);
-		selectedMisses[_T.ID-1].removeIf(n->( (int)n<limit ));
-		
-//		if (best<0)	{
-//			// P = (best - X ) / |best| ==> X = best - (best * P)
-//			int limit = best - (int)(Settings.FITNESS_RANGE * Math.abs(best));
-//
-//			((ArrayList<Integer>)selectedMisses[_T.ID-1]).removeIf(n -> (n < limit));
-//			if (_missed >= limit) ((ArrayList<Integer>)selectedMisses[_T.ID-1]).add(_missed);
-//		}
-//		else{
-//			;
-//		}
 		return 0;
 	}
 	
 	@Override
 	public double getEvaluatedValue() {
 		double fitness = 0.0;
+		
 		if (Settings.TASK_FITNESS==0){
-			for (int id=0; id<selectedMisses.length; id++){
-				Collections.sort(selectedMisses[Settings.TASK_FITNESS-1]);
-				int idx = selectedMisses[Settings.TASK_FITNESS-1].size()-1;
-				fitness += (Integer)selectedMisses[Settings.TASK_FITNESS-1].get(idx);
+			for (int id=0; id<maximumMissed.length; id++){
+				fitness += maximumMissed[id];
 			}
 		}
 		else{
-			Collections.sort(selectedMisses[Settings.TASK_FITNESS-1]);
-			int idx = selectedMisses[Settings.TASK_FITNESS-1].size()-1;
-			fitness = (Integer)selectedMisses[Settings.TASK_FITNESS-1].get(idx);
+			fitness = maximumMissed[Settings.TASK_FITNESS-1];
 		}
 		
 		return fitness;
