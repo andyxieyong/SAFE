@@ -4,26 +4,31 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.logging.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
 
 import com.github.rcaller.rstuff.*;
-import lu.uni.svv.StressTesting.datatype.FitnessList;
 import org.uma.jmetal.util.JMetalLogger;
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
+import lu.uni.svv.StressTesting.search.RManager;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
 import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 import lu.uni.svv.StressTesting.utils.RandomGenerator;
-import lu.uni.svv.StressTesting.scheduler.*;
+
+
 
 
 public class FinegrainedSearch {
+	/**********************************
+	 * static methods
+	 *********************************/
 	public static SimpleFormatter formatter = new SimpleFormatter(){
 		private static final String format = "[%1$tF %1$tT] %2$s: %3$s %n";
 		
@@ -37,13 +42,8 @@ public class FinegrainedSearch {
 		}
 	};
 	
-	
-	String basePath;
-	TestingProblem problem;
-	RMScheduler scheduler = null;
-	
 	/**
-	 * Test method
+	 * Start function of second phase
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
@@ -66,10 +66,21 @@ public class FinegrainedSearch {
 		secondPhase.run(Settings.UPDATE_ITERATION, Settings.MAX_ITERATION, Settings.BORDER_PROBABILITY);
 	}
 	
+	/**********************************
+	 * non-static methods
+	 *********************************/
+	String basePath;
+	TestingProblem problem;
+	RMScheduler scheduler = null;
+	RManager rManager = null;
+	
+	
 	public FinegrainedSearch(TestingProblem _problem, String _schedulerName) throws Exception{
 		basePath = Settings.BASE_PATH;
 		problem = _problem;
+		rManager = new RManager();
 		System.out.println(basePath);
+		
 		
 		// Create Scheduler instance
 		try {
@@ -104,21 +115,29 @@ public class FinegrainedSearch {
 	 * @throws IOException
 	 */
 	public void run(int _updateIteration, int _maxIteration, double _probability) throws IOException {
+		// Load Solutions
 		List<TimeListSolution> solutions = this.loadSolutions(this.basePath);
 		if (solutions == null) {
 			JMetalLogger.logger.info("There are no solutions in the path:" + this.basePath);
 			return;
 		}
 		
+		// Test
+		String workpath = this.basePath + "/workdata_linear.csv";
+		double[] coefficients = this.training_LRQuadratic(workpath);
+		
+		
+		// Load Initial points
 		String datapath = this.basePath + "/sampledata.csv";
-		String workfile = String.format("workdata_%d_%d_%d_%.2f.csv", _maxIteration, _updateIteration, Settings.SAMPLE_CANDIDATES, _probability);
-		String workpath = this.basePath + "/" + workfile;
+		String workfile = String.format("workdata_%d_%d_%.2f.csv", _maxIteration, _updateIteration, _probability);
+		workpath = this.basePath + "/" + workfile;
 		
 		Files.copy(Paths.get(datapath), Paths.get(workpath), StandardCopyOption.REPLACE_EXISTING);
-		double[] coefficients = null;
+		coefficients = null;
 		
 		JMetalLogger.logger.info("initialized second phase");
 		
+		// Sampling new data point and evaluation
 		int count = 0;
 		int UPDASTE_PERIOD = _updateIteration * solutions.size();
 		int MAX_ITERATION = _maxIteration * solutions.size();
@@ -130,13 +149,8 @@ public class FinegrainedSearch {
 					coefficients = this.training_LRQuadratic(workpath);
 					JMetalLogger.logger.info("updated logistic regression "+ count +"/" + MAX_ITERATION +": " + getCoeffText(coefficients));
 				}
-				long[] sampleWCET;
-				if (Settings.SAMPLE_CANDIDATES==0){
-					sampleWCET = this.getSampleWCETs();
-				}
-				else{
-					sampleWCET = this.sampling(_probability, coefficients);
-				}
+				
+				long[] sampleWCET = this.sampling(_probability, coefficients);
 				int D = this.evaluate(s, sampleWCET);
 				this.appendNewDataset(workfile, D, sampleWCET);
 				count+=1;
@@ -191,7 +205,7 @@ public class FinegrainedSearch {
 		scheduler.setSamples(sampleMap);
 		scheduler.run(_solution);
 		
-	
+		
 		return scheduler.hasDeadlineMisses()==true?1:0;
 	}
 	
@@ -268,20 +282,18 @@ public class FinegrainedSearch {
 	 * @return
 	 */
 	public double[] training_LR(String _filePath) {
+		
 		double[] coefficients = null;
-		RCaller caller=this.get_rCaller();
 		
 		try {
 			/**
 			 * Creating an instance of RCaller class
 			 */
-			RCode code = RCode.create();
-			code.addRCode("training <- read.csv(file=\"" + _filePath + "\", header = TRUE)");
-			code.addRCode("md <- glm(formula = result~., family = \"binomial\", data = training)");
-			
-			caller.setRCode(code);
-			caller.runAndReturnResult("md");
-			coefficients = caller.getParser().getAsDoubleArray("coefficients");
+			rManager.addCode("training <- read.csv(file=\"" + _filePath + "\", header = TRUE)");
+			rManager.addCode("md <- glm(formula = result~., family = \"binomial\", data = training)");
+//			md = rManager.get("md", RManager.type_double);
+//
+//			coefficients = caller.getParser().getAsDoubleArray("coefficients");
 			
 		} catch (Exception e) {
 			/**
@@ -294,6 +306,57 @@ public class FinegrainedSearch {
 		return coefficients;
 	}
 	
+	
+	public String get_formula(String[] columns){
+		StringBuilder formula = new StringBuilder();
+		formula.append(columns[0]);
+		formula.append("~");
+		for(int i=1; i<columns.length; i++){
+			if (i!=1) formula.append("+");
+			formula.append(columns[i]);
+			formula.append("+I(");
+			formula.append(columns[i]);
+			formula.append("^2)");
+		}
+		
+		return formula.toString();
+	}
+	
+	public String[] get_columns(String _filePath){
+		// Load File title
+		String line = null;
+		BufferedReader reader;
+		try {
+			reader = new BufferedReader(new FileReader(_filePath));
+			line = reader.readLine();
+			reader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		if (line ==null) return null;
+		
+		String[] columns = line.split(",");
+		return columns;
+	}
+	
+	public String get_adjust_UNIT_code(String var, double UNIT, String[] columns){
+		StringBuilder formula = new StringBuilder();
+		for(int i=1; i<columns.length; i++){
+			formula.append(var);
+			formula.append("$");
+			formula.append(columns[i]);
+			formula.append(" = ");
+			formula.append(var);
+			formula.append("$");
+			formula.append(columns[i]);
+			formula.append("*");
+			formula.append(UNIT);
+			formula.append("\n");
+		}
+		
+		return formula.toString();
+	}
+	
 	/**
 	 * training logistic regression with data
 	 * @param _filePath
@@ -301,20 +364,31 @@ public class FinegrainedSearch {
 	 */
 	public double[] training_LRQuadratic(String _filePath) {
 		double[] coefficients = null;
-		RCaller caller=this.get_rCaller();
 		
 		try {
 			/**
 			 * Creating an instance of RCaller class
 			 */
-			RCode code = RCode.create();
-			code.addRCode("training <- read.csv(file=\"" + _filePath + "\", header = TRUE)");
-			code.addRCode("md <- glm(formula = result~I(T30^2) + T33 + I(T33^2), family = \"binomial\", data = training)");
 			
-			caller.setRCode(code);
-			caller.runAndReturnResult("md");
-			coefficients = caller.getParser().getAsDoubleArray("coefficients");
+			String[] columns = this.get_columns(_filePath);
+			String formula = this.get_formula(columns); //"I(T30^2) + T33 + I(T33^2)";
+			String unit_code = this.get_adjust_UNIT_code("training", 0.0001, columns);
 			
+			rManager.addCode("library(\"MASS\")");
+			rManager.addCode("training <- read.csv(file=\"" + _filePath + "\", header = TRUE)");
+			rManager.addCode(unit_code);
+			rManager.addCode("md <- glm(formula = "+formula+", family = \"binomial\", data = training)");
+			rManager.addCode("md2 <- stepAIC(md, scope = . ~ .^2, direction = 'both')");
+			Object[] coeff = rManager.get("md2", "coefficients", RManager.type_Double);
+			
+			// a part of geting distance code
+//			rManager.initCode();
+//			rManager.addCode("d <- data.frame(T30=c(3), T33=c(4))");
+//			rManager.addCode("k <- predict(md2, d)[[1]]");
+//
+//			Object[] k = rManager.get("k", null, RManager.type_Double);
+//
+//			System.out.println(k);
 		} catch (Exception e) {
 			/**
 			 * Note that, RCaller does some OS based works such as creating an external process and
@@ -323,6 +397,7 @@ public class FinegrainedSearch {
 			 */
 			Logger.getLogger(lu.uni.svv.StressTesting.search.FinegrainedSearch.class.getName()).log(Level.SEVERE, e.getMessage());
 		}
+		
 		return coefficients;
 	}
 	
@@ -351,46 +426,4 @@ public class FinegrainedSearch {
 		return Math.abs(numerator + addition) / Math.sqrt(denominator);
 	}
 	
-	/**
-	 * get Rcaller object based on OS type
-	 * @return
-	 */
-	public RCaller get_rCaller(){
-		RCaller caller = null;
-		if (detectOS().startsWith("Mac")){
-			String RPath = "/Library/Frameworks/R.framework/Resources/bin/R";
-			String RScriptPath = "/Library/Frameworks/R.framework/Resources/bin/Rscript";
-			RCallerOptions options =
-					RCallerOptions.create(RScriptPath, RPath,
-							FailurePolicy.RETRY_1,
-							3000L,
-							100L,
-							RProcessStartUpOptions.create());
-			caller = RCaller.create(options);
-		}
-		else{
-			caller = RCaller.create();
-		}
-		return caller;
-	}
-
-	
-	/**
-	 * Detect OS
-	 */
-	public String detectOS(){
-		String OS = System.getProperty("os.name").toLowerCase();
-		
-		if (OS.contains("win")) {
-			return "Windows";
-		} else if (OS.contains("mac")) {
-			return "Mac";
-		} else if (OS.contains("nix") || OS.contains("nux") || OS.contains("aix") ) {
-			return "Linux";
-		} else if (OS.contains("sunos")) {
-			return "Solaris";
-		} else {
-			return OS;
-		}
-	}
 }
