@@ -224,8 +224,12 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	public void initProgress() {
 		iterations = 1;
 		JMetalLogger.logger.info("initialized Progress");
-		initByproduct();
-		printByproduct();
+		if (Settings.PRINT_RESULTS) {
+			initSummary();
+			loggingSumary();
+		}
+		//initByproduct();
+		//printByproduct();
 
 	}
 	
@@ -233,7 +237,10 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	public void updateProgress() {
 		iterations++;
 		JMetalLogger.logger.info("move to next evaluation: " + iterations);
-		printByproduct();
+		if (Settings.PRINT_RESULTS) {
+			loggingSumary();
+		}
+		//printByproduct();
 	}
 	
 	@Override
@@ -301,5 +308,43 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		}
 		
 		byproduct.info(sb.toString());
+	}
+	
+	
+	/*******************************************
+	 * Related showing results
+	 *******************************************/
+	List<Collection> summaries = null;
+	
+	private void initSummary() {
+		summaries = new ArrayList<Collection>();
+		for (int x = 0; x < problem.getNumberOfObjectives(); x++) {
+			if (Settings.N_SAMPLE_WCET==0)
+				summaries.add(new ArrayList<SummaryItem>());
+			else
+				summaries.add(new ArrayList<FitnessList>());
+		}
+		
+	}
+	
+	private void loggingSumary() {
+		Collections.sort(population, comparator);
+		if (Settings.N_SAMPLE_WCET==0){
+			for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
+				SummaryItem item = new SummaryItem(((TimeListSolution)population.get(0)).getObjective(objIdx), 0);
+				summaries.get(objIdx).add(item);
+			}
+		}
+		else{
+			for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
+				FitnessList list = ((TimeListSolution)population.get(0)).getObjectiveList(objIdx);
+				summaries.get(objIdx).add(list);
+			}
+		}
+		
+	}
+	
+	public List<Collection> getSummaries() {
+		return summaries;
 	}
 }

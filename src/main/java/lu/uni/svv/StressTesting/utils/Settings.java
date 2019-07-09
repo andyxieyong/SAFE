@@ -47,6 +47,8 @@ public class Settings {
 	
 	//printing
 	public static boolean PRINT_SAMPLES       = false;
+	public static boolean PRINT_RESULTS       = false;
+	
 	
 	
 	public Settings()
@@ -81,6 +83,7 @@ public class Settings {
 		parser.addOption(false,"borderProb", DataType.DOUBLE, null, "borderProb", "Border Probability for second phase");
 		parser.addOption(false,"sampleCandidates", DataType.INTEGER, null, "sampleCandidates", "The number of sandidates to get one sample in second phase");
 		parser.addOption(false,"printSamples", DataType.BOOLEAN, null, "printSamples", "If you set this parameter, The program will produce sampling detail information", false);
+		parser.addOption(false,"printResults", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
 		
 		// parsing args;
 		try{
@@ -128,8 +131,7 @@ public class Settings {
 		if (parser.containsParam("borderProb"))     BORDER_PROBABILITY = (Double) parser.getParam("borderProb");
 		if (parser.containsParam("sampleCandidates"))SAMPLE_CANDIDATES = (Integer) parser.getParam("sampleCandidates");
 		if (parser.containsParam("printSamples"))   PRINT_SAMPLES = (Boolean) parser.getParam("printSamples");
-		
-		
+		if (parser.containsParam("printResults"))   PRINT_RESULTS = (Boolean) parser.getParam("printResults");
 		
 	}
 	

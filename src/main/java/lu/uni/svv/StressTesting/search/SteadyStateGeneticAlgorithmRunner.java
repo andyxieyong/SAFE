@@ -112,9 +112,13 @@ public class SteadyStateGeneticAlgorithmRunner {
 		// print results
 		if (Settings.N_SAMPLE_WCET==0) {
 			printDetails(solution, run);
+			if (Settings.PRINT_RESULTS)
+				printSummary(algorithm.getSummaries(), run, maxIterations);
 		}
 		else {
 			printFullSolutions(algorithm.getPopulation(), run);
+			if (Settings.PRINT_RESULTS)
+				printSummaryList(algorithm.getSummaries(), run, maxIterations);
 		}
 		
 		// logging some information
@@ -205,4 +209,57 @@ public class SteadyStateGeneticAlgorithmRunner {
 		}
 	}
 	
+	/*******************************************
+	 * Related logging results
+	 *******************************************/
+	public static void printSummary(List<Collection> summary, int run, int maxIterations)
+	{
+		for (int objIDX=0; objIDX<summary.size(); objIDX++)
+		{
+			List<SummaryItem> items = (List<SummaryItem>)summary.get(objIDX);
+			
+			GAWriter writer = new GAWriter(String.format("results/result_obj%02d_run%02d.csv", objIDX, run+1), Level.INFO, null, Settings.BASE_PATH);
+			
+			// Title
+			StringBuilder sb = new StringBuilder();
+			sb.append(String.format("Iteration,Run %02d\n", run+1));
+			
+			// Data
+			for (int iter=0; iter<maxIterations; iter++) {
+				sb.append((iter+1));
+				sb.append(",");
+				sb.append(String.format("%.0f\n", items.get(iter).BestFitness));
+			}
+			writer.info(sb.toString());
+			writer.close();
+		} // for objIdx
+	}
+	
+	public static void printSummaryList(List<Collection> summary, int run, int maxIterations)
+	{
+		for (int objIDX=0; objIDX<summary.size(); objIDX++)
+		{
+			List<FitnessList> items = (List<FitnessList>)summary.get(objIDX);
+			
+			GAWriter writer = new GAWriter(String.format("results/result_obj%02d_run%02d.csv", objIDX, run+1), Level.INFO, null, Settings.BASE_PATH);
+			
+			// Title
+			StringBuilder sb = new StringBuilder();
+			sb.append(String.format("Iterations,SampleID,Run %02d\n", run+1));
+			
+			// Data
+			for (int iter=0; iter<maxIterations; iter++) {
+				FitnessList samples = items.get(iter);
+				for (int x=0; x<samples.size(); x++){
+					sb.append((iter + 1));
+					sb.append(",");
+					sb.append(x);
+					sb.append(",");
+					sb.append(String.format("%.0f\n", samples.get(x) ));
+				}
+			}
+			writer.info(sb.toString());
+			writer.close();
+		} // for objIdx
+	}
 }
