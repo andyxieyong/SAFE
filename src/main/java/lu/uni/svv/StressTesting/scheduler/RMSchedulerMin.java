@@ -4,7 +4,6 @@ import lu.uni.svv.StressTesting.datatype.Task;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.utils.Settings;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 
 
@@ -46,18 +45,18 @@ public class RMSchedulerMin extends RMScheduler{
 	 * This functions can give a result after 'run()' function executed
 	 */
 	@Override
-	public BigDecimal getEvaluatedValue() {
-		BigDecimal result = new BigDecimal("0.0");
-		BigDecimal a = new BigDecimal("2");
+	public double getEvaluatedValue() {
+		double result = 0.0;
+		double a = 2;
 		for (int x=0; x<minimumMissed.length; x ++) {
 			int ID = x + 1;
 			if (Settings.TASK_FITNESS == 0 || ID == Settings.TASK_FITNESS) {
-				result = result.add(a.pow(minimumMissed[x]));
+				result = result + Math.pow(a, Math.abs(minimumMissed[x]));
 			}
 		}
 		return result;
 	}
-	
+
 	@Override
 	public String getByproduct() {
 		StringBuilder sb = new StringBuilder();

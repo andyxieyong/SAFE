@@ -4,10 +4,9 @@ import lu.uni.svv.StressTesting.datatype.Task;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.utils.Settings;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -59,47 +58,23 @@ public class RMSchedulerRange extends RMScheduler{
 	protected double evaluateDeadlineMiss(Task _T, int _missed) {
 		if (_missed > maximumMissed[_T.ID-1]) maximumMissed[_T.ID-1] = _missed;
 		
-		if (!(Settings.TASK_FITNESS == 0 || _T.ID == Settings.TASK_FITNESS)) return 0.0;
-		
-		int best = maximumMissed[_T.ID-1];
-		if (best==_missed) {
-			bestExecutions.add(_T);
-			bestExecutions.removeIf(x->( (int)(x.FinishedTime - (x.ArrivedTime+x.Deadline)) < best ));
-		}
-		
-		// P = (best - X ) / |best| ==> X = best - (best * P)
-		int limit = best - (int)(Settings.FITNESS_RANGE * Math.abs(best));
-		if (_missed >= limit)
-			selectedMisses[_T.ID-1].add(_missed);
-		selectedMisses[_T.ID-1].removeIf(n->( (int)n<limit ));
-		
-//		if (best<0)	{
-//			// P = (best - X ) / |best| ==> X = best - (best * P)
-//			int limit = best - (int)(Settings.FITNESS_RANGE * Math.abs(best));
-//
-//			((ArrayList<Integer>)selectedMisses[_T.ID-1]).removeIf(n -> (n < limit));
-//			if (_missed >= limit) ((ArrayList<Integer>)selectedMisses[_T.ID-1]).add(_missed);
-//		}
-//		else{
-//			;
-//		}
 		return 0;
 	}
 	
 	@Override
-	public BigDecimal getEvaluatedValue() {
-		BigDecimal result = new BigDecimal("0.0");
-		for (int id=0; id<selectedMisses.length; id++){
-			if (!(Settings.TASK_FITNESS == 0 || (id+1) == Settings.TASK_FITNESS)) continue;
-			
-			for (int x=0; x<selectedMisses[id].size(); x++) {
-				int value = (Integer)selectedMisses[id].get(x);
-				BigDecimal a = (value > 0) ? new BigDecimal("2") : new BigDecimal("0.5");
-				result = result.add(a.pow(Math.abs(value)));
+	public double getEvaluatedValue() {
+		double fitness = 0.0;
+		
+		if (Settings.TASK_FITNESS==0){
+			for (int id=0; id<maximumMissed.length; id++){
+				fitness += maximumMissed[id];
 			}
 		}
+		else{
+			fitness = maximumMissed[Settings.TASK_FITNESS-1];
+		}
 		
-		return result;
+		return fitness;
 	}
 	
 	@Override

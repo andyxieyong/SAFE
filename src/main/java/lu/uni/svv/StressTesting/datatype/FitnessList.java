@@ -1,9 +1,8 @@
 package lu.uni.svv.StressTesting.datatype;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 
-public class FitnessList extends ArrayList<BigDecimal> {
+public class FitnessList extends ArrayList<Double> {
 	
 	/**
 	 *

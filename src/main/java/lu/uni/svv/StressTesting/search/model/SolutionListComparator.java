@@ -6,7 +6,6 @@ import org.uma.jmetal.solution.Solution;
 import org.uma.jmetal.util.JMetalException;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -66,13 +65,13 @@ public class SolutionListComparator<S extends Solution<?>> implements Comparator
 			throw new JMetalException("The solution2 has " + solution2.getNumberOfObjectives()+ " objectives "
 					+ "and the objective to sort is " + objectiveId) ;
 		} else {
-			FitnessList objective1 = ((TimeListSolution)solution1).getObjectiveDecimalList(this.objectiveId);
-			FitnessList objective2 = ((TimeListSolution)solution2).getObjectiveDecimalList(this.objectiveId);
+			FitnessList objective1 = ((TimeListSolution)solution1).getObjectiveList(this.objectiveId);
+			FitnessList objective2 = ((TimeListSolution)solution2).getObjectiveList(this.objectiveId);
 			double value = 0.0;
 			if (order == Ordering.ASCENDING) {
-				value = A12(objective1, objective2);
+				value = StatisticalTest.A12(objective1, objective2);
 			} else {
-				value = A12(objective2, objective1);
+				value = StatisticalTest.A12(objective2, objective1);
 			}
 			if (value > 0.5) result = 1;
 			else if (value < 0.5) result = -1;
@@ -81,63 +80,5 @@ public class SolutionListComparator<S extends Solution<?>> implements Comparator
 		return result ;
 	}
 	
-	public double A12(FitnessList list1, FitnessList list2){
-		double m = list1.size();
-		double n = list2.size();
-		double sum = rankSum1(list1, list2);
-		
-		return ((sum/m) - ((m+1)/2.0))/n;
-	}
 	
-	public double rankSum1(FitnessList list1, FitnessList list2){
-		List<BigDecimal> union = new ArrayList<BigDecimal>();
-		List<BigDecimal> distinct = new ArrayList<BigDecimal>();
-		Map<BigDecimal, Integer> map = new HashMap<BigDecimal, Integer>();
-		
-		union.addAll(list1);
-		union.addAll(list2);
-		Collections.sort(union);
-		
-		// create distinct list
-		int idx = 0;
-		for(int x=0; x<union.size(); x++) {
-			if (distinct.size()>0 && union.get(x).compareTo(distinct.get(distinct.size() - 1)) == 0) continue;
-			distinct.add(union.get(x));
-			map.put(union.get(x), idx++);
-		}
-		
-		// Count each items;
-		int[] counts = new int[distinct.size()];
-		BigDecimal item=null;
-		for (int x=0; x<union.size(); x++){
-			item = union.get(x);
-			idx = map.get(item);
-			counts[idx] += 1;
-		}
-		
-		// accumulate
-		for(int x=0; x<counts.length-1; x++){
-			counts[x+1] += counts[x];
-		}
-		
-		// calculate ranks
-		int prev = 1;
-		int current = 1;
-		double[] ranks = new double[distinct.size()];
-		for(int x=0; x<counts.length; x++){
-			current = counts[x];
-			ranks[x] = (prev + current)/2.0;
-			prev = current+1;
-		}
-		
-		// Calculate rankSum
-		double sum = 0.0;
-		for(int x=0; x<list1.size(); x++)
-		{
-			idx = map.get(list1.get(x));
-			sum += ranks[idx];
-		}
-		
-		return sum;
-	}
 }

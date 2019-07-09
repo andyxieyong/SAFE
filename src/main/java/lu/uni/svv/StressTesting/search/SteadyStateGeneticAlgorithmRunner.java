@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -20,12 +19,10 @@ import org.uma.jmetal.operator.SelectionOperator;
 import org.uma.jmetal.operator.impl.selection.BinaryTournamentSelection;
 import org.uma.jmetal.util.AlgorithmRunner;
 import org.uma.jmetal.util.JMetalLogger;
-import org.uma.jmetal.util.fileoutput.SolutionListOutput;
-import org.uma.jmetal.util.fileoutput.impl.DefaultFileOutputContext;
-
 import lu.uni.svv.StressTesting.datatype.SummaryItem;
 import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
+
 
 public class SteadyStateGeneticAlgorithmRunner {
 	
@@ -68,9 +65,6 @@ public class SteadyStateGeneticAlgorithmRunner {
 						Settings.GA_MAX_ITERATION,
 						Settings.GA_CROSSOVER_PROB,
 						Settings.GA_MUTATION_PROB);
-			
-			if (Settings.N_SAMPLE_WCET==0)
-				unionSummary(problem.getNumberOfObjectives());
 		}
 		
 		// move final result to another location.
@@ -118,16 +112,13 @@ public class SteadyStateGeneticAlgorithmRunner {
 		// print results
 		if (Settings.N_SAMPLE_WCET==0) {
 			printDetails(solution, run);
-			printSummary(algorithm.getSummaries(), run, maxIterations);
 		}
 		else {
 			printFullSolutions(algorithm.getPopulation(), run);
-			printSummaryList(algorithm.getSummaries(), run, maxIterations);
 		}
 		
 		// logging some information
 		JMetalLogger.logger.info("Total execution time: " + computingTime + "ms");
-		JMetalLogger.logger.info(String.format("Fitness: %.32e", solution.getObjectiveDecimal(0)));
 		JMetalLogger.logger.info("Size of Solution: " + getVariableSize(solution, run)) ;
 		
 		System.gc();
@@ -135,31 +126,27 @@ public class SteadyStateGeneticAlgorithmRunner {
 	
 	public static void printDetails(TimeListSolution solution, int run)
 	{
-		String deadlineStr = solution.getDeadlines();
-		GAWriter writer = new GAWriter(String.format("deadlines/deadlines_run%02d.csv", run+1), Level.FINE, null, Settings.BASE_PATH);
-		writer.info(deadlineStr);
-		writer.close();
-		
-		writer = new GAWriter(String.format("solutions/solutions_run%02d.json", run+1), Level.FINE, null, Settings.BASE_PATH);
+		GAWriter writer = new GAWriter(String.format("solutions/solutions_run%02d.json", run+1), Level.FINE, null, Settings.BASE_PATH);
 		writer.info(solution.getVariableValueString());
 		writer.close();
 	}
 	
 	public static void printFullSolutions(List<TimeListSolution> solutions, int run)
 	{
+		JMetalLogger.logger.info("Saving populations...");
+		
 		GAWriter writer = null;
 		int idx = 0;
 		for(TimeListSolution solution: solutions) {
 			idx += 1;
-			String deadlineStr = solution.getDeadlines();
-			writer = new GAWriter(String.format("deadlines/deadlines_run%02d_%d.csv", run + 1, idx), Level.FINE, null, Settings.BASE_PATH);
-			writer.info(deadlineStr);
-			writer.close();
 			
 			writer = new GAWriter(String.format("solutions/solutions_run%02d_%d.json", run + 1, idx), Level.FINE, null, Settings.BASE_PATH);
 			writer.info(solution.getVariableValueString());
 			writer.close();
+			
+			JMetalLogger.logger.info("\t["+idx+"/"+solutions.size()+"] saved");
 		}
+		JMetalLogger.logger.info("Saving populations...Done");
 	}
 	
 	public static String getVariableSize(TimeListSolution solution, int run) 
@@ -174,57 +161,6 @@ public class SteadyStateGeneticAlgorithmRunner {
 		sb.append("]");
 		
 		return sb.toString();
-	}
-	
-	public static void printSummary(List<Collection> summary, int run, int maxIterations)
-	{
-		for (int objIDX=0; objIDX<summary.size(); objIDX++) 
-		{
-			List<SummaryItem> items = (List<SummaryItem>)summary.get(objIDX);
-			
-			GAWriter writer = new GAWriter(String.format("results/result_obj%02d_run%02d.csv", objIDX, run+1), Level.INFO, null, Settings.BASE_PATH);
-
-			// Title
-			StringBuilder sb = new StringBuilder();
-			sb.append(String.format("Iteration,Run %02d\n", run+1));
-			
-			// Data
-			for (int iter=0; iter<maxIterations; iter++) {
-				sb.append((iter+1));
-				sb.append(",");
-				sb.append(String.format("%.32e\n", items.get(iter).BestFitness));
-			}
-			writer.info(sb.toString());
-			writer.close();
-		} // for objIdx
-	}
-	
-	public static void printSummaryList(List<Collection> summary, int run, int maxIterations)
-	{
-		for (int objIDX=0; objIDX<summary.size(); objIDX++)
-		{
-			List<FitnessList> items = (List<FitnessList>)summary.get(objIDX);
-			
-			GAWriter writer = new GAWriter(String.format("results/result_obj%02d_run%02d.csv", objIDX, run+1), Level.INFO, null, Settings.BASE_PATH);
-			
-			// Title
-			StringBuilder sb = new StringBuilder();
-			sb.append(String.format("Iterations,SampleID,Run %02d\n", run+1));
-			
-			// Data
-			for (int iter=0; iter<maxIterations; iter++) {
-				FitnessList samples = items.get(iter);
-				for (int x=0; x<samples.size(); x++){
-					sb.append((iter + 1));
-					sb.append(",");
-					sb.append(x);
-					sb.append(",");
-					sb.append(String.format("%.32e\n", samples.get(x) ));
-				}
-			}
-			writer.info(sb.toString());
-			writer.close();
-		} // for objIdx
 	}
 
 	public static void init() {
@@ -242,86 +178,6 @@ public class SteadyStateGeneticAlgorithmRunner {
 		writer.info(Settings.getString());
 		writer.close();
 		System.out.print(Settings.getString());
-	}
-	
-	public static void unionSummary(int numObjectives) throws Exception
-	{
-		// open Directory
-		File dir = new File(Settings.BASE_PATH + "/results");
-		if (dir.exists() == false) {
-			throw new IOException("Failed to create union results");
-		}
-		File[] results = dir.listFiles();
-		
-		for(int objIDX=0; objIDX<numObjectives; objIDX++) {
-
-			// find target files.
-			List<File> targets = new ArrayList<File>();
-			for (File result:results)
-			{
-				String name = result.getName();
-				int idx = name.indexOf("obj");
-				String objStr = name.substring(idx+3,name.indexOf("_", idx)); 
-				
-				if (objIDX == Integer.parseInt(objStr)) targets.add(result);
-			}
-			Collections.sort(targets);
-			
-			List<Collection> valuesList = new ArrayList<Collection>();
-			List<String> names = new ArrayList<String>();
-			
-			// reading Files
-			for (File result:targets) {
-				BufferedReader br = new BufferedReader(new FileReader(result));
-				String line = br.readLine();
-				
-				String[] cols = line.split(",");
-				names.add(cols[1]);
-				List<BigDecimal> values = new ArrayList<BigDecimal>();
-				while(true) {
-					line = br.readLine();
-					if (line == null || line.compareTo("")==0) break;
-					cols = line.split(",");
-					values.add(new BigDecimal(cols[1]));
-				}
-				valuesList.add(values);
-			}
-			
-			//
-			GAWriter writer = new GAWriter(String.format("result_runs_obj%02d.csv", objIDX), Level.INFO,  null, Settings.BASE_PATH);
-			
-			// print title
-			StringBuilder sb = new StringBuilder();
-			sb.append("Iteration,");
-			for(int x=0; x<names.size(); x++) {
-				sb.append(names.get(x));
-				if (x != names.size()-1)
-					sb.append(",");
-			}
-			//sb.append(",,Average");
-			writer.info(sb.toString());
-			
-			
-			for (int iter=0; iter<valuesList.get(0).size(); iter++)
-			{
-				sb = new StringBuilder((iter+1)+",");
-				
-				BigDecimal average = new BigDecimal("0.0");
-				for (int r=0; r< valuesList.size(); r++) {
-					BigDecimal value = ((List<BigDecimal>)valuesList.get(r)).get(iter);
-					sb.append(String.format("%.32e", value));
-					
-					//average = average.add(value);
-					if (r != valuesList.size())
-						sb.append(",");
-				}
-				//average = average.divide(new BigDecimal(valuesList.size()));
-				//sb.append(String.format(",%d,%.32e", ev, average));
-				
-				writer.info(sb.toString());
-			}
-
-		} // for objIDX
 	}
 	
 	public static void moveResults(){

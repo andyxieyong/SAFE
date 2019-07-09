@@ -5,10 +5,6 @@ import lu.uni.svv.StressTesting.search.model.*;
 import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.apache.commons.io.FileUtils;
-import org.uma.jmetal.operator.CrossoverOperator;
-import org.uma.jmetal.operator.MutationOperator;
-import org.uma.jmetal.operator.SelectionOperator;
-import org.uma.jmetal.operator.impl.selection.BinaryTournamentSelection;
 import org.uma.jmetal.util.AlgorithmRunner;
 import org.uma.jmetal.util.JMetalLogger;
 
@@ -16,7 +12,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -91,7 +86,7 @@ public class SimpleRandomAlgorithmRunner {
 		
 		// logging some information
 		JMetalLogger.logger.info("Total execution time: " + computingTime + "ms");
-		JMetalLogger.logger.info(String.format("Fitness: %.32e", solution.getObjectiveDecimal(0)));
+		JMetalLogger.logger.info(String.format("Fitness: %.32e", solution.getObjective(0)));
 		JMetalLogger.logger.info("Size of Solution: " + getVariableSize(solution, run)) ;
 		
 		System.gc();
@@ -194,12 +189,12 @@ public class SimpleRandomAlgorithmRunner {
 				
 				String[] cols = line.split(",");
 				names.add(cols[1]);
-				List<BigDecimal> values = new ArrayList<BigDecimal>();
+				List<Double> values = new ArrayList<Double>();
 				while(true) {
 					line = br.readLine();
 					if (line == null || line.compareTo("")==0) break;
 					cols = line.split(",");
-					values.add(new BigDecimal(cols[1]));
+					values.add(Double.parseDouble(cols[1]));
 				}
 				valuesList.add(values);
 			}
@@ -223,18 +218,16 @@ public class SimpleRandomAlgorithmRunner {
 			{
 				sb = new StringBuilder((iter+1)+",");
 				
-				BigDecimal average = new BigDecimal("0.0");
+				double average = 0.0;
 				for (int r=0; r< valuesList.size(); r++) {
-					BigDecimal value = ((List<BigDecimal>)valuesList.get(r)).get(iter);
+					double value = ((List<Double>)valuesList.get(r)).get(iter);
 					sb.append(String.format("%.32e", value));
 					
 					//average = average.add(value);
 					if (r != valuesList.size())
 						sb.append(",");
 				}
-				//average = average.divide(new BigDecimal(valuesList.size()));
-				//sb.append(String.format(",%d,%.32e", ev, average));
-				
+		
 				writer.info(sb.toString());
 			}
 

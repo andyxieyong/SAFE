@@ -2,11 +2,9 @@ package lu.uni.svv.StressTesting.scheduler;
 
 import java.io.PrintStream;
 import java.util.*;
-import java.math.BigDecimal;
 
 import lu.uni.svv.StressTesting.datatype.Task;
 import lu.uni.svv.StressTesting.datatype.TimeList;
-import lu.uni.svv.StressTesting.datatype.Triple;
 import lu.uni.svv.StressTesting.search.model.TaskDescriptor;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
 import lu.uni.svv.StressTesting.search.model.TaskDescriptor.TaskType;
@@ -41,7 +39,7 @@ public class RMScheduler {
 	
 	/* For evaluating */
 	private List<Task>  missedDeadlines;
-	private BigDecimal  evaluatedValue;
+	private double  evaluatedValue;
 	private long        CPUusages;
 	
 	
@@ -68,7 +66,7 @@ public class RMScheduler {
 	public void initialize(){
 		CPUusages = 0;
 		missedDeadlines = new ArrayList<Task>();
-		evaluatedValue = new BigDecimal("0.0");
+		evaluatedValue = 0.0;
 		
 		timeLapsed = 0;
 		lastExecutedTask = null;
@@ -301,7 +299,7 @@ public class RMScheduler {
 		
 		// calculate deadline misses for evaluating
 		double factor = evaluateDeadlineMiss(_T, missed);
-		evaluatedValue = evaluatedValue.add(new BigDecimal(String.valueOf(factor)));
+		evaluatedValue = evaluatedValue + factor;
 		
 		// For Debugging
 		if (RMScheduler.DETAIL == true) executedTasks.add(_T);
@@ -331,7 +329,7 @@ public class RMScheduler {
 	 * Result getters
 	 * This functions can give a result after 'run()' function executed
 	 */
-	public BigDecimal getEvaluatedValue() {
+	public double getEvaluatedValue() {
 		return evaluatedValue;
 	}
 	

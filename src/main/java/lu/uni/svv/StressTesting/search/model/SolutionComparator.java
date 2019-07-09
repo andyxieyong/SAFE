@@ -5,7 +5,6 @@ import org.uma.jmetal.util.JMetalException;
 import org.uma.jmetal.util.comparator.ObjectiveComparator.Ordering;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.Comparator;
 
 /**
@@ -49,10 +48,10 @@ public class SolutionComparator<S extends Solution<?>> implements Comparator<S>,
 	 */
 	@Override
 	public int compare(S solution1, S solution2) {
-		int result ;
+		double result ;
 		if (solution1 == null) {
 			if (solution2 == null) {
-				result = 0;
+				result = 0.0;
 			} else {
 				result = 1;
 			}
@@ -65,14 +64,16 @@ public class SolutionComparator<S extends Solution<?>> implements Comparator<S>,
 			throw new JMetalException("The solution2 has " + solution2.getNumberOfObjectives()+ " objectives "
 					+ "and the objective to sort is " + objectiveId) ;
 		} else {
-			BigDecimal objective1 = ((TimeListSolution)solution1).getObjectiveDecimal(this.objectiveId);
-			BigDecimal objective2 = ((TimeListSolution)solution2).getObjectiveDecimal(this.objectiveId);
+			double objective1 = ((TimeListSolution)solution1).getObjective(this.objectiveId);
+			double objective2 = ((TimeListSolution)solution2).getObjective(this.objectiveId);
 			if (order == Ordering.ASCENDING) {
-				result = objective1.compareTo(objective2);
+				result = objective1 - objective2;
 			} else {
-				result = objective2.compareTo(objective1);
+				result = objective2 - objective1;
 			}
 		}
-		return result ;
+		if (result > 0) return 1;
+		else if (result < 0) return -1;
+		return 0;
 	}
 }

@@ -4,7 +4,6 @@ import lu.uni.svv.StressTesting.datatype.FitnessList;
 import lu.uni.svv.StressTesting.datatype.SummaryItem;
 import lu.uni.svv.StressTesting.datatype.TimeList;
 import lu.uni.svv.StressTesting.utils.Settings;
-import org.omg.IOP.TAG_INTERNET_IOP;
 import org.uma.jmetal.algorithm.impl.AbstractGeneticAlgorithm;
 import org.uma.jmetal.operator.CrossoverOperator;
 import org.uma.jmetal.operator.MutationOperator;
@@ -16,8 +15,6 @@ import org.uma.jmetal.util.comparator.ObjectiveComparator.Ordering;
 
 import lu.uni.svv.StressTesting.utils.GAWriter;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -29,12 +26,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	private Comparator<S> comparator;
 	private int maxIterations;
 	private int iterations;
-	private GAWriter writer;
 	private GAWriter byproduct;
-	private GAWriter detailWriter;
-	
-	private String name;
-	private String basepath;
 	
 	/**
 	 * Constructor
@@ -53,23 +45,17 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		this.crossoverOperator = crossoverOperator;
 		this.mutationOperator = mutationOperator;
 		this.selectionOperator = selectionOperator;
-		this.basepath = basepath;
-		this.name = name;
 		
 		if (Settings.N_SAMPLE_WCET==0)
 			comparator = new SolutionComparator<S>(0, Ordering.DESCENDING);
 		else
 			comparator = new SolutionListComparatorAvg<S>(0, Ordering.DESCENDING);
 		
-		writer = new GAWriter(String.format("iterations/iterations_%s.log", name), Level.FINE, null, basepath);
 		byproduct = new GAWriter(String.format("minimums/minimumMissed_%s.csv", name), Level.FINE, null, basepath);
-		detailWriter = new GAWriter(String.format("executions/run%s.csv", name), Level.FINE, null, basepath);
 	}
 	
 	protected void close(){
-		writer.close();
 		byproduct.close();
-		detailWriter.close();
 	}
 	
 	@Override
@@ -90,10 +76,19 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		return population;
 	}
 	
+	protected int findIndex(List<S> population, long id){
+		int target = 0;
+		for(int x=0; x<population.size(); x++){
+			if ( ((TimeListSolution)population.get(x)).ID == id ){
+				target = x;
+				break;
+			}
+		}
+		return target;
+	}
+	
 	@Override
 	protected List<S> reproduction(List<S> matingPopulation) {
-		List<S> offspringPopulation = new ArrayList<S>(1);
-		
 		List<S> parents = new ArrayList<S>(2);
 		parents.add(matingPopulation.get(0));
 		parents.add(matingPopulation.get(1));
@@ -101,8 +96,8 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		List<S> offspring = crossoverOperator.execute(parents);
 		mutationOperator.execute(offspring.get(0));
 		
+		List<S> offspringPopulation = new ArrayList<S>(1);
 		offspringPopulation.add(offspring.get(0));
-		
 		return offspringPopulation;
 	}
 	
@@ -193,7 +188,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		// print fitness
 		filename = String.format("/samples/fitness/%d.csv", _solution.ID);
 		
-		FitnessList fitnessList = _solution.getObjectiveDecimalList(0);
+		FitnessList fitnessList = _solution.getObjectiveList(0);
 		StringBuilder sb = new StringBuilder();
 		sb.append("SampleID,Fitness,MissingDeadlines\n");
 		for (int x=0; x<fitnessList.size(); x++) {
@@ -229,22 +224,16 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	public void initProgress() {
 		iterations = 1;
 		JMetalLogger.logger.info("initialized Progress");
-		initSummary();
-		loggingSumary();
-		printPopulation();
 		initByproduct();
 		printByproduct();
-		printExecutions(true);
+
 	}
 	
 	@Override
 	public void updateProgress() {
 		iterations++;
 		JMetalLogger.logger.info("move to next evaluation: " + iterations);
-		loggingSumary();
-		printPopulation();
 		printByproduct();
-		printExecutions(false);
 	}
 	
 	@Override
@@ -279,32 +268,6 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		close();
 	}
 	
-	public void printPopulation() {
-		writer.fine("--------- Iteration: " + iterations + "----------------");
-		for (S solution : population) {
-			if (Settings.N_SAMPLE_WCET==0) {
-				String pattern = "{%2d} fitness: %.32e";
-				String str = String.format(pattern, ((TimeListSolution) solution).ID, ((TimeListSolution) solution).getObjectiveDecimal(0));
-				writer.fine(str);
-			}
-			else{
-				StringBuilder sb = new StringBuilder();
-				long SolutionID = ((TimeListSolution) solution).ID;
-				FitnessList list = ((TimeListSolution) solution).getObjectiveDecimalList(0);
-				
-				sb.append(String.format("{%2d} fitness: [",SolutionID));
-				for(int x=0; x<list.size(); x++){
-					sb.append(String.format("%.32e", list.get(x)));
-					if (x != list.size()-1)
-						sb.append(",");
-				}
-				sb.append("]\n");
-				writer.fine(sb.toString());
-			}
-			
-		}
-	}
-	
 	public void initByproduct(){
 		StringBuilder sb = new StringBuilder();
 		sb.append("Iteration,");
@@ -320,78 +283,23 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	
 	public void printByproduct() {
 		StringBuilder sb = new StringBuilder();
-		String text = ((TimeListSolution)population.get(0)).getByproduct();
+		String text = ((TimeListSolution) population.get(0)).getByproduct();
 		
-		if (Settings.N_SAMPLE_WCET==0){
+		if (Settings.N_SAMPLE_WCET == 0) {
 			sb.append(iterations);
 			sb.append(",");
 			sb.append(text);
-		}
-		else{
+		} else {
 			String[] lines = text.split("\n");
-			for(int x=1; x<lines.length; x++){
+			for (int x = 1; x < lines.length; x++) {
 				sb.append(iterations);
 				sb.append(",");
 				sb.append(lines[x]);
-				if (x!=lines.length-1)
+				if (x != lines.length - 1)
 					sb.append("\n");
 			}
 		}
 		
 		byproduct.info(sb.toString());
-	}
-	
-	public void printExecutions(boolean _init){
-		TimeListSolution solution = (TimeListSolution)population.get(0);
-		String executionsStr = solution.getDetailExecution();
-		String[] lines = executionsStr.split("\n");
-		
-		for(int x=0; x<lines.length; x++){
-			if (lines[x].length()==0) continue;
-			if (x==0){
-				if (_init==false) continue;
-				detailWriter.info("Iteration," + lines[x]);
-			}
-			else{
-				detailWriter.info(iterations + "," + lines[x]);
-			}
-		}
-	}
-	
-	/*******************************************
-	 * Related showing results
-	 *******************************************/
-	List<Collection> summaries = null;
-	
-	private void initSummary() {
-		summaries = new ArrayList<Collection>();
-		for (int x = 0; x < problem.getNumberOfObjectives(); x++) {
-			if (Settings.N_SAMPLE_WCET==0)
-				summaries.add(new ArrayList<SummaryItem>());
-			else
-				summaries.add(new ArrayList<FitnessList>());
-		}
-		
-	}
-	
-	private void loggingSumary() {
-		Collections.sort(population, comparator);
-		if (Settings.N_SAMPLE_WCET==0){
-			for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
-				SummaryItem item = new SummaryItem(((TimeListSolution)population.get(0)).getObjectiveDecimal(objIdx), new BigDecimal(0));
-				summaries.get(objIdx).add(item);
-			}
-		}
-		else{
-			for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
-				FitnessList list = ((TimeListSolution)population.get(0)).getObjectiveDecimalList(objIdx);
-				summaries.get(objIdx).add(list);
-			}
-		}
-		
-	}
-	
-	public List<Collection> getSummaries() {
-		return summaries;
 	}
 }

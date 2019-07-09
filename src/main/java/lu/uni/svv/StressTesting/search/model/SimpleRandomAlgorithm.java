@@ -7,9 +7,6 @@ import org.uma.jmetal.algorithm.impl.AbstractGeneticAlgorithm;
 import org.uma.jmetal.problem.Problem;
 import org.uma.jmetal.solution.Solution;
 import org.uma.jmetal.util.JMetalLogger;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -147,7 +144,7 @@ public class SimpleRandomAlgorithm<S extends Solution<?>>  extends AbstractGenet
 		writer.fine("--------- Iteration: " + iterations + "----------------");
 		for (S solution : population) {
 			String pattern = "{%2d} fitness: %.32e, Arrival Times: %s";
-			String str = String.format(pattern, ((TimeListSolution) solution).ID, ((TimeListSolution) solution).getObjectiveDecimal(0), ((TimeListSolution) solution).getLineVariableValueString(20));
+			String str = String.format(pattern, ((TimeListSolution) solution).ID, ((TimeListSolution) solution).getObjective(0), ((TimeListSolution) solution).getLineVariableValueString(20));
 			writer.fine(str);
 			
 		}
@@ -156,7 +153,7 @@ public class SimpleRandomAlgorithm<S extends Solution<?>>  extends AbstractGenet
 	public void printCandidates(List<S> solutions) {
 		// Data
 		for (S solution: solutions) {
-			BigDecimal value = ((TimeListSolution)solution).getObjectiveDecimal(0);
+			double value = ((TimeListSolution)solution).getObjective(0);
 			candidatesWriter.print(String.format("%d,%.32e\n", iterations+1, value));
 		}
 	}
@@ -213,12 +210,12 @@ public class SimpleRandomAlgorithm<S extends Solution<?>>  extends AbstractGenet
 	private void loggingSumary() {
 		Collections.sort(population, comparator);
 		for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
-			BigDecimal avgFitness = new BigDecimal(0);
+			double avgFitness = 0.0;
 			for (S solution : population) {
-				avgFitness = avgFitness.add(((TimeListSolution)solution).getObjectiveDecimal(objIdx));
+				avgFitness = avgFitness + ((TimeListSolution)solution).getObjective(objIdx);
 			}
-			avgFitness = avgFitness.divide(new BigDecimal(population.size()), 1000, RoundingMode.HALF_UP);
-			summaries.get(objIdx).add(new SummaryItem(((TimeListSolution)population.get(0)).getObjectiveDecimal(objIdx), avgFitness));
+			avgFitness = avgFitness / population.size();
+			summaries.get(objIdx).add(new SummaryItem(((TimeListSolution)population.get(0)).getObjective(objIdx), avgFitness));
 		}
 	}
 	

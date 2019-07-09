@@ -1,12 +1,11 @@
 package lu.uni.svv.StressTesting.datatype;
 
-import java.math.BigDecimal;
 
 public class SummaryItem {
-	public BigDecimal AverageFitness;
-	public BigDecimal BestFitness;
+	public double AverageFitness;
+	public double BestFitness;
 	
-	public SummaryItem(BigDecimal _best, BigDecimal _avg) {
+	public SummaryItem(double _best, double _avg) {
 		AverageFitness = _avg;
 		BestFitness = _best;
 	}

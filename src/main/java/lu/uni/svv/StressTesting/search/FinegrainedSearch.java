@@ -111,7 +111,7 @@ public class FinegrainedSearch {
 		}
 		
 		String datapath = this.basePath + "/sampledata.csv";
-		String workfile = String.format("workdata_%d_%d_%.2f.csv", _maxIteration, _updateIteration, _probability);
+		String workfile = String.format("workdata_%d_%d_%d_%.2f.csv", _maxIteration, _updateIteration, Settings.SAMPLE_CANDIDATES, _probability);
 		String workpath = this.basePath + "/" + workfile;
 		
 		Files.copy(Paths.get(datapath), Paths.get(workpath), StandardCopyOption.REPLACE_EXISTING);
@@ -130,8 +130,13 @@ public class FinegrainedSearch {
 					coefficients = this.training_LRQuadratic(workpath);
 					JMetalLogger.logger.info("updated logistic regression "+ count +"/" + MAX_ITERATION +": " + getCoeffText(coefficients));
 				}
-				
-				long[] sampleWCET = this.sampling(_probability, coefficients);
+				long[] sampleWCET;
+				if (Settings.SAMPLE_CANDIDATES==0){
+					sampleWCET = this.getSampleWCETs();
+				}
+				else{
+					sampleWCET = this.sampling(_probability, coefficients);
+				}
 				int D = this.evaluate(s, sampleWCET);
 				this.appendNewDataset(workfile, D, sampleWCET);
 				count+=1;
