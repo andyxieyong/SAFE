@@ -265,14 +265,26 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		JMetalLogger.logger.info("evaluated initial population");
 		initProgress();
 		while (!isStoppingConditionReached()) {
-			matingPopulation = selection(population);
-			offspringPopulation = reproduction(matingPopulation);
+			if (Settings.SIMPLE_SEARCH){
+				offspringPopulation = simpleGenerateOffsprings();
+			}
+			else{
+				matingPopulation = selection(population);
+				offspringPopulation = reproduction(matingPopulation);
+			}
 			offspringPopulation = evaluatePopulation(offspringPopulation);
 			population = replacement(population, offspringPopulation);
 			updateProgress();
 		}
 		
 		close();
+	}
+	
+	public List<S> simpleGenerateOffsprings(){
+		List<S> offsprings = new ArrayList<S>(1);
+		S solution = problem.createSolution();
+		offsprings.add(solution);
+		return offsprings;
 	}
 	
 	public void initByproduct(){

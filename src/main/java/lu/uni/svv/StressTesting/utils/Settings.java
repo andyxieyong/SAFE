@@ -30,6 +30,7 @@ public class Settings {
 	public static double  GA_CROSSOVER_PROB   = 0.9;
 	public static double  GA_MUTATION_PROB    = 0.5;
 	public static double  A12_THRESHOLD       = 0.5;
+	public static boolean SIMPLE_SEARCH       = false;
 	
 	// Experiment control
 	public static String  BASE_PATH           = "logs";
@@ -84,6 +85,7 @@ public class Settings {
 		parser.addOption(false,"sampleCandidates", DataType.INTEGER, null, "sampleCandidates", "The number of sandidates to get one sample in second phase");
 		parser.addOption(false,"printSamples", DataType.BOOLEAN, null, "printSamples", "If you set this parameter, The program will produce sampling detail information", false);
 		parser.addOption(false,"printResults", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
+		parser.addOption(false,"simpleSearch", DataType.BOOLEAN, null, "simpleSearch", "Simple search mode, not using crossover and mutation just produce children randomly", false);
 		
 		// parsing args;
 		try{
@@ -132,6 +134,7 @@ public class Settings {
 		if (parser.containsParam("sampleCandidates"))SAMPLE_CANDIDATES = (Integer) parser.getParam("sampleCandidates");
 		if (parser.containsParam("printSamples"))   PRINT_SAMPLES = (Boolean) parser.getParam("printSamples");
 		if (parser.containsParam("printResults"))   PRINT_RESULTS = (Boolean) parser.getParam("printResults");
+		if (parser.containsParam("simpleSearch"))   SIMPLE_SEARCH = (Boolean) parser.getParam("simpleSearch");
 		
 	}
 	
