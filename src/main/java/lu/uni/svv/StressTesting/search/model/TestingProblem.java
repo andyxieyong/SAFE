@@ -52,16 +52,29 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		this(_filename, 0.1, 3600000, _schedulerName);
 	}
 	
+	
+	public long find_max_deadline(){
+		long max_dealine=0;
+		for (TaskDescriptor task:this.Tasks){
+			if (task.Deadline> max_dealine)
+				max_dealine = task.Deadline;
+		}
+		return max_dealine;
+	}
 	public TestingProblem(String _filename, double _time_quanta, int _max_time, String _schedulerName) throws NumberFormatException, IOException{
 		
 		// Set environment of this problem.
 		this.TIME_QUANTA = _time_quanta;
 		this.MAX_TIME = _max_time;
-		this.QUANTA_LENGTH = (int) (this.MAX_TIME * (1/this.TIME_QUANTA));
 		this.RUN_ID =0;
+		this.QUANTA_LENGTH = (int) (this.MAX_TIME * (1/this.TIME_QUANTA));
 		
 		// This function updates this.Tasks value.
 		this.loadFromCSV(_filename);
+		
+		// Increase Quanta_length
+		long max_deadline = find_max_deadline();
+		this.QUANTA_LENGTH += max_deadline;
 		
 		this.setName("StressTesting");
 		this.setNumberOfVariables(this.Tasks.length);
@@ -365,11 +378,20 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	}
 	
 	public long getTimeFromString(String _text, long _default) {
+		return getTimeFromString(_text, _default, this.QUANTA_LENGTH);
+	}
+	
+	
+	public long getTimeFromString(String _text, long _default, long _max) {
 		
 		if (_text.compareTo("")==0 || _text.compareTo("N/A")==0) 
 			return _default;
-		else
-			return (long)(Double.parseDouble(_text) * (1/this.TIME_QUANTA));
+		else {
+			long value = (long)(Double.parseDouble(_text) * (1 / this.TIME_QUANTA));
+			if (value > _max)
+				return _max;
+			return value;
+		}
 	}
 
 }

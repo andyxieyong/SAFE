@@ -92,7 +92,7 @@ public class RMScheduler {
 			
 			// Running Scheduler
 			long time = 0;
-			for (; time < problem.QUANTA_LENGTH; time++)
+			for (; time <= problem.QUANTA_LENGTH; time++)
 			{
 				// append a new task which is matched with this time
 				appendNewTask(time, _solution.getVariables());
@@ -103,14 +103,14 @@ public class RMScheduler {
 			}
 			
 			//Check cycle complete or not  (It was before ExecuteOneUnit() originally)
-			if (readyQueue.size() > 0) {
+			if (Settings.EXTEND_SCHEDULER && readyQueue.size() > 0) {
 				if (RMScheduler.DETAIL == true)
 				{
 					printer.println("\nEnd of expected time quanta");
 					printer.println("Here are extra execution because of ramaining tasks in queue");
 					printer.println("------------------------------------------");
 				}
-		
+
 				while(readyQueue.size() > 0) {
 					int output = executeOneUnit();
 					if (output == -1) return ;
