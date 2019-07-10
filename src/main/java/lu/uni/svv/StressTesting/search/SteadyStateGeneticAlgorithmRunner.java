@@ -49,6 +49,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 
 		// Environment Settings
 		Settings.update(args);
+		
 		init();
 		
 		// problem load
@@ -58,7 +59,9 @@ public class SteadyStateGeneticAlgorithmRunner {
 		JMetalLogger.logger.info("Loaded problem");
 		
 		// experiment
-		for (int run = 0; run < Settings.GA_RUN_MAX; run++) {
+		for (int run = 1; run <= Settings.GA_RUN_MAX; run++) {
+			if (Settings.GA_RUN!=0 && run!=Settings.GA_RUN) continue;
+			problem.RUN_ID = run;
 			experiment( run,
 						problem,
 						Settings.GA_POPULATION,
@@ -73,12 +76,21 @@ public class SteadyStateGeneticAlgorithmRunner {
 	}
 	
 	public static void printInput(String changed, String inputs){
-		GAWriter writer = new GAWriter("changed.txt", Level.INFO,  null, Settings.BASE_PATH);
-		writer.print(changed);
-		writer.close();
-		writer = new GAWriter("input.csv", Level.INFO,  null, Settings.BASE_PATH);
-		writer.info(inputs);
-		writer.close();
+		if (Settings.GA_RUN<=1) {
+			// multi run mode and single run mode with runID 1)
+			GAWriter writer = new GAWriter("settings.txt", Level.FINE, null, Settings.BASE_PATH);
+			writer.info(Settings.getString());
+			writer.close();
+			System.out.print(Settings.getString());
+			
+			writer = new GAWriter("changed.txt", Level.INFO, null, Settings.BASE_PATH);
+			writer.print(changed);
+			writer.close();
+			
+			writer = new GAWriter("input.csv", Level.INFO, null, Settings.BASE_PATH);
+			writer.info(inputs);
+			writer.close();
+		}
 	}
 	 
 	public static void experiment(int run, TestingProblem problem, int populationSize, int maxIterations, double crossoverProbability, double mutationProbability)
@@ -89,13 +101,12 @@ public class SteadyStateGeneticAlgorithmRunner {
 		MutationOperator<TimeListSolution> mutationOperator = new SimpleTLMutation4(problem, mutationProbability);
 		SelectionOperator<List<TimeListSolution>, TimeListSolution> selectionOperator = new BinaryTournamentSelection<TimeListSolution>();
 
-		List<TimeListSolution> bestSolutions = new ArrayList<TimeListSolution>() ;
 		
-		JMetalLogger.logger.info("Started algorithem run "+(run+1));
+		JMetalLogger.logger.info("Started algorithem run "+run);
 		
 		SteadyStateGeneticAlgorithm<TimeListSolution> algorithm =
 				 new SteadyStateGeneticAlgorithm<TimeListSolution>(	Settings.BASE_PATH,
-						                                            String.format("%02d", (run+1)),
+						                                            String.format("%02d", run),
 						 											problem,
 						                                            maxIterations,
 																	populationSize, 
@@ -112,13 +123,9 @@ public class SteadyStateGeneticAlgorithmRunner {
 		// print results
 		if (Settings.N_SAMPLE_WCET==0) {
 			printDetails(solution, run);
-			if (Settings.PRINT_RESULTS)
-				printSummary(algorithm.getSummaries(), run, maxIterations);
 		}
 		else {
 			printFullSolutions(algorithm.getPopulation(), run);
-			if (Settings.PRINT_RESULTS)
-				printSummaryList(algorithm.getSummaries(), run, maxIterations);
 		}
 		
 		// logging some information
@@ -130,7 +137,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 	
 	public static void printDetails(TimeListSolution solution, int run)
 	{
-		GAWriter writer = new GAWriter(String.format("solutions/solutions_run%02d.json", run+1), Level.FINE, null, Settings.BASE_PATH);
+		GAWriter writer = new GAWriter(String.format("solutions/solutions_run%02d.json", run), Level.FINE, null, Settings.BASE_PATH);
 		writer.info(solution.getVariableValueString());
 		writer.close();
 	}
@@ -144,7 +151,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 		for(TimeListSolution solution: solutions) {
 			idx += 1;
 			
-			writer = new GAWriter(String.format("solutions/solutions_run%02d_%d.json", run + 1, idx), Level.FINE, null, Settings.BASE_PATH);
+			writer = new GAWriter(String.format("solutions/solutions_run%02d_%d.json", run, idx), Level.FINE, null, Settings.BASE_PATH);
 			writer.info(solution.getVariableValueString());
 			writer.close();
 			
@@ -168,20 +175,18 @@ public class SteadyStateGeneticAlgorithmRunner {
 	}
 
 	public static void init() {
-		File dir = new File(Settings.BASE_PATH);
-		if (dir.exists() == true) {
-			try {
-				FileUtils.deleteDirectory(dir);
-			} catch (IOException e) {
-				System.out.println("Failed to delete results");
-				e.printStackTrace();
+		if (Settings.GA_RUN == 0){
+			// Only apply to multi run mode
+			File dir = new File(Settings.BASE_PATH);
+			if (dir.exists() == true) {
+				try {
+					FileUtils.deleteDirectory(dir);
+				} catch (IOException e) {
+					System.out.println("Failed to delete results");
+					e.printStackTrace();
+				}
 			}
 		}
-		
-		GAWriter writer = new GAWriter("settings.txt", Level.FINE, null, Settings.BASE_PATH);
-		writer.info(Settings.getString());
-		writer.close();
-		System.out.print(Settings.getString());
 	}
 	
 	public static void moveResults(){
@@ -207,59 +212,5 @@ public class SteadyStateGeneticAlgorithmRunner {
 					dir.mkdir();
 			}
 		}
-	}
-	
-	/*******************************************
-	 * Related logging results
-	 *******************************************/
-	public static void printSummary(List<Collection> summary, int run, int maxIterations)
-	{
-		for (int objIDX=0; objIDX<summary.size(); objIDX++)
-		{
-			List<SummaryItem> items = (List<SummaryItem>)summary.get(objIDX);
-			
-			GAWriter writer = new GAWriter(String.format("results/result_obj%02d_run%02d.csv", objIDX, run+1), Level.INFO, null, Settings.BASE_PATH);
-			
-			// Title
-			StringBuilder sb = new StringBuilder();
-			sb.append(String.format("Iteration,Run %02d\n", run+1));
-			
-			// Data
-			for (int iter=0; iter<maxIterations; iter++) {
-				sb.append((iter+1));
-				sb.append(",");
-				sb.append(String.format("%.0f\n", items.get(iter).BestFitness));
-			}
-			writer.info(sb.toString());
-			writer.close();
-		} // for objIdx
-	}
-	
-	public static void printSummaryList(List<Collection> summary, int run, int maxIterations)
-	{
-		for (int objIDX=0; objIDX<summary.size(); objIDX++)
-		{
-			List<FitnessList> items = (List<FitnessList>)summary.get(objIDX);
-			
-			GAWriter writer = new GAWriter(String.format("results/result_obj%02d_run%02d.csv", objIDX, run+1), Level.INFO, null, Settings.BASE_PATH);
-			
-			// Title
-			StringBuilder sb = new StringBuilder();
-			sb.append(String.format("Iterations,SampleID,Run %02d\n", run+1));
-			
-			// Data
-			for (int iter=0; iter<maxIterations; iter++) {
-				FitnessList samples = items.get(iter);
-				for (int x=0; x<samples.size(); x++){
-					sb.append((iter + 1));
-					sb.append(",");
-					sb.append(x);
-					sb.append(",");
-					sb.append(String.format("%.0f\n", samples.get(x) ));
-				}
-			}
-			writer.info(sb.toString());
-			writer.close();
-		} // for objIdx
 	}
 }

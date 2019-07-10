@@ -24,9 +24,10 @@ public class Settings {
 	public static boolean UNIFORM_SAMPLE      = false;
 	
 	// GA
-	public static int     GA_RUN_MAX          = 20;
+	public static int     GA_RUN              = 1;
+	public static int     GA_RUN_MAX          = 0;
 	public static int     GA_POPULATION       = 10;
-	public static int     GA_MAX_ITERATION    = 100;
+	public static int     GA_MAX_ITERATION    = 1000;
 	public static double  GA_CROSSOVER_PROB   = 0.9;
 	public static double  GA_MUTATION_PROB    = 0.5;
 	public static double  A12_THRESHOLD       = 0.5;
@@ -62,6 +63,7 @@ public class Settings {
 		parser.addOption(false,"Help", DataType.BOOLEAN, "h", "help", "Show how to use this program");
 		parser.addOption(false,"SettingFile", DataType.STRING, "f", null, "Base setting file.", "settings.json");
 		parser.addOption(false,"RunMax", DataType.INTEGER, "r", null, "Maximum run times for GA");
+		parser.addOption(false,"Run", DataType.INTEGER, null, "runID", "Specific run ID when you execute run separately");
 		parser.addOption(false,"Populations", DataType.INTEGER, "p", null, "Population for GA");
 		parser.addOption(false,"Iterations", DataType.INTEGER, "i", null, "Maximum iterations for GA");
 		parser.addOption(false,"CrossoverRate", DataType.DOUBLE, "c", null, "Crossover rate for GA");
@@ -111,6 +113,7 @@ public class Settings {
 		
 		// update settings from command parameters
 		if (parser.containsParam("RunMax"))         GA_RUN_MAX = (Integer) parser.getParam("RunMax");
+		if (parser.containsParam("Run"))            GA_RUN = (Integer) parser.getParam("Run");
 		if (parser.containsParam("Populations"))    GA_POPULATION = (Integer) parser.getParam("Populations");
 		if (parser.containsParam("Iterations"))     GA_MAX_ITERATION = (Integer) parser.getParam("Iterations");
 		if (parser.containsParam("CrossoverRate"))  GA_CROSSOVER_PROB = (Double) parser.getParam("CrossoverRate");

@@ -26,7 +26,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	private Comparator<S> comparator;
 	private int maxIterations;
 	private int iterations;
-	private GAWriter byproduct;
+	private GAWriter fitness_writer;
 	
 	/**
 	 * Constructor
@@ -51,11 +51,40 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		else
 			comparator = new SolutionListComparatorAvg<S>(0, Ordering.DESCENDING);
 		
-		//byproduct = new GAWriter(String.format("minimums/minimumMissed_%s.csv", name), Level.FINE, null, basepath);
+		printSummaryInit(name, basepath);
+	}
+
+	protected void close(){
+		if (fitness_writer != null)
+			fitness_writer.close();
 	}
 	
-	protected void close(){
-		//byproduct.close();
+	
+	@Override
+	public void run() {
+		List<S> offspringPopulation;
+		List<S> matingPopulation;
+		
+		population = createInitialPopulation();
+		JMetalLogger.logger.info("created initial population");
+		JMetalLogger.logger.info("evaluating initial population");
+		population = evaluatePopulation(population);
+		JMetalLogger.logger.info("evaluated initial population");
+		initProgress();
+		while (!isStoppingConditionReached()) {
+			if (Settings.SIMPLE_SEARCH){
+				offspringPopulation = simpleGenerateOffsprings();
+			}
+			else{
+				matingPopulation = selection(population);
+				offspringPopulation = reproduction(matingPopulation);
+			}
+			offspringPopulation = evaluatePopulation(offspringPopulation);
+			population = replacement(population, offspringPopulation);
+			updateProgress();
+		}
+		
+		close();
 	}
 	
 	@Override
@@ -99,6 +128,13 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		List<S> offspringPopulation = new ArrayList<S>(1);
 		offspringPopulation.add(offspring.get(0));
 		return offspringPopulation;
+	}
+	
+	public List<S> simpleGenerateOffsprings() {
+		List<S> offsprings = new ArrayList<S>(1);
+		S solution = problem.createSolution();
+		offsprings.add(solution);
+		return offsprings;
 	}
 	
 	@Override
@@ -225,8 +261,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		iterations = 0;
 		JMetalLogger.logger.info("initialized Progress");
 		if (Settings.PRINT_RESULTS) {
-			initSummary();
-			loggingSumary();
+			printSummary();
 		}
 		//initByproduct();
 		//printByproduct();
@@ -238,7 +273,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		iterations++;
 		JMetalLogger.logger.info("move to next evaluation: " + iterations);
 		if (Settings.PRINT_RESULTS) {
-			loggingSumary();
+			printSummary();
 		}
 		//printByproduct();
 	}
@@ -253,110 +288,43 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		return "Steady-State Genetic Algorithm";
 	}
 	
-	@Override
-	public void run() {
-		List<S> offspringPopulation;
-		List<S> matingPopulation;
-		
-		population = createInitialPopulation();
-		JMetalLogger.logger.info("created initial population");
-		JMetalLogger.logger.info("evaluating initial population");
-		population = evaluatePopulation(population);
-		JMetalLogger.logger.info("evaluated initial population");
-		initProgress();
-		while (!isStoppingConditionReached()) {
-			if (Settings.SIMPLE_SEARCH){
-				offspringPopulation = simpleGenerateOffsprings();
-			}
-			else{
-				matingPopulation = selection(population);
-				offspringPopulation = reproduction(matingPopulation);
-			}
-			offspringPopulation = evaluatePopulation(offspringPopulation);
-			population = replacement(population, offspringPopulation);
-			updateProgress();
-		}
-		
-		close();
-	}
-	
-	public List<S> simpleGenerateOffsprings(){
-		List<S> offsprings = new ArrayList<S>(1);
-		S solution = problem.createSolution();
-		offsprings.add(solution);
-		return offsprings;
-	}
-	
-	public void initByproduct(){
+	public void printSummaryInit(String run, String basepath){
+		fitness_writer = new GAWriter(String.format("results/result_run%s.csv", run), Level.INFO, null, basepath);
+		// Title
 		StringBuilder sb = new StringBuilder();
-		sb.append("Iteration,");
-		if (Settings.N_SAMPLE_WCET!=0)
-			sb.append("SampleID,");
-		for(int num=0; num<problem.getNumberOfVariables(); num++){
-			sb.append(String.format("Task%2s",num+1));
-			if (num+1 < problem.getNumberOfVariables())
-				sb.append(",");
-		}
-		byproduct.info(sb.toString());
+		if (Settings.N_SAMPLE_WCET==0)
+			sb.append(String.format("Iterations,Run %s", run));
+		else
+			sb.append(String.format("Iterations,SampleID,Run %s", run));
+		
+		fitness_writer.info(sb.toString());
 	}
 	
-	public void printByproduct() {
-		StringBuilder sb = new StringBuilder();
-		String text = ((TimeListSolution) population.get(0)).getByproduct();
+	public void printSummary(){
+		Collections.sort(population, comparator);
+		TimeListSolution bestSolution = (TimeListSolution)population.get(0);
 		
-		if (Settings.N_SAMPLE_WCET == 0) {
-			sb.append(iterations);
+		StringBuilder sb = new StringBuilder();
+		
+		if (Settings.N_SAMPLE_WCET==0){
+			double fitness = bestSolution.getObjective(0);
+			sb.append((iterations + 1));
 			sb.append(",");
-			sb.append(text);
-		} else {
-			String[] lines = text.split("\n");
-			for (int x = 1; x < lines.length; x++) {
-				sb.append(iterations);
+			sb.append(String.format("%.0f\n", fitness));
+		}
+		else{
+			FitnessList list = bestSolution.getObjectiveList(0);
+			for (int x=0; x<list.size(); x++){
+				sb.append((iterations));
 				sb.append(",");
-				sb.append(lines[x]);
-				if (x != lines.length - 1)
+				sb.append(x);
+				sb.append(",");
+				sb.append(String.format("%.0f", list.get(x) ));
+				if (x!=list.size()-1)
 					sb.append("\n");
 			}
 		}
-		
-		byproduct.info(sb.toString());
+		fitness_writer.info(sb.toString());
 	}
 	
-	
-	/*******************************************
-	 * Related showing results
-	 *******************************************/
-	List<Collection> summaries = null;
-	
-	private void initSummary() {
-		summaries = new ArrayList<Collection>();
-		for (int x = 0; x < problem.getNumberOfObjectives(); x++) {
-			if (Settings.N_SAMPLE_WCET==0)
-				summaries.add(new ArrayList<SummaryItem>());
-			else
-				summaries.add(new ArrayList<FitnessList>());
-		}
-		
-	}
-	
-	private void loggingSumary() {
-		Collections.sort(population, comparator);
-		if (Settings.N_SAMPLE_WCET==0){
-			for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
-				SummaryItem item = new SummaryItem(((TimeListSolution)population.get(0)).getObjective(objIdx), 0);
-				summaries.get(objIdx).add(item);
-			}
-		}
-		else{
-			for (int objIdx = 0; objIdx < problem.getNumberOfObjectives(); objIdx++) {
-				FitnessList list = ((TimeListSolution)population.get(0)).getObjectiveList(objIdx);
-				summaries.get(objIdx).add(list);
-			}
-		}
-		
-	}
-	
-	public List<Collection> getSummaries() {
-		return summaries;
-	}
 }

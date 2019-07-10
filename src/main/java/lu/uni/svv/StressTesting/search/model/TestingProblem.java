@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 
+import com.sun.xml.internal.ws.api.config.management.policy.ManagementAssertion;
 import lu.uni.svv.StressTesting.datatype.FitnessList;
 import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.RandomGenerator;
@@ -35,6 +36,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	public long     MAX_TIME;		// 1 hour (ms)
 	public long     MAX_PHASETIME;	// maximum phase time;
 	public long     QUANTA_LENGTH;	// MAX_TIME * (1/TIME_QUANTA) // to treat all time values as integer
+	public int      RUN_ID =0;
 	
 	public TaskDescriptor[] Tasks = null;		// Task information
 	
@@ -56,6 +58,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		this.TIME_QUANTA = _time_quanta;
 		this.MAX_TIME = _max_time;
 		this.QUANTA_LENGTH = (int) (this.MAX_TIME * (1/this.TIME_QUANTA));
+		this.RUN_ID =0;
 		
 		// This function updates this.Tasks value.
 		this.loadFromCSV(_filename);
@@ -131,7 +134,8 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		// Sample
 		List<Integer> uncertainTasks = this.getUncertainTasks();
 		String uncertainHeader = this.getUncertainTasksString("result", uncertainTasks);
-		GAWriter sampledata = new GAWriter("sampledata.csv", Level.INFO, uncertainHeader, Settings.BASE_PATH,true);
+		String filename = (this.RUN_ID >0)? String.format("samples/sampledata_run%02d.csv", this.RUN_ID):"samples/sampledata.csv";
+		GAWriter sampledata = new GAWriter(filename, Level.INFO, uncertainHeader, Settings.BASE_PATH,true);
 		
 		// generate sample
 		for (int sampleID = 0; sampleID < Settings.N_SAMPLE_WCET; sampleID++) {
