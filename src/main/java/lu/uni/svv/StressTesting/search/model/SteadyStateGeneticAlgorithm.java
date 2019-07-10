@@ -51,11 +51,11 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		else
 			comparator = new SolutionListComparatorAvg<S>(0, Ordering.DESCENDING);
 		
-		byproduct = new GAWriter(String.format("minimums/minimumMissed_%s.csv", name), Level.FINE, null, basepath);
+		//byproduct = new GAWriter(String.format("minimums/minimumMissed_%s.csv", name), Level.FINE, null, basepath);
 	}
 	
 	protected void close(){
-		byproduct.close();
+		//byproduct.close();
 	}
 	
 	@Override
@@ -222,7 +222,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	
 	@Override
 	public void initProgress() {
-		iterations = 1;
+		iterations = 0;
 		JMetalLogger.logger.info("initialized Progress");
 		if (Settings.PRINT_RESULTS) {
 			initSummary();
