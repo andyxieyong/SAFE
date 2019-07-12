@@ -27,6 +27,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	private int maxIterations;
 	private int iterations;
 	private GAWriter fitness_writer;
+	private GAWriter byproduct;
 	
 	/**
 	 * Constructor
@@ -51,14 +52,15 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		else
 			comparator = new SolutionListComparatorAvg<S>(0, Ordering.DESCENDING);
 		
+		byproduct = new GAWriter(String.format("minimums/minimumMissed_%s.csv", name), Level.FINE, null, basepath);
 		printSummaryInit(name, basepath);
 	}
 
-	protected void close(){
+	protected void close() {
+		byproduct.close();
 		if (fitness_writer != null)
 			fitness_writer.close();
 	}
-	
 	
 	@Override
 	public void run() {
@@ -263,8 +265,8 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		if (Settings.PRINT_RESULTS) {
 			printSummary();
 		}
-		//initByproduct();
-		//printByproduct();
+		initByproduct();
+		printByproduct();
 
 	}
 	
@@ -275,7 +277,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		if (Settings.PRINT_RESULTS) {
 			printSummary();
 		}
-		//printByproduct();
+		printByproduct();
 	}
 	
 	@Override
@@ -327,4 +329,38 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		fitness_writer.info(sb.toString());
 	}
 	
+	public void initByproduct(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("Iteration,");
+		if (Settings.N_SAMPLE_WCET!=0)
+			sb.append("SampleID,");
+		for(int num=0; num<problem.getNumberOfVariables(); num++){
+			sb.append(String.format("Task%2s",num+1));
+			if (num+1 < problem.getNumberOfVariables())
+				sb.append(",");
+		}
+		byproduct.info(sb.toString());
+	}
+	
+	public void printByproduct() {
+		StringBuilder sb = new StringBuilder();
+		String text = ((TimeListSolution) population.get(0)).getByproduct();
+		
+		if (Settings.N_SAMPLE_WCET == 0) {
+			sb.append(iterations);
+			sb.append(",");
+			sb.append(text);
+		} else {
+			String[] lines = text.split("\n");
+			for (int x = 1; x < lines.length; x++) {
+				sb.append(iterations);
+				sb.append(",");
+				sb.append(lines[x]);
+				if (x != lines.length - 1)
+					sb.append("\n");
+			}
+		}
+		
+		byproduct.info(sb.toString());
+	}
 }

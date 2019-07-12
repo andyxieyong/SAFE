@@ -22,7 +22,7 @@ public class Settings {
 	public static double  FITNESS_RANGE       = 0.5;
 	public static int     N_SAMPLE_WCET       = 0;
 	public static boolean UNIFORM_SAMPLE      = false;
-	public static boolean EXTEND_SCHEDULER    = false;
+	public static boolean EXTEND_SCHEDULER    = true;
 	
 	// GA
 	public static int     GA_RUN              = 1;
@@ -89,7 +89,7 @@ public class Settings {
 		parser.addOption(false,"printSamples", DataType.BOOLEAN, null, "printSamples", "If you set this parameter, The program will produce sampling detail information", false);
 		parser.addOption(false,"printResults", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
 		parser.addOption(false,"simpleSearch", DataType.BOOLEAN, null, "simpleSearch", "Simple search mode, not using crossover and mutation just produce children randomly", false);
-		parser.addOption(false,"extendScheduler", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", false);
+		parser.addOption(false,"extendScheduler", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", true);
 		// parsing args;
 		try{
 			parser.parseArgs(args);
