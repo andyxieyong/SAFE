@@ -54,8 +54,9 @@ public class SteadyStateGeneticAlgorithmRunner {
 		
 		// problem load
 		TestingProblem problem = new TestingProblem(Settings.INPUT_FILE, Settings.TIME_QUANTA, Settings.TIME_MAX, Settings.SCHEDULER);
-		String changed = problem.increaseWCET(Settings.INC_TASK_TYPE, Settings.INC_RATE);
-		printInput(changed, problem.getInputs());
+		//String changed = problem.increaseWCET(Settings.INC_TASK_TYPE, Settings.INC_RATE);
+		//printInput(changed, problem.getInputs());
+		printInput(null, problem.getInputs());
 		JMetalLogger.logger.info("Loaded problem");
 		
 		// experiment
@@ -83,9 +84,11 @@ public class SteadyStateGeneticAlgorithmRunner {
 			writer.close();
 			System.out.print(Settings.getString());
 			
-			writer = new GAWriter("changed.txt", Level.INFO, null, Settings.BASE_PATH);
-			writer.print(changed);
-			writer.close();
+			if (changed != null) {
+				writer = new GAWriter("changed.txt", Level.INFO, null, Settings.BASE_PATH);
+				writer.print(changed);
+				writer.close();
+			}
 			
 			writer = new GAWriter("input.csv", Level.INFO, null, Settings.BASE_PATH);
 			writer.info(inputs);

@@ -140,7 +140,6 @@ public class Settings {
 		if (parser.containsParam("printResults"))   PRINT_RESULTS = (Boolean) parser.getParam("printResults");
 		if (parser.containsParam("simpleSearch"))   SIMPLE_SEARCH = (Boolean) parser.getParam("simpleSearch");
 		if (parser.containsParam("extendScheduler"))   EXTEND_SCHEDULER = (Boolean) parser.getParam("extendScheduler");
-		
 	}
 	
 	/**

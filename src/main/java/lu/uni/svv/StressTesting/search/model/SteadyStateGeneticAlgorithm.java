@@ -310,9 +310,9 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		
 		if (Settings.N_SAMPLE_WCET==0){
 			double fitness = bestSolution.getObjective(0);
-			sb.append((iterations + 1));
+			sb.append((iterations));
 			sb.append(",");
-			sb.append(String.format("%.0f\n", fitness));
+			sb.append(String.format("%.0f", fitness));
 		}
 		else{
 			FitnessList list = bestSolution.getObjectiveList(0);

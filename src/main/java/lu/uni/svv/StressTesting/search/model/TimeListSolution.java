@@ -36,7 +36,7 @@ public class TimeListSolution implements Solution<TimeList>{
 	protected TestingProblem problem;
 	protected JMetalRandom randomGenerator;
 	
-	private String deadlineExecution;		// to save deadline misses by String
+	private String deadlineExecution;	// to save deadline misses by String
 	private String detailExecution;		// to save deadline misses by String
 	private String byproduct;           // to save information anything to print out during evolution
 	private String sampledWCET;         // to save sampled WCET results.

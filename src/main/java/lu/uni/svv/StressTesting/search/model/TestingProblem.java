@@ -330,7 +330,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			}
 			previous = task.MinWCET;
 			task.MinWCET = (int)Math.ceil((double)task.MinWCET*increase);
-			task.MaxWCET = (int)Math.ceil((double)task.MinWCET*increase);
+			task.MaxWCET = (int)Math.ceil((double)task.MaxWCET*increase);
 			if (increase == 1.0)
 				sb.append(String.format("[%25s] %10s, %7d, %8d\n", task.Name, task.Type.toString(), task.MinWCET, task.Deadline));
 			else
