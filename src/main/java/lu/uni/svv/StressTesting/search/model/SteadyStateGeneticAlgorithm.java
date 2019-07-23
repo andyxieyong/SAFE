@@ -26,6 +26,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	private Comparator<S> comparator;
 	private int maxIterations;
 	private int iterations;
+	private GAWriter fitness_writer;
 	private GAWriter byproduct;
 	
 	/**
@@ -52,10 +53,40 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 			comparator = new SolutionListComparatorAvg<S>(0, Ordering.DESCENDING);
 		
 		byproduct = new GAWriter(String.format("minimums/minimumMissed_%s.csv", name), Level.FINE, null, basepath);
+		printSummaryInit(name, basepath);
+	}
+
+	protected void close() {
+		byproduct.close();
+		if (fitness_writer != null)
+			fitness_writer.close();
 	}
 	
-	protected void close(){
-		byproduct.close();
+	@Override
+	public void run() {
+		List<S> offspringPopulation;
+		List<S> matingPopulation;
+		
+		population = createInitialPopulation();
+		JMetalLogger.logger.info("created initial population");
+		JMetalLogger.logger.info("evaluating initial population");
+		population = evaluatePopulation(population);
+		JMetalLogger.logger.info("evaluated initial population");
+		initProgress();
+		while (!isStoppingConditionReached()) {
+			if (Settings.SIMPLE_SEARCH){
+				offspringPopulation = simpleGenerateOffsprings();
+			}
+			else{
+				matingPopulation = selection(population);
+				offspringPopulation = reproduction(matingPopulation);
+			}
+			offspringPopulation = evaluatePopulation(offspringPopulation);
+			population = replacement(population, offspringPopulation);
+			updateProgress();
+		}
+		
+		close();
 	}
 	
 	@Override
@@ -99,6 +130,13 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		List<S> offspringPopulation = new ArrayList<S>(1);
 		offspringPopulation.add(offspring.get(0));
 		return offspringPopulation;
+	}
+	
+	public List<S> simpleGenerateOffsprings() {
+		List<S> offsprings = new ArrayList<S>(1);
+		S solution = problem.createSolution();
+		offsprings.add(solution);
+		return offsprings;
 	}
 	
 	@Override
@@ -222,8 +260,11 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	
 	@Override
 	public void initProgress() {
-		iterations = 1;
+		iterations = 0;
 		JMetalLogger.logger.info("initialized Progress");
+		if (Settings.PRINT_RESULTS) {
+			printSummary();
+		}
 		initByproduct();
 		printByproduct();
 
@@ -233,6 +274,9 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	public void updateProgress() {
 		iterations++;
 		JMetalLogger.logger.info("move to next evaluation: " + iterations);
+		if (Settings.PRINT_RESULTS) {
+			printSummary();
+		}
 		printByproduct();
 	}
 	
@@ -246,26 +290,43 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		return "Steady-State Genetic Algorithm";
 	}
 	
-	@Override
-	public void run() {
-		List<S> offspringPopulation;
-		List<S> matingPopulation;
+	public void printSummaryInit(String run, String basepath){
+		fitness_writer = new GAWriter(String.format("results/result_run%s.csv", run), Level.INFO, null, basepath);
+		// Title
+		StringBuilder sb = new StringBuilder();
+		if (Settings.N_SAMPLE_WCET==0)
+			sb.append(String.format("Iterations,Run %s", run));
+		else
+			sb.append(String.format("Iterations,SampleID,Run %s", run));
 		
-		population = createInitialPopulation();
-		JMetalLogger.logger.info("created initial population");
-		JMetalLogger.logger.info("evaluating initial population");
-		population = evaluatePopulation(population);
-		JMetalLogger.logger.info("evaluated initial population");
-		initProgress();
-		while (!isStoppingConditionReached()) {
-			matingPopulation = selection(population);
-			offspringPopulation = reproduction(matingPopulation);
-			offspringPopulation = evaluatePopulation(offspringPopulation);
-			population = replacement(population, offspringPopulation);
-			updateProgress();
+		fitness_writer.info(sb.toString());
+	}
+	
+	public void printSummary(){
+		Collections.sort(population, comparator);
+		TimeListSolution bestSolution = (TimeListSolution)population.get(0);
+		
+		StringBuilder sb = new StringBuilder();
+		
+		if (Settings.N_SAMPLE_WCET==0){
+			double fitness = bestSolution.getObjective(0);
+			sb.append((iterations));
+			sb.append(",");
+			sb.append(String.format("%.0f", fitness));
 		}
-		
-		close();
+		else{
+			FitnessList list = bestSolution.getObjectiveList(0);
+			for (int x=0; x<list.size(); x++){
+				sb.append((iterations));
+				sb.append(",");
+				sb.append(x);
+				sb.append(",");
+				sb.append(String.format("%.0f", list.get(x) ));
+				if (x!=list.size()-1)
+					sb.append("\n");
+			}
+		}
+		fitness_writer.info(sb.toString());
 	}
 	
 	public void initByproduct(){

@@ -49,16 +49,20 @@ public class SteadyStateGeneticAlgorithmRunner {
 
 		// Environment Settings
 		Settings.update(args);
+		
 		init();
 		
 		// problem load
 		TestingProblem problem = new TestingProblem(Settings.INPUT_FILE, Settings.TIME_QUANTA, Settings.TIME_MAX, Settings.SCHEDULER);
-		String changed = problem.increaseWCET(Settings.INC_TASK_TYPE, Settings.INC_RATE);
-		printInput(changed, problem.getInputs());
+		//String changed = problem.increaseWCET(Settings.INC_TASK_TYPE, Settings.INC_RATE);
+		//printInput(changed, problem.getInputs());
+		printInput(null, problem.getInputs());
 		JMetalLogger.logger.info("Loaded problem");
 		
 		// experiment
-		for (int run = 0; run < Settings.GA_RUN_MAX; run++) {
+		for (int run = 1; run <= Settings.GA_RUN_MAX; run++) {
+			if (Settings.GA_RUN!=0 && run!=Settings.GA_RUN) continue;
+			problem.RUN_ID = run;
 			experiment( run,
 						problem,
 						Settings.GA_POPULATION,
@@ -73,12 +77,23 @@ public class SteadyStateGeneticAlgorithmRunner {
 	}
 	
 	public static void printInput(String changed, String inputs){
-		GAWriter writer = new GAWriter("changed.txt", Level.INFO,  null, Settings.BASE_PATH);
-		writer.print(changed);
-		writer.close();
-		writer = new GAWriter("input.csv", Level.INFO,  null, Settings.BASE_PATH);
-		writer.info(inputs);
-		writer.close();
+		if (Settings.GA_RUN<=1) {
+			// multi run mode and single run mode with runID 1)
+			GAWriter writer = new GAWriter("settings.txt", Level.FINE, null, Settings.BASE_PATH);
+			writer.info(Settings.getString());
+			writer.close();
+			System.out.print(Settings.getString());
+			
+			if (changed != null) {
+				writer = new GAWriter("changed.txt", Level.INFO, null, Settings.BASE_PATH);
+				writer.print(changed);
+				writer.close();
+			}
+			
+			writer = new GAWriter("input.csv", Level.INFO, null, Settings.BASE_PATH);
+			writer.info(inputs);
+			writer.close();
+		}
 	}
 	 
 	public static void experiment(int run, TestingProblem problem, int populationSize, int maxIterations, double crossoverProbability, double mutationProbability)
@@ -89,13 +104,12 @@ public class SteadyStateGeneticAlgorithmRunner {
 		MutationOperator<TimeListSolution> mutationOperator = new SimpleTLMutation4(problem, mutationProbability);
 		SelectionOperator<List<TimeListSolution>, TimeListSolution> selectionOperator = new BinaryTournamentSelection<TimeListSolution>();
 
-		List<TimeListSolution> bestSolutions = new ArrayList<TimeListSolution>() ;
 		
-		JMetalLogger.logger.info("Started algorithem run "+(run+1));
+		JMetalLogger.logger.info("Started algorithem run "+run);
 		
 		SteadyStateGeneticAlgorithm<TimeListSolution> algorithm =
 				 new SteadyStateGeneticAlgorithm<TimeListSolution>(	Settings.BASE_PATH,
-						                                            String.format("%02d", (run+1)),
+						                                            String.format("%02d", run),
 						 											problem,
 						                                            maxIterations,
 																	populationSize, 
@@ -126,7 +140,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 	
 	public static void printDetails(TimeListSolution solution, int run)
 	{
-		GAWriter writer = new GAWriter(String.format("solutions/solutions_run%02d.json", run+1), Level.FINE, null, Settings.BASE_PATH);
+		GAWriter writer = new GAWriter(String.format("solutions/solutions_run%02d.json", run), Level.FINE, null, Settings.BASE_PATH);
 		writer.info(solution.getVariableValueString());
 		writer.close();
 	}
@@ -140,7 +154,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 		for(TimeListSolution solution: solutions) {
 			idx += 1;
 			
-			writer = new GAWriter(String.format("solutions/solutions_run%02d_%d.json", run + 1, idx), Level.FINE, null, Settings.BASE_PATH);
+			writer = new GAWriter(String.format("solutions/solutions_run%02d_%d.json", run, idx), Level.FINE, null, Settings.BASE_PATH);
 			writer.info(solution.getVariableValueString());
 			writer.close();
 			
@@ -164,20 +178,18 @@ public class SteadyStateGeneticAlgorithmRunner {
 	}
 
 	public static void init() {
-		File dir = new File(Settings.BASE_PATH);
-		if (dir.exists() == true) {
-			try {
-				FileUtils.deleteDirectory(dir);
-			} catch (IOException e) {
-				System.out.println("Failed to delete results");
-				e.printStackTrace();
+		if (Settings.GA_RUN == 0){
+			// Only apply to multi run mode
+			File dir = new File(Settings.BASE_PATH);
+			if (dir.exists() == true) {
+				try {
+					FileUtils.deleteDirectory(dir);
+				} catch (IOException e) {
+					System.out.println("Failed to delete results");
+					e.printStackTrace();
+				}
 			}
 		}
-		
-		GAWriter writer = new GAWriter("settings.txt", Level.FINE, null, Settings.BASE_PATH);
-		writer.info(Settings.getString());
-		writer.close();
-		System.out.print(Settings.getString());
 	}
 	
 	public static void moveResults(){
@@ -204,5 +216,4 @@ public class SteadyStateGeneticAlgorithmRunner {
 			}
 		}
 	}
-	
 }

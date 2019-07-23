@@ -22,14 +22,17 @@ public class Settings {
 	public static double  FITNESS_RANGE       = 0.5;
 	public static int     N_SAMPLE_WCET       = 0;
 	public static boolean UNIFORM_SAMPLE      = false;
+	public static boolean EXTEND_SCHEDULER    = true;
 	
 	// GA
-	public static int     GA_RUN_MAX          = 20;
+	public static int     GA_RUN              = 1;
+	public static int     GA_RUN_MAX          = 0;
 	public static int     GA_POPULATION       = 10;
-	public static int     GA_MAX_ITERATION    = 100;
+	public static int     GA_MAX_ITERATION    = 1000;
 	public static double  GA_CROSSOVER_PROB   = 0.9;
 	public static double  GA_MUTATION_PROB    = 0.5;
 	public static double  A12_THRESHOLD       = 0.5;
+	public static boolean SIMPLE_SEARCH       = false;
 	
 	// Experiment control
 	public static String  BASE_PATH           = "logs";
@@ -47,6 +50,8 @@ public class Settings {
 	
 	//printing
 	public static boolean PRINT_SAMPLES       = false;
+	public static boolean PRINT_RESULTS       = false;
+	
 	
 	
 	public Settings()
@@ -59,6 +64,7 @@ public class Settings {
 		parser.addOption(false,"Help", DataType.BOOLEAN, "h", "help", "Show how to use this program");
 		parser.addOption(false,"SettingFile", DataType.STRING, "f", null, "Base setting file.", "settings.json");
 		parser.addOption(false,"RunMax", DataType.INTEGER, "r", null, "Maximum run times for GA");
+		parser.addOption(false,"Run", DataType.INTEGER, null, "runID", "Specific run ID when you execute run separately");
 		parser.addOption(false,"Populations", DataType.INTEGER, "p", null, "Population for GA");
 		parser.addOption(false,"Iterations", DataType.INTEGER, "i", null, "Maximum iterations for GA");
 		parser.addOption(false,"CrossoverRate", DataType.DOUBLE, "c", null, "Crossover rate for GA");
@@ -81,7 +87,9 @@ public class Settings {
 		parser.addOption(false,"borderProb", DataType.DOUBLE, null, "borderProb", "Border Probability for second phase");
 		parser.addOption(false,"sampleCandidates", DataType.INTEGER, null, "sampleCandidates", "The number of sandidates to get one sample in second phase");
 		parser.addOption(false,"printSamples", DataType.BOOLEAN, null, "printSamples", "If you set this parameter, The program will produce sampling detail information", false);
-		
+		parser.addOption(false,"printResults", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
+		parser.addOption(false,"simpleSearch", DataType.BOOLEAN, null, "simpleSearch", "Simple search mode, not using crossover and mutation just produce children randomly", false);
+		parser.addOption(false,"extendScheduler", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", true);
 		// parsing args;
 		try{
 			parser.parseArgs(args);
@@ -106,6 +114,7 @@ public class Settings {
 		
 		// update settings from command parameters
 		if (parser.containsParam("RunMax"))         GA_RUN_MAX = (Integer) parser.getParam("RunMax");
+		if (parser.containsParam("Run"))            GA_RUN = (Integer) parser.getParam("Run");
 		if (parser.containsParam("Populations"))    GA_POPULATION = (Integer) parser.getParam("Populations");
 		if (parser.containsParam("Iterations"))     GA_MAX_ITERATION = (Integer) parser.getParam("Iterations");
 		if (parser.containsParam("CrossoverRate"))  GA_CROSSOVER_PROB = (Double) parser.getParam("CrossoverRate");
@@ -128,9 +137,9 @@ public class Settings {
 		if (parser.containsParam("borderProb"))     BORDER_PROBABILITY = (Double) parser.getParam("borderProb");
 		if (parser.containsParam("sampleCandidates"))SAMPLE_CANDIDATES = (Integer) parser.getParam("sampleCandidates");
 		if (parser.containsParam("printSamples"))   PRINT_SAMPLES = (Boolean) parser.getParam("printSamples");
-		
-		
-		
+		if (parser.containsParam("printResults"))   PRINT_RESULTS = (Boolean) parser.getParam("printResults");
+		if (parser.containsParam("simpleSearch"))   SIMPLE_SEARCH = (Boolean) parser.getParam("simpleSearch");
+		if (parser.containsParam("extendScheduler"))   EXTEND_SCHEDULER = (Boolean) parser.getParam("extendScheduler");
 	}
 	
 	/**

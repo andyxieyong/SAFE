@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 
+import com.sun.xml.internal.ws.api.config.management.policy.ManagementAssertion;
 import lu.uni.svv.StressTesting.datatype.FitnessList;
 import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.RandomGenerator;
@@ -35,6 +36,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	public long     MAX_TIME;		// 1 hour (ms)
 	public long     MAX_PHASETIME;	// maximum phase time;
 	public long     QUANTA_LENGTH;	// MAX_TIME * (1/TIME_QUANTA) // to treat all time values as integer
+	public int      RUN_ID =0;
 	
 	public TaskDescriptor[] Tasks = null;		// Task information
 	
@@ -50,15 +52,29 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		this(_filename, 0.1, 3600000, _schedulerName);
 	}
 	
+	
+	public long find_max_deadline(){
+		long max_dealine=0;
+		for (TaskDescriptor task:this.Tasks){
+			if (task.Deadline> max_dealine)
+				max_dealine = task.Deadline;
+		}
+		return max_dealine;
+	}
 	public TestingProblem(String _filename, double _time_quanta, int _max_time, String _schedulerName) throws NumberFormatException, IOException{
 		
 		// Set environment of this problem.
 		this.TIME_QUANTA = _time_quanta;
 		this.MAX_TIME = _max_time;
+		this.RUN_ID =0;
 		this.QUANTA_LENGTH = (int) (this.MAX_TIME * (1/this.TIME_QUANTA));
 		
 		// This function updates this.Tasks value.
 		this.loadFromCSV(_filename);
+		
+		// Increase Quanta_length
+		long max_deadline = find_max_deadline();
+		this.QUANTA_LENGTH += max_deadline;
 		
 		this.setName("StressTesting");
 		this.setNumberOfVariables(this.Tasks.length);
@@ -131,7 +147,8 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		// Sample
 		List<Integer> uncertainTasks = this.getUncertainTasks();
 		String uncertainHeader = this.getUncertainTasksString("result", uncertainTasks);
-		GAWriter sampledata = new GAWriter("sampledata.csv", Level.INFO, uncertainHeader, Settings.BASE_PATH,true);
+		String filename = (this.RUN_ID >0)? String.format("samples/sampledata_run%02d.csv", this.RUN_ID):"samples/sampledata.csv";
+		GAWriter sampledata = new GAWriter(filename, Level.INFO, uncertainHeader, Settings.BASE_PATH,true);
 		
 		// generate sample
 		for (int sampleID = 0; sampleID < Settings.N_SAMPLE_WCET; sampleID++) {
@@ -313,7 +330,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			}
 			previous = task.MinWCET;
 			task.MinWCET = (int)Math.ceil((double)task.MinWCET*increase);
-			task.MaxWCET = (int)Math.ceil((double)task.MinWCET*increase);
+			task.MaxWCET = (int)Math.ceil((double)task.MaxWCET*increase);
 			if (increase == 1.0)
 				sb.append(String.format("[%25s] %10s, %7d, %8d\n", task.Name, task.Type.toString(), task.MinWCET, task.Deadline));
 			else
@@ -361,11 +378,20 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	}
 	
 	public long getTimeFromString(String _text, long _default) {
+		return getTimeFromString(_text, _default, this.QUANTA_LENGTH);
+	}
+	
+	
+	public long getTimeFromString(String _text, long _default, long _max) {
 		
 		if (_text.compareTo("")==0 || _text.compareTo("N/A")==0) 
 			return _default;
-		else
-			return (long)(Double.parseDouble(_text) * (1/this.TIME_QUANTA));
+		else {
+			long value = (long)(Double.parseDouble(_text) * (1 / this.TIME_QUANTA));
+			if (value > _max)
+				return _max;
+			return value;
+		}
 	}
 
 }
