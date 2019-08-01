@@ -76,14 +76,12 @@ public class ModelComparing {
 	String basePath;
 	TestingProblem problem;
 	RMScheduler scheduler = null;
-	RManager rManager = null;
 	ScriptEngine engine = null;
 	
 	
 	public ModelComparing(TestingProblem _problem, String _schedulerName) throws Exception{
 		basePath = Settings.BASE_PATH;
 		problem = _problem;
-		rManager = new RManager();
 		System.out.println(basePath);
 		
 		
