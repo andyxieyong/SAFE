@@ -47,6 +47,9 @@ public class Settings {
 	public static int     MAX_ITERATION       = 200;
 	public static double  BORDER_PROBABILITY  = 0.5;
 	public static int     SAMPLE_CANDIDATES   = 20;
+	public static String  SECOND_PHASE_RUNTYPE= "distance";
+	public static String  LR_FORMULA_PATH     = "";
+	public static String  LR_SAMPLEDATA_CODE  = "1000";
 	
 	//printing
 	public static boolean PRINT_SAMPLES       = false;
@@ -90,6 +93,10 @@ public class Settings {
 		parser.addOption(false,"printResults", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
 		parser.addOption(false,"simpleSearch", DataType.BOOLEAN, null, "simpleSearch", "Simple search mode, not using crossover and mutation just produce children randomly", false);
 		parser.addOption(false,"extendScheduler", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", true);
+		parser.addOption(false,"secondRuntype", DataType.STRING, null, "secondRuntype", "Second phase run type {\"random\", \"distance\"}");
+		parser.addOption(false,"formulaPath", DataType.STRING, null, "formulaPath", "formula file path to use in second phase");
+		parser.addOption(false,"sampleData", DataType.STRING, null, "sampleData", "select sampledata file");
+		
 		// parsing args;
 		try{
 			parser.parseArgs(args);
@@ -139,7 +146,11 @@ public class Settings {
 		if (parser.containsParam("printSamples"))   PRINT_SAMPLES = (Boolean) parser.getParam("printSamples");
 		if (parser.containsParam("printResults"))   PRINT_RESULTS = (Boolean) parser.getParam("printResults");
 		if (parser.containsParam("simpleSearch"))   SIMPLE_SEARCH = (Boolean) parser.getParam("simpleSearch");
-		if (parser.containsParam("extendScheduler"))   EXTEND_SCHEDULER = (Boolean) parser.getParam("extendScheduler");
+		if (parser.containsParam("extendScheduler"))EXTEND_SCHEDULER = (Boolean) parser.getParam("extendScheduler");
+		if (parser.containsParam("secondRuntype"))  SECOND_PHASE_RUNTYPE = (String) parser.getParam("secondRuntype");
+		if (parser.containsParam("formulaPath"))    LR_FORMULA_PATH = (String) parser.getParam("formulaPath");
+		if (parser.containsParam("sampleData"))     LR_SAMPLEDATA_CODE = (String) parser.getParam("sampleData");
+		
 	}
 	
 	/**
