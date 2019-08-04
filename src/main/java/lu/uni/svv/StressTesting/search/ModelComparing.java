@@ -117,7 +117,7 @@ public class ModelComparing {
 	 */
 	public void run(String _run_type, int _updateIteration, int _maxIteration, double _probability) throws IOException {
 		// Load Solutions
-		List<TimeListSolution> solutions = this.loadSolutions(this.basePath, 10);
+		List<TimeListSolution> solutions = this.loadSolutions(this.basePath, Settings.BEST_RUN);
 		if (solutions == null) {
 			JMetalLogger.logger.info("There are no solutions in the path:" + this.basePath);
 			return;
@@ -127,7 +127,7 @@ public class ModelComparing {
 		String datapath = String.format("%s/sampledata_%s.csv", this.basePath, Settings.LR_SAMPLEDATA_CODE);
 		
 		String formulaCode = Settings.LR_FORMULA_PATH.replace("/", "_");
-		String workfile = String.format("/seconds/workdata_%s_%d_%d_%.2f_%s.csv", _run_type, _maxIteration, _updateIteration, _probability, formulaCode);
+		String workfile = String.format("/%s/workdata_%s_%d_%d_%.2f_%s.csv", Settings.LR_WORKPATH, _run_type, _maxIteration, _updateIteration, _probability, formulaCode);
 		String workpath = this.basePath + workfile;
 		File file = new File(workpath);
 		if (!file.getParentFile().exists())
@@ -189,20 +189,13 @@ public class ModelComparing {
 			engine.eval("TASK_INFO <- read.csv(file=RESOURCE_FILE, header = TRUE)");
 			engine.eval("TASK_INFO<- data.frame(ID = c(1:34), TASK_INFO)");
 			engine.eval("colnames(TASK_INFO)<- c(\"ID\", \"NAME\", \"TYPE\", \"PRIORITY\", \"WCET.MIN\", \"WCET.MAX\", \"PERIOD\", \"INTER.MIN\", \"INTER.MAX\", \"DEADLINE\")");
-//			String update_time_str =
-//					"TASK_INFO$WCET.MIN = TASK_INFO$WCET.MIN/TIME_QUANTA\n" +
-//							"TASK_INFO$WCET.MAX = TASK_INFO$WCET.MAX/TIME_QUANTA\n" +
-//							"TASK_INFO$PERIOD = TASK_INFO$PERIOD/TIME_QUANTA\n" +
-//							"TASK_INFO$INTER.MIN = TASK_INFO$INTER.MIN/TIME_QUANTA\n" +
-//							"TASK_INFO$INTER.MAX = TASK_INFO$INTER.MAX/TIME_QUANTA\n" +
-//							"TASK_INFO$DEADLINE = TASK_INFO$DEADLINE/TIME_QUANTA";
 			String update_time_str =
-			"TASK_INFO$WCET.MIN = as.integer(TASK_INFO$WCET.MIN/TIME_QUANTA)\n" +
-			"TASK_INFO$WCET.MAX = as.integer(TASK_INFO$WCET.MAX/TIME_QUANTA)\n" +
-			"TASK_INFO$PERIOD = as.integer(TASK_INFO$PERIOD/TIME_QUANTA)\n" +
-			"TASK_INFO$INTER.MIN = as.integer(TASK_INFO$INTER.MIN/TIME_QUANTA)\n" +
-			"TASK_INFO$INTER.MAX = as.integer(TASK_INFO$INTER.MAX/TIME_QUANTA)\n" +
-			"TASK_INFO$DEADLINE = as.integer(TASK_INFO$DEADLINE/TIME_QUANTA)";
+				"TASK_INFO$WCET.MIN = as.integer(TASK_INFO$WCET.MIN/TIME_QUANTA)\n" +
+				"TASK_INFO$WCET.MAX = as.integer(TASK_INFO$WCET.MAX/TIME_QUANTA)\n" +
+				"TASK_INFO$PERIOD = as.integer(TASK_INFO$PERIOD/TIME_QUANTA)\n" +
+				"TASK_INFO$INTER.MIN = as.integer(TASK_INFO$INTER.MIN/TIME_QUANTA)\n" +
+				"TASK_INFO$INTER.MAX = as.integer(TASK_INFO$INTER.MAX/TIME_QUANTA)\n" +
+				"TASK_INFO$DEADLINE = as.integer(TASK_INFO$DEADLINE/TIME_QUANTA)";
 			engine.eval(update_time_str);
 			engine.eval("source(\"R/LogisticRegressionN/lib_quadratic.R\")");
 		}

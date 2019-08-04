@@ -50,6 +50,8 @@ public class Settings {
 	public static String  SECOND_PHASE_RUNTYPE= "distance";
 	public static String  LR_FORMULA_PATH     = "";
 	public static String  LR_SAMPLEDATA_CODE  = "1000";
+	public static int     BEST_RUN            = 10;
+	public static String  LR_WORKPATH         = "seconds";
 	
 	//printing
 	public static boolean PRINT_SAMPLES       = false;
@@ -96,6 +98,9 @@ public class Settings {
 		parser.addOption(false,"secondRuntype", DataType.STRING, null, "secondRuntype", "Second phase run type {\"random\", \"distance\"}");
 		parser.addOption(false,"formulaPath", DataType.STRING, null, "formulaPath", "formula file path to use in second phase");
 		parser.addOption(false,"sampleData", DataType.STRING, null, "sampleData", "select sampledata file");
+		parser.addOption(false,"bestRun", DataType.INTEGER, null, "bestRun", "select best run in first phase");
+		parser.addOption(false,"workPath", DataType.STRING, null, "workPath", "the path for saving workdata in second phase");
+		
 		
 		// parsing args;
 		try{
@@ -150,6 +155,9 @@ public class Settings {
 		if (parser.containsParam("secondRuntype"))  SECOND_PHASE_RUNTYPE = (String) parser.getParam("secondRuntype");
 		if (parser.containsParam("formulaPath"))    LR_FORMULA_PATH = (String) parser.getParam("formulaPath");
 		if (parser.containsParam("sampleData"))     LR_SAMPLEDATA_CODE = (String) parser.getParam("sampleData");
+		if (parser.containsParam("bestRun"))        BEST_RUN = (Integer) parser.getParam("bestRun");
+		if (parser.containsParam("workPath"))       LR_WORKPATH = (String) parser.getParam("workPath");
+		
 		
 	}
 	
