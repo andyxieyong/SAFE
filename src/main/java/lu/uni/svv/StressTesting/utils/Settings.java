@@ -52,6 +52,7 @@ public class Settings {
 	public static String  LR_SAMPLEDATA_CODE  = "1000";
 	public static int     BEST_RUN            = 10;
 	public static String  LR_WORKPATH         = "seconds";
+	public static int     LR_INITIAL_SIZE     = 0;
 	
 	//printing
 	public static boolean PRINT_SAMPLES       = false;
@@ -100,6 +101,7 @@ public class Settings {
 		parser.addOption(false,"sampleData", DataType.STRING, null, "sampleData", "select sampledata file");
 		parser.addOption(false,"bestRun", DataType.INTEGER, null, "bestRun", "select best run in first phase");
 		parser.addOption(false,"workPath", DataType.STRING, null, "workPath", "the path for saving workdata in second phase");
+		parser.addOption(false,"LRinitSize", DataType.INTEGER, null, "LRinitSize", "the number of initial training data size for the second phase");
 		
 		
 		// parsing args;
@@ -157,6 +159,7 @@ public class Settings {
 		if (parser.containsParam("sampleData"))     LR_SAMPLEDATA_CODE = (String) parser.getParam("sampleData");
 		if (parser.containsParam("bestRun"))        BEST_RUN = (Integer) parser.getParam("bestRun");
 		if (parser.containsParam("workPath"))       LR_WORKPATH = (String) parser.getParam("workPath");
+		if (parser.containsParam("LRinitSize"))     LR_INITIAL_SIZE = (Integer) parser.getParam("LRinitSize");
 		
 		
 	}

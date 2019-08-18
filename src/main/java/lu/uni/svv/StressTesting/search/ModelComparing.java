@@ -84,7 +84,6 @@ public class ModelComparing {
 		problem = _problem;
 		System.out.println(basePath);
 		
-		
 		// Create Scheduler instance
 		try {
 			Class c = this.getClass();
@@ -127,7 +126,17 @@ public class ModelComparing {
 		String datapath = String.format("%s/sampledata_%s.csv", this.basePath, Settings.LR_SAMPLEDATA_CODE);
 		
 		String formulaCode = Settings.LR_FORMULA_PATH.replace("/", "_");
-		String workfile = String.format("/%s/workdata_%s_%d_%d_%.2f_%s.csv", Settings.LR_WORKPATH, _run_type, _maxIteration, _updateIteration, _probability, formulaCode);
+		String run = "";
+		if (Settings.BEST_RUN != 0)
+			run = String.format("_run%02d", Settings.BEST_RUN);
+		
+		// to execute multiple test (because we use subset of first phase data)
+		String testID = "";
+		if (Settings.GA_RUN != 0)
+			run = String.format("_test%02d", Settings.GA_RUN);
+		
+		String workfile = String.format("/%s/workdata_%s_%d_%d_%.2f_%s%s%s.csv", Settings.LR_WORKPATH, _run_type, _maxIteration, _updateIteration, _probability, formulaCode, run, testID);
+		
 		String workpath = this.basePath + workfile;
 		File file = new File(workpath);
 		if (!file.getParentFile().exists())
@@ -139,7 +148,7 @@ public class ModelComparing {
 		// Initialize model
 		this.setting_environment();
 		
-		if (!this.initialize_model(workpath, Settings.LR_FORMULA_PATH)){
+		if (!this.initialize_model(workpath, Settings.LR_FORMULA_PATH, Settings.LR_INITIAL_SIZE)){
 			JMetalLogger.logger.info("Error to initialze model");
 			return;
 		}
@@ -148,34 +157,33 @@ public class ModelComparing {
 		
 		// Sampling new data point and evaluation
 		int count = 0;
-
 		while (count < _maxIteration) {
 			// evaluate all samples for each solution
-			for(TimeListSolution s:solutions){
+			for (TimeListSolution s : solutions) {
 				long[] sampleWCET = null;
 				// Learning model again with more data
-				if ( (count!=0) && (count % _updateIteration == 0) ) {
-					JMetalLogger.logger.info("update logistic regression "+ count +"/" + _maxIteration);
+				if ((count != 0) && (count % _updateIteration == 0)) {
+					JMetalLogger.logger.info("update logistic regression " + count + "/" + _maxIteration);
 					this.update_model();
 				}
 				
-				if (_run_type.compareTo("random")==0){
+				if (_run_type.compareTo("random") == 0) {
 					sampleWCET = this.sampling_byRandom(1);
-				}
-				else{
+				} else {
 					sampleWCET = this.sampling_byDistance(1, Settings.SAMPLE_CANDIDATES, _probability);
 				}
+				
 				
 				int D = this.evaluate(s, sampleWCET);
 				String text = this.createSampleLine(D, sampleWCET);
 				this.appendNewDataset(workfile, text);
-				JMetalLogger.logger.info(String.format("New data %d/%d: %s", (count%_updateIteration) + 1, _updateIteration, text));
+				JMetalLogger.logger.info(String.format("New data %d/%d: %s", (count % _updateIteration) + 1, _updateIteration, text));
 				
 				merge_to_training_data(new int[]{D});
-				count+=1;
+				count += 1;
 			}
-		}
-		
+		} // while
+
 		this.update_model();
 		JMetalLogger.logger.info("Finished to run");
 	}
@@ -183,7 +191,7 @@ public class ModelComparing {
 	public boolean setting_environment() {
 		try {
 			engine.eval("library('org.renjin.cran:MASS')");
-			engine.eval("UNIT<- 0.0001");
+			engine.eval("UNIT<- 1");
 			engine.eval(String.format("TIME_QUANTA<- %.2f", Settings.TIME_QUANTA));
 			engine.eval(String.format("RESOURCE_FILE<- \"%s\"", Settings.INPUT_FILE));
 			engine.eval("TASK_INFO <- read.csv(file=RESOURCE_FILE, header = TRUE)");
@@ -207,38 +215,6 @@ public class ModelComparing {
 	
 	}
 	
-	/**
-	 *
-	 * @param filepath   'results/20190722_FirstPhase_Ex30_s20_GASearch/Task23/samples/
-	 * @param direction
-	 * @return
-	 */
-	public boolean initialize_model_genformula(String filepath, String direction){
-
-		Object[] samples = null;
-		try {
-			// load data
-			engine.eval(String.format("datafile<- \"%s\"", filepath));
-			engine.eval("training <- read.csv(datafile, header=TRUE)");
-			
-			// learning logistic regression with simple formula
-			JMetalLogger.logger.info("Started logistic regression...");
-			engine.eval("formula_str<- get_formula_simple(training)");
-			engine.eval("base_model <- glm(formula = formula_str, family = \"binomial\", data = training)");
-//			engine.eval("base_model <- glm(formula = result ~ T30 + T33, family = \"binomial\", data = training)");
-			
-			// stepwise for reducing formula
-			JMetalLogger.logger.info("Started stepwise...");
-			engine.eval(String.format("base_model <- stepAIC(base_model, direction = '%s')", direction));
-			
-			JMetalLogger.logger.info("Initialized model: " + getModelText("base_model"));
-			
-		} catch (ScriptException | EvalException e) {
-			JMetalLogger.logger.info("R Error:: " + e.getMessage());
-			return false;
-		}
-		return true;
-	}
 	
 	/**
 	 *
@@ -246,8 +222,9 @@ public class ModelComparing {
 	 * @param formulaPath
 	 * @return
 	 */
-	public boolean initialize_model(String filepath, String formulaPath){
+	public boolean initialize_model(String filepath, String formulaPath, int initialTrainingSize){
 		
+		//Load formula from formulaPath
 		String formula="";
 		try{
 			formula = new String(Files.readAllBytes(Paths.get(formulaPath)), StandardCharsets.UTF_8);
@@ -262,6 +239,13 @@ public class ModelComparing {
 			// load data
 			engine.eval(String.format("datafile<- \"%s\"", filepath));
 			engine.eval("training <- read.csv(datafile, header=TRUE)");
+			
+			if (initialTrainingSize!=0){
+//				engine.eval(String.format("training <- training[1:%d,]",initialTrainingSize));  //sample_n(training, %d)
+				// sampling and save the result to the datafile
+				engine.eval(String.format("training <- training[sample(nrow(training), %d), ]",initialTrainingSize));  //
+				engine.eval("write.table(training, datafile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+			}
 			
 			// learning logistic regression with simple formula
 			JMetalLogger.logger.info("Started logistic regression...");
@@ -284,7 +268,8 @@ public class ModelComparing {
 		// sampled_data <- get_random_sampling(training, nSample=1)
 		long[] samples = null;
 		try {
-			String codeText = String.format("sampled_data <- get_distance_sampling(training, base_model, nSample=%d, nCandidate=%d, P=%.2f)", nSample, nCandidate, P);
+			engine.eval("tnames <- get_task_names(training)");
+			String codeText = String.format("sampled_data <- get_distance_sampling(tnames, base_model, nSample=%d, nCandidate=%d, P=%.2f)", nSample, nCandidate, P);
 			engine.eval(codeText);
 			
 			StringVector nameVector = (StringVector)engine.eval("colnames(sampled_data)");
@@ -311,7 +296,8 @@ public class ModelComparing {
 		// sampled_data <- get_random_sampling(training, nSample=1)
 		long[] samples = null;
 		try {
-			String codeText = String.format("sampled_data <- get_random_sampling(training, nSample=%d)", nSample);
+			engine.eval("tnames <- get_task_names(training)");
+			String codeText = String.format("sampled_data <- get_random_sampling(tnames, nSample=%d)", nSample);
 			engine.eval(codeText);
 			
 			StringVector nameVector = (StringVector)engine.eval("colnames(sampled_data)");
