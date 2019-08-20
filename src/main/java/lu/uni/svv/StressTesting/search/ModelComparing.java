@@ -263,6 +263,18 @@ public class ModelComparing {
 		return true;
 	}
 	
+	
+	public long[] get_row_longlist(String varName) throws ScriptException {
+		long[] items = null;
+		
+		Vector dataVector = (Vector)engine.eval(varName);
+		items = new long[dataVector.length()];
+		for(int x=0; x<dataVector.length(); x++){
+			items[x] = (long)dataVector.getElementAsInt(x); //dataVector.getElementAsInt(x);
+		}
+		return items;
+	}
+	
 	public long[] sampling_byDistance(int nSample, int nCandidate, double P){
 		
 		// sampled_data <- get_random_sampling(training, nSample=1)
@@ -275,13 +287,7 @@ public class ModelComparing {
 			StringVector nameVector = (StringVector)engine.eval("colnames(sampled_data)");
 			String[] names = nameVector.toArray();
 			
-			Vector dataVector = (Vector)engine.eval("sampled_data");
-			
-			samples = new long[dataVector.length()];
-			for(int x=0; x<dataVector.length(); x++){
-				samples[x] = (long)dataVector.getElementAsInt(x); //dataVector.getElementAsInt(x);
-				
-			}
+			samples = get_row_longlist("sampled_data");
 			
 		} catch (ScriptException | EvalException e) {
 			JMetalLogger.logger.info("R Error:: " + e.getMessage());
@@ -303,13 +309,8 @@ public class ModelComparing {
 			StringVector nameVector = (StringVector)engine.eval("colnames(sampled_data)");
 			String[] names = nameVector.toArray();
 			
-			Vector dataVector = (Vector)engine.eval("sampled_data");
+			samples = get_row_longlist("sampled_data");
 			
-			samples = new long[dataVector.length()];
-			for(int x=0; x<dataVector.length(); x++){
-				samples[x] = (long)dataVector.getElementAsInt(x); //dataVector.getElementAsInt(x);
-				
-			}
 		} catch (ScriptException | EvalException e) {
 			JMetalLogger.logger.info("R Error:: " + e.getMessage());
 			return null;
@@ -330,8 +331,8 @@ public class ModelComparing {
 		}
 		
 		try {
-			engine.eval(String.format("sampled_data <- data.frame(result=c(%s), sampled_data)", sb.toString()));
-			engine.eval("training <- rbind(training, sampled_data) ");
+			engine.eval(String.format("training.item <- data.frame(result=c(%s), sampled_data)", sb.toString()));
+			engine.eval("training <- rbind(training, training.item) ");
 			
 		} catch (ScriptException | EvalException e) {
 			JMetalLogger.logger.info("R Error:: " + e.getMessage());
