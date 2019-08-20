@@ -41,6 +41,7 @@ public class RMScheduler {
 	private List<Task>  missedDeadlines;
 	private double  evaluatedValue;
 	private long        CPUusages;
+	protected int       taskFitness;
 	
 	
 	/* For Debugging */
@@ -55,8 +56,9 @@ public class RMScheduler {
 	HashMap<Integer, Long> WCETSamples = null;// for storing sampled WCET
 	
 	
-	public RMScheduler(TestingProblem _problem) {
+	public RMScheduler(TestingProblem _problem, int _taskFitness) {
 		problem = _problem;
+		taskFitness = _taskFitness;
 		
 		initialize();
 		
@@ -312,7 +314,7 @@ public class RMScheduler {
 	}
 	
 	protected double evaluateDeadlineMiss(Task _T, int _missed){
-		if (Settings.TASK_FITNESS == 0 || _T.ID == Settings.TASK_FITNESS){
+		if (this.taskFitness == 0 || _T.ID == this.taskFitness){
 			return 0.0;
 		}
 		return (_missed>0) ? 1 : 0;

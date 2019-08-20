@@ -18,8 +18,8 @@ import lu.uni.svv.StressTesting.search.model.TestingProblem;
  */
 public class RMSchedulerEx extends RMScheduler{
 		
-	public RMSchedulerEx(TestingProblem _problem) {
-		super(_problem);
+	public RMSchedulerEx(TestingProblem _problem, int _taskFitness) {
+		super(_problem, _taskFitness);
 	}
 	
 	@Override

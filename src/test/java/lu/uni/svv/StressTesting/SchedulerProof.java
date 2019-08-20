@@ -11,6 +11,7 @@ import lu.uni.svv.StressTesting.scheduler.RMSchedulerNorm;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
 import lu.uni.svv.StressTesting.utils.GAWriter;
+import lu.uni.svv.StressTesting.utils.Settings;
 
 /**
  * Unit test for simple App.
@@ -43,8 +44,8 @@ public class SchedulerProof extends TestCase
 		RMScheduler.DETAIL = true;
 		RMScheduler.PROOF = true;
 		//RMScheduler scheduler = new RMScheduler(this);
-		//RMScheduler scheduler = new RMSchedulerEx(problem);
-		RMScheduler scheduler = new RMSchedulerNorm(problem);
+		//RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TASK_FITNESS);
+		RMScheduler scheduler = new RMSchedulerNorm(problem, Settings.TASK_FITNESS);
 
 		try {
 			PrintStream printer = new PrintStream(new File(BASE_PATH+"/cpulog.log"));

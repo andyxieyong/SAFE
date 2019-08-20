@@ -53,6 +53,10 @@ public class Settings {
 	public static int     BEST_RUN            = 10;
 	public static String  LR_WORKPATH         = "seconds";
 	public static int     LR_INITIAL_SIZE     = 0;
+	public static double  SAMPLE_MIN_PROB     = 0.0001;
+	public static double  SAMPLE_MAX_PROB     = 0.9999;
+	public static int     SAMPLE_DISTANCE     = 0;
+	public static String  TARGET_TASKLIST     = "";
 	
 	//printing
 	public static boolean PRINT_SAMPLES       = false;
@@ -102,7 +106,10 @@ public class Settings {
 		parser.addOption(false,"bestRun", DataType.INTEGER, null, "bestRun", "select best run in first phase");
 		parser.addOption(false,"workPath", DataType.STRING, null, "workPath", "the path for saving workdata in second phase");
 		parser.addOption(false,"LRinitSize", DataType.INTEGER, null, "LRinitSize", "the number of initial training data size for the second phase");
-		
+		parser.addOption(false,"minProb", DataType.DOUBLE, null, "minProb", "sampling parameter in second phase");
+		parser.addOption(false,"maxProb", DataType.DOUBLE, null, "maxProb", "sampling parameter in second phase");
+		parser.addOption(false,"sampleDist", DataType.INTEGER, null, "sampleDist", "sampling parameter in second phase");
+		parser.addOption(false,"targets", DataType.STRING, null, "targets", "target tasks for second phase");
 		
 		// parsing args;
 		try{
@@ -160,8 +167,10 @@ public class Settings {
 		if (parser.containsParam("bestRun"))        BEST_RUN = (Integer) parser.getParam("bestRun");
 		if (parser.containsParam("workPath"))       LR_WORKPATH = (String) parser.getParam("workPath");
 		if (parser.containsParam("LRinitSize"))     LR_INITIAL_SIZE = (Integer) parser.getParam("LRinitSize");
-		
-		
+		if (parser.containsParam("minProb"))        SAMPLE_MIN_PROB = (Double) parser.getParam("minProb");
+		if (parser.containsParam("maxProb"))        SAMPLE_MAX_PROB = (Double) parser.getParam("maxProb");
+		if (parser.containsParam("sampleDist"))     SAMPLE_DISTANCE = (Integer) parser.getParam("sampleDist");
+		if (parser.containsParam("targets"))        TARGET_TASKLIST = (String) parser.getParam("targets");
 	}
 	
 	/**

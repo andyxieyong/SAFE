@@ -5,6 +5,7 @@ import lu.uni.svv.StressTesting.scheduler.RMScheduler;
 import lu.uni.svv.StressTesting.scheduler.RMSchedulerEx;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
+import lu.uni.svv.StressTesting.utils.Settings;
 
 
 public class EvaluationTest extends TestCase {
@@ -23,7 +24,7 @@ public class EvaluationTest extends TestCase {
 		System.out.println("-----------periodic Test1----------------");
 		TestingProblem problem = new TestingProblem("res/sample_periodic_1.csv", 1, 60, "RMScheduler");
 		
-		RMScheduler scheduler = new RMSchedulerEx(problem);
+		RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TASK_FITNESS);
 		OneExecution(problem, scheduler, 5);
 	}
 	
@@ -36,7 +37,7 @@ public class EvaluationTest extends TestCase {
 		System.out.println("-----------aperiodic Test4----------------");
 		TestingProblem problem = new TestingProblem("res/sample_aperiodic_4.csv", 1, 60, "RMScheduler");
 		
-		RMScheduler scheduler = new RMSchedulerEx(problem);
+		RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TASK_FITNESS);
 		OneExecution(problem, scheduler, 5);
 		
 	}

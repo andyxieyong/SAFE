@@ -82,6 +82,11 @@
             <artifactId>MASS</artifactId>
             <version>RELEASE</version>
         </dependency>
+        <dependency>
+            <groupId>org.renjin.cran</groupId>
+            <artifactId>MLmetrics</artifactId>
+            <version>RELEASE</version>
+        </dependency>
     </dependencies>
     <repositories>
         <repository>
