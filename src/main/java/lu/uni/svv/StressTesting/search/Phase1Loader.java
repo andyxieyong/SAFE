@@ -83,7 +83,7 @@ public class Phase1Loader {
 		return solutions;
 	}
 	
-	public boolean loadInitialPoints(String _inputPath, String _outputPath, int _bestRun, String _workfile)	{
+	public boolean makeInitialPoints(String _inputPath, String _outputPath, int _bestRun, String _workfile)	{
 		
 		File file = new File(String.format("%s/%s", _outputPath, _workfile));
 		if (!file.getParentFile().exists())

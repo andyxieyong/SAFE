@@ -30,60 +30,8 @@ import static java.nio.file.StandardOpenOption.*;
 
 
 public class SecondPhase {
-	/**********************************
-	 * static methods
-	 *********************************/
-	public static SimpleFormatter formatter = new SimpleFormatter(){
-		private static final String format = "[%1$tF %1$tT] %2$s: %3$s %n";
-		
-		@Override
-		public synchronized String format(LogRecord lr) {
-			return String.format(format,
-					new Date(lr.getMillis()),
-					lr.getLevel().getLocalizedName(),
-					lr.getMessage()
-			);
-		}
-	};
-	
-	/**
-	 * Start function of second phase
-	 * @param args
-	 */
-	public static void main(String[] args) throws Exception {
-		// Logger Setting
-		JMetalLogger.logger.setUseParentHandlers(false);
-		ConsoleHandler handler = new ConsoleHandler();
-		handler.setFormatter(formatter);
-		JMetalLogger.logger.addHandler(handler);
-		Settings.update(args);
-		
-		// Settings update
-		if(Settings.N_SAMPLE_WCET==0) Settings.N_SAMPLE_WCET=1;   // Scheduling option:
-		int[] targetTasks = convertToIntArray(Settings.TARGET_TASKLIST);
-		Settings.INPUT_FILE = Settings.BASE_PATH + String.format("/Task%02d/input.csv", targetTasks[0]);
-		
-		TestingProblem problem = new TestingProblem(Settings.INPUT_FILE, Settings.TIME_QUANTA, Settings.TIME_MAX, Settings.SCHEDULER);
-		JMetalLogger.logger.info("Loaded problem");
-		
-		SecondPhase secondPhase = new SecondPhase(problem, Settings.SCHEDULER, targetTasks);
-		secondPhase.run(Settings.SECOND_PHASE_RUNTYPE, Settings.UPDATE_ITERATION, Settings.MAX_ITERATION, Settings.BORDER_PROBABILITY);
-	}
-	
-	public static int[] convertToIntArray(String commaSeparatedStr)
-	{
-		if (commaSeparatedStr.startsWith("["))
-			commaSeparatedStr = commaSeparatedStr.substring(1);
-		if (commaSeparatedStr.endsWith("]"))
-			commaSeparatedStr = commaSeparatedStr.substring(0,commaSeparatedStr.length()-1);
-		
-		String[] commaSeparatedArr = commaSeparatedStr.split("\\s*,\\s*");
-		int[] result = new int[commaSeparatedArr.length];
-		for(int x=0; x<commaSeparatedArr.length; x++){
-			result[x] = Integer.parseInt(commaSeparatedArr[x]);
-		}
-		return result;
-	}
+
+
 	
 	/**********************************
 	 * non-static methods
@@ -95,17 +43,25 @@ public class SecondPhase {
 	ScriptEngine engine = null;
 	int[] targetTasks = null;
 	
-	public SecondPhase(TestingProblem _problem, String _schedulerName, int[] _targetTasks) throws Exception{
+	public SecondPhase() throws Exception{
 		basePath = Settings.BASE_PATH;
-		problem = _problem;
-		targetTasks = _targetTasks;
-		System.out.println(basePath);
+		
+		// Settings update
+		if(Settings.N_SAMPLE_WCET==0) Settings.N_SAMPLE_WCET=1;   // Scheduling option:
+		targetTasks = convertToIntArray(Settings.TARGET_TASKLIST);
+		Settings.INPUT_FILE = Settings.BASE_PATH + String.format("/Task%02d/input.csv", targetTasks[0]);
+		
+		//load Testing Problem
+		problem = new TestingProblem(Settings.INPUT_FILE, Settings.TIME_QUANTA, Settings.TIME_MAX, Settings.SCHEDULER);
+		JMetalLogger.logger.info("Loaded problem");
+		
+		
 		
 		// Create Scheduler instance
 		try {
 			Class c = this.getClass();
 			c.getPackage();
-			Class schedulerClass = Class.forName("lu.uni.svv.StressTesting.scheduler." + _schedulerName);
+			Class schedulerClass = Class.forName("lu.uni.svv.StressTesting.scheduler." + Settings.SCHEDULER);
 			
 			this.constructor = schedulerClass.getConstructors()[0];
 
@@ -119,63 +75,23 @@ public class SecondPhase {
 		RenjinScriptEngineFactory factory = new RenjinScriptEngineFactory();
 		this.engine = factory.getScriptEngine();
 		JMetalLogger.logger.info("Loading R module....Finished");
-}
-	
-	public List<TimeListSolution> loadMultiTaskSolutions(String basepath, int bestRun){
-		// load solutions for multiple tasks
-		List<TimeListSolution> solutions = new ArrayList<TimeListSolution>();
-		for (int taskID:targetTasks){
-			String path = String.format("%s/Task%02d", basepath, taskID);
-			List<TimeListSolution> solutionsPart = this.loadSolutions(path, bestRun);
-			solutions.addAll(solutionsPart);
-		}
-		return solutions;
 	}
 	
-	public String loadInitialPoints(String _basePath, String _outputPath, int _bestRun, String _run_type, int _updateIteration, int _maxIteration, double _probability)	{
-		String formulaCode = Settings.LR_FORMULA_PATH.replace("/", "_");
+	public int[] convertToIntArray(String commaSeparatedStr)
+	{
+		if (commaSeparatedStr.startsWith("["))
+			commaSeparatedStr = commaSeparatedStr.substring(1);
+		if (commaSeparatedStr.endsWith("]"))
+			commaSeparatedStr = commaSeparatedStr.substring(0,commaSeparatedStr.length()-1);
 		
-		String workfile = String.format("%s/%s/workdata_%s_%d_%d_%.2f_%s_run%02d.csv",
-										_outputPath, Settings.LR_WORKPATH,
-										_run_type,
-										_maxIteration,
-										_updateIteration,
-										_probability, formulaCode, _bestRun);
-		File file = new File(workfile);
-		if (!file.getParentFile().exists())
-			file.getParentFile().mkdirs();
-		
-		// move inputs into output file
-		Path outFile=Paths.get(workfile);
-		try {
-			FileChannel out=FileChannel.open(outFile, CREATE, TRUNCATE_EXISTING, WRITE);
-			int titleLength = 0;
-			for (int x=0; x<targetTasks.length;x++) {
-				int taskID = targetTasks[x];
-				String datafile = String.format("%s/Task%02d/samples/sampledata_run%02d.csv", _basePath, taskID, _bestRun);
-				Path inFile=Paths.get(datafile);
-				if(x==0)
-				{
-					BufferedReader br = new BufferedReader(new FileReader(datafile));
-					String line = br.readLine();
-					br.close();
-					titleLength = line.length()+1;
-				}
-				
-				JMetalLogger.logger.info("loading "+inFile+"...");
-				FileChannel in=FileChannel.open(inFile, READ);
-				for(long p=(x==0?0:titleLength), l=in.size(); p<l; )
-					p+=in.transferTo(p, l-p, out);
-			}
-			out.close();
+		String[] commaSeparatedArr = commaSeparatedStr.split("\\s*,\\s*");
+		int[] result = new int[commaSeparatedArr.length];
+		for(int x=0; x<commaSeparatedArr.length; x++){
+			result[x] = Integer.parseInt(commaSeparatedArr[x]);
 		}
-		catch (IOException e){
-			e.printStackTrace();
-			workfile = null;
-		}
-		
-		return workfile;
+		return result;
 	}
+
 	/**
 	 * Run the second phase
 	 * @param _run_type: "random" or "distance"
@@ -185,25 +101,34 @@ public class SecondPhase {
 	 * @throws IOException
 	 */
 	public void run(String _run_type, int _updateIteration, int _maxIteration, double _probability) throws IOException {
+		
+		Phase1Loader phase1 = new Phase1Loader(problem, targetTasks);
+		
 		// Load Solutions
-		List<TimeListSolution> solutions = loadMultiTaskSolutions(this.basePath, Settings.BEST_RUN);
+		List<TimeListSolution> solutions = phase1.loadMultiTaskSolutions(this.basePath, Settings.BEST_RUN);
 		if (solutions == null) {
 			JMetalLogger.logger.info("There are no solutions in the path:" + this.basePath);
 			return;
 		}
 		
 		// Setting initial points to use for learning
-		String workpath = loadInitialPoints(this.basePath, Settings.EXPORT_PATH, Settings.BEST_RUN, _run_type, _updateIteration, _maxIteration, _probability);
-		if (workpath == null) {
+		String formulaCode = Settings.LR_FORMULA_PATH.replace("/", "_");
+		String workfile = String.format("%s/workdata_%s_%d_%d_%.2f_%s_run%02d.csv", Settings.LR_WORKPATH,_run_type, _maxIteration, _updateIteration, _probability, formulaCode, Settings.BEST_RUN);
+		
+		// create evaluation data
+		String evalfile = String.format("%s/evaldata_%s_%d_%d_%.2f_%s_run%02d.csv", Settings.LR_WORKPATH,_run_type, _maxIteration, _updateIteration, _probability, formulaCode, Settings.BEST_RUN);
+		createEvaluationDataFile(evalfile);
+		
+		if (!phase1.makeInitialPoints(this.basePath, Settings.EXPORT_PATH, Settings.BEST_RUN, workfile)) {
 			JMetalLogger.logger.info("Failed to load input data");
 			return;
 		}
 		JMetalLogger.logger.info("Started second phase");
-		
+
 		// Initialize model
 		this.setting_environment();
 		
-		if (!this.initialize_model(workpath, Settings.LR_FORMULA_PATH, Settings.LR_INITIAL_SIZE)){
+		if (!this.initialize_model(workfile, Settings.LR_FORMULA_PATH, Settings.LR_INITIAL_SIZE)){
 			JMetalLogger.logger.info("Error to initialze model");
 			return;
 		}
@@ -212,37 +137,42 @@ public class SecondPhase {
 		
 		// Sampling new data point and evaluation
 		int count = 0;
+		int solID = 0;
 		boolean END = false;
 		while (count < _maxIteration && !END) {
-			// evaluate all samples for each solution
-			for (int solID=0; solID < solutions.size(); solID++){
-				long[] sampleWCET = null;
-				// Learning model again with more data
-				if ((count != 0) && (count % _updateIteration == 0)) {
-					JMetalLogger.logger.info("update logistic regression " + count + "/" + _maxIteration);
-					if (!this.update_model(count/_updateIteration)){
-						END=true; break;
-					}
+			// Learning model again with more data
+			if ((count != 0) && (count % _updateIteration == 0)) {
+				JMetalLogger.logger.info("update logistic regression " + count + "/" + _maxIteration);
+				this.update_model();
+				if (this.evaluate_model(count/_updateIteration, solutions, evalfile)){
+					END=true;
+					break;
 				}
-				
-				if (_run_type.compareTo("random") == 0) {
-					sampleWCET = this.sampling_byRandom(1);
-				} else {
-					sampleWCET = this.sampling_byDistance(1, Settings.SAMPLE_CANDIDATES, _probability);
-				}
-				
-				int taskID = solID/Settings.GA_POPULATION;
-				int D = this.evaluate(solutions.get(solID), taskID, sampleWCET);
-				String text = this.createSampleLine(D, sampleWCET);
-				this.appendNewDataset(workpath, text);
-				JMetalLogger.logger.info(String.format("New data %d/%d: %s", (count % _updateIteration) + 1, _updateIteration, text));
-				
-				merge_to_training_data(new int[]{D});
-				count += 1;
 			}
-		} // while
+			
+			//Sampling
+			long[] sampleWCET = null;
+			if (_run_type.compareTo("random") == 0) {
+				sampleWCET = this.sampling_byRandom(1);
+			} else {
+				sampleWCET = this.sampling_byDistance(1, Settings.SAMPLE_CANDIDATES, _probability);
+			}
+			//Evaluate using scheduler
+			int taskID = solID/Settings.GA_POPULATION;
+			int D = this.evaluate(solutions.get(solID), taskID, sampleWCET);
+			merge_to_training_data(new int[]{D});
+			
+			// Save information
+			String text = this.createSampleLine(D, sampleWCET);
+			this.appendNewDataset(workfile, text);
+			JMetalLogger.logger.info(String.format("New data %d/%d: %s", (count % _updateIteration) + 1, _updateIteration, text));
+			
+			// update index
+			solID = (solID + 1) % solutions.size();
+			count += 1;
+		} //while
 
-		this.update_model(count/_updateIteration);
+		this.update_model();
 		JMetalLogger.logger.info("Finished to run");
 	}
 
@@ -295,7 +225,7 @@ public class SecondPhase {
 		Object[] samples = null;
 		try {
 			// load data
-			engine.eval(String.format("datafile<- \"%s\"", filepath));
+			engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXPORT_PATH, filepath));
 			engine.eval("training <- read.csv(datafile, header=TRUE)");
 			engine.eval(String.format("testDataPool <-get_evaluate_data_pool(\"%s/testdata\")", basePath));
 			
@@ -322,12 +252,12 @@ public class SecondPhase {
 		return true;
 	}
 	
-	public ArrayList<long[]> sampling_byRange(int nSample, double minP, double maxP, int distance){
+	public ArrayList<long[]> sampling_byRange(int nSample, double Ps, double Prange){
 
 		ArrayList<long[]> samples = new ArrayList<long[]>();
 		try {
 			engine.eval("tnames <- get_task_names(training)");
-			String codeText = String.format("sampled_data<-get_range_sampling(tnames, base_model, nSample=%d, Pmin=%.5f, Pmax=%.5f, overBound=%d)", nSample, minP, maxP, distance);
+			String codeText = String.format("sampled_data<-get_range_sampling(tnames, base_model, %d, Ps=%.3f, Prange=%.3f)", nSample, Ps, Prange);
 			engine.eval(codeText);
 			
 			for(int x=1; x<=nSample; x++) {
@@ -342,7 +272,7 @@ public class SecondPhase {
 		return samples;
 	}
 	
-	public long[] get_row_longlist(String varName) throws ScriptException {
+	public long[] get_row_longlist(String varName) throws ScriptException, EvalException {
 		long[] items = null;
 		
 		Vector dataVector = (Vector)engine.eval(varName);
@@ -419,45 +349,13 @@ public class SecondPhase {
 		return true;
 	}
 	
-	public boolean update_model(int count){
+	public boolean update_model(){
 		boolean result=true;
 		try {
 			engine.eval("print(sprintf(\"Number of data set: %d\", nrow(training)))");
 			engine.eval("prev_model<-base_model");
 			engine.eval("base_model <- glm(formula = prev_model$formula, family = \"binomial\", data = training)");
 			JMetalLogger.logger.info("Updated model: " + getModelText("base_model"));
-			
-			engine.eval("testData <-sample_subset_data_even(testDataPool, 20000)"); //training[20201:nrow(training),]
-			
-			engine.eval("fitPrev <-predict(prev_model, newdata=testData, type=\"response\")");
-			engine.eval("fitNew <- predict(base_model, newdata=testData, type=\"response\")");
-			
-			engine.eval(String.format("predPrev <- ifelse(fitPrev<= %.3f, 0, 1)", Settings.BORDER_PROBABILITY));
-			engine.eval(String.format("predNew <- ifelse(fitNew<= %.3f, 0, 1)", Settings.BORDER_PROBABILITY));
-			
-			engine.eval("pFPR <- FPRate(y_true=testData$result, y_pred=predPrev, positive = \"0\")");
-			engine.eval("nFPR <- FPRate(y_true=testData$result, y_pred=predNew, positive = \"0\")");
-			engine.eval("rate <- abs(pFPR-nFPR)");
-			Vector dataVector = (Vector)engine.eval("rate");
-			double rate = dataVector.getElementAsDouble(0);
-			JMetalLogger.logger.info(String.format("FPR compare: %.3f", rate));
-			
-			engine.eval("comp <-data.frame(Prev=predPrev, New=predNew)");
-			engine.eval("nT <- nrow(comp[(comp$Prev==comp$New),])");
-			engine.eval("nF <- nrow(comp[(comp$Prev!=comp$New),])");
-			engine.eval("rate <- nF/(nT+nF)");
-			
-			dataVector = (Vector)engine.eval("rate");
-			rate = dataVector.getElementAsDouble(0);
-			JMetalLogger.logger.info(String.format("rate: %.3f", rate));
-			
-			engine.eval(String.format("printCDF('prev_model', prev_model, testData, %.3f)", Settings.BORDER_PROBABILITY));
-			engine.eval(String.format("printCDF('current_model', base_model, testData, %.3f)", Settings.BORDER_PROBABILITY));
-			
-			
-			if (rate <= 0.001 && count>=2) result = false;
-			
-			
 			
 		} catch (ScriptException | EvalException e) {
 			JMetalLogger.logger.info("R Error:: " + e.getMessage());
@@ -466,30 +364,59 @@ public class SecondPhase {
 		return result;
 	}
 	
-	public String getModelText(String modelname){
+	public boolean evaluate_model(int count, List<TimeListSolution> _solutions, String workpath){
+		JMetalLogger.logger.info(String.format("Sampling %d points for evaluating model %.2f+-%.2f...", Settings.TEST_NSAMPLES, Settings.BORDER_PROBABILITY, Settings.TEST_RANGE_PROB));
+		ArrayList<long[]> samples = sampling_byRange(Settings.TEST_NSAMPLES, Settings.BORDER_PROBABILITY, Settings.TEST_RANGE_PROB);
+		
+		JMetalLogger.logger.info("Evaluating model ...");
+		int solID = 0;
+		int sumNegative = 0;
+		for(int x=0; x<samples.size(); x++){
+			int taskID = solID/Settings.GA_POPULATION;
+			int D = this.evaluate(_solutions.get(solID), taskID, samples.get(x));
+			
+			// Save information
+			String text = this.createSampleLine(D, samples.get(x));
+			this.appendEvaluationData(workpath, String.format("%d,%s",count, text));
+			JMetalLogger.logger.info(String.format("#model=%d, Evaluated data %d/%d: %s", count+1, (x+1), samples.size(), text));
+			
+			sumNegative += D;
+			solID = (solID + 1) / Settings.GA_POPULATION;
+		}
+		
+		// Compare the evaluation result
+		double riskness = sumNegative/(double)samples.size();  //deadline miss rate
+		double diff = Math.abs(Settings.BORDER_PROBABILITY - riskness);
+		JMetalLogger.logger.info(String.format("Rate of deadline miss: %.3f", riskness));
+		JMetalLogger.logger.info(String.format("Diff with border Ps: %.3f", diff));
+		
+		double upperBound = Settings.BORDER_PROBABILITY + Settings.TEST_ACCEPT_RATE;
+		double underBound = Settings.BORDER_PROBABILITY - Settings.TEST_ACCEPT_RATE;
+		if (riskness >= underBound && riskness <= upperBound)
+			return true;
+		return false;
+		
+	}
+	
+	public String getModelText(String modelname) throws ScriptException, EvalException {
 		StringBuilder sb = new StringBuilder();
-		try {
-			StringVector nameVector = (StringVector)engine.eval(String.format("names(%s$coefficients)", modelname));
-			String[] names = nameVector.toArray();
-			
-			Vector dataVector = (Vector)engine.eval(modelname+"$coefficients");
-			double[] coeff = new double[dataVector.length()];
-			for(int x=0; x<dataVector.length(); x++){
-				coeff[x] = dataVector.getElementAsDouble(x);
-			}
+		
+		StringVector nameVector = (StringVector)engine.eval(String.format("names(%s$coefficients)", modelname));
+		String[] names = nameVector.toArray();
+		
+		Vector dataVector = (Vector)engine.eval(modelname+"$coefficients");
+		double[] coeff = new double[dataVector.length()];
+		for(int x=0; x<dataVector.length(); x++){
+			coeff[x] = dataVector.getElementAsDouble(x);
+		}
 
-			sb.append("Y = ");
-			sb.append(coeff[0]);
-			for(int x=1; x<names.length; x++) {
-				sb.append(" + ");
-				sb.append(coeff[x]);
-				sb.append("*");
-				sb.append(names[x]);
-			}
-			
-		} catch (ScriptException | EvalException e) {
-			JMetalLogger.logger.info("R Error:: " + e.getMessage());
-			return "";
+		sb.append("Y = ");
+		sb.append(coeff[0]);
+		for(int x=1; x<names.length; x++) {
+			sb.append(" + ");
+			sb.append(coeff[x]);
+			sb.append("*");
+			sb.append(names[x]);
 		}
 		return sb.toString();
 	}
@@ -559,12 +486,29 @@ public class SecondPhase {
 	
 	/**
 	 * append evaluated data into data file
-	 * @param workPath
-	 * @param datatext
+	 * @param _filename
+	 * @param _datatext
 	 */
-	public void appendNewDataset(String workPath, String datatext){
-		String filename = workPath.substring(Settings.EXPORT_PATH.length()+1);
-		GAWriter writer = new GAWriter(filename, Level.INFO, null, Settings.EXPORT_PATH, true);
+	public void appendNewDataset(String _filename, String _datatext){
+		GAWriter writer = new GAWriter(_filename, Level.INFO, null, Settings.EXPORT_PATH, true);
+		writer.info(_datatext);
+		writer.close();
+	}
+	
+	public void createEvaluationDataFile(String _filename){
+		List<Integer> uncertainTasks  = problem.getUncertainTasks();
+		GAWriter writer = new GAWriter(_filename, Level.INFO, null, Settings.EXPORT_PATH, false);
+		StringBuilder sb = new StringBuilder();
+		sb.append("nUpdate,result");
+		for (int x=0; x<uncertainTasks.size(); x++) {
+			sb.append(String.format(",T%d",uncertainTasks.get(x)));
+		}
+		writer.info(sb.toString());
+		writer.close();
+	}
+	
+	public void appendEvaluationData(String _filename, String datatext){
+		GAWriter writer = new GAWriter(_filename, Level.INFO, null, Settings.EXPORT_PATH, true);
 		writer.info(datatext);
 		writer.close();
 	}
@@ -577,6 +521,38 @@ public class SecondPhase {
 			sb.append(_sample[i]);
 		}
 		return sb.toString();
+	}
+	
+	/**********************************
+	 * static methods
+	 *********************************/
+	public static SimpleFormatter formatter = new SimpleFormatter(){
+		private static final String format = "[%1$tF %1$tT] %2$s: %3$s %n";
+		
+		@Override
+		public synchronized String format(LogRecord lr) {
+			return String.format(format,
+					new Date(lr.getMillis()),
+					lr.getLevel().getLocalizedName(),
+					lr.getMessage()
+			);
+		}
+	};
+	
+	/**
+	 * Start function of second phase
+	 * @param args
+	 */
+	public static void main(String[] args) throws Exception {
+		// Logger Setting
+		JMetalLogger.logger.setUseParentHandlers(false);
+		ConsoleHandler handler = new ConsoleHandler();
+		handler.setFormatter(formatter);
+		JMetalLogger.logger.addHandler(handler);
+		Settings.update(args);
+		
+		SecondPhase secondPhase = new SecondPhase();
+		secondPhase.run(Settings.SECOND_PHASE_RUNTYPE, Settings.UPDATE_ITERATION, Settings.MAX_ITERATION, Settings.BORDER_PROBABILITY);
 	}
 	
 }
