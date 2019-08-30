@@ -7,6 +7,7 @@ import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
 import org.renjin.script.RenjinScriptEngineFactory;
+import org.renjin.sexp.Logical;
 import org.renjin.sexp.StringVector;
 import org.renjin.sexp.Vector;
 import org.uma.jmetal.util.JMetalLogger;
@@ -16,7 +17,6 @@ import javax.script.ScriptException;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
@@ -24,14 +24,10 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
-import java.util.stream.Collectors;
 
-import static java.nio.file.StandardOpenOption.*;
 
 
 public class SecondPhase {
-
-
 	
 	/**********************************
 	 * non-static methods
@@ -42,6 +38,7 @@ public class SecondPhase {
 	Constructor constructor = null;
 	ScriptEngine engine = null;
 	int[] targetTasks = null;
+	String filename = "";
 	
 	public SecondPhase() throws Exception{
 		basePath = Settings.BASE_PATH;
@@ -101,6 +98,15 @@ public class SecondPhase {
 	 * @throws IOException
 	 */
 	public void run(String _run_type, int _updateIteration, int _maxIteration, double _probability) throws IOException {
+		// Print settings
+		JMetalLogger.logger.info("Settings.TEST_DATA_TYPE  : "+ Settings.TEST_DATA_TYPE);
+		JMetalLogger.logger.info("Settings.TEST_FUNC_NAME  : "+ Settings.TEST_FUNCTION_NAME);
+		JMetalLogger.logger.info("Settings.TEST_NSAMPLES   : "+ Settings.TEST_NSAMPLES);
+		JMetalLogger.logger.info("Settings.BEST_RUN in Phase 1: "+ Settings.BEST_RUN);
+		JMetalLogger.logger.info("Settings.RUNID in Phase 2: "+ Settings.GA_RUN);
+		JMetalLogger.logger.info("Settings.LR_WORKPATH     : "+ Settings.LR_WORKPATH);
+		
+		
 		
 		Phase1Loader phase1 = new Phase1Loader(problem, targetTasks);
 		
@@ -111,13 +117,18 @@ public class SecondPhase {
 			return;
 		}
 		
+		String appendix = "";
+		if (Settings.TEST_NSAMPLES != 0)
+			appendix = String.format("_T%d", Settings.TEST_NSAMPLES);
+		
+		if (Settings.GA_RUN != 0)
+			appendix = String.format("_P2run%d", Settings.GA_RUN);
+		
+		
 		// Setting initial points to use for learning
 		String formulaCode = Settings.LR_FORMULA_PATH.replace("/", "_");
-		String workfile = String.format("%s/workdata_%s_%d_%d_%.2f_%s_run%02d.csv", Settings.LR_WORKPATH,_run_type, _maxIteration, _updateIteration, _probability, formulaCode, Settings.BEST_RUN);
-		
-		// create evaluation data
-		String evalfile = String.format("%s/evaldata_%s_%d_%d_%.2f_%s_run%02d.csv", Settings.LR_WORKPATH,_run_type, _maxIteration, _updateIteration, _probability, formulaCode, Settings.BEST_RUN);
-		createEvaluationDataFile(evalfile);
+		filename = String.format("workdata_%s_%d_%d_%.2f_%s_run%02d%s", _run_type, _maxIteration, _updateIteration, _probability, formulaCode, Settings.BEST_RUN, appendix);
+		String workfile = String.format("%s/%s.csv", Settings.LR_WORKPATH, filename);
 		
 		if (!phase1.makeInitialPoints(this.basePath, Settings.EXPORT_PATH, Settings.BEST_RUN, workfile)) {
 			JMetalLogger.logger.info("Failed to load input data");
@@ -134,18 +145,15 @@ public class SecondPhase {
 		}
 		JMetalLogger.logger.info("Generated initial model");
 		
-		
 		// Sampling new data point and evaluation
 		int count = 0;
 		int solID = 0;
-		boolean END = false;
-		while (count < _maxIteration && !END) {
+		while (count < _maxIteration) {
 			// Learning model again with more data
 			if ((count != 0) && (count % _updateIteration == 0)) {
 				JMetalLogger.logger.info("update logistic regression " + count + "/" + _maxIteration);
 				this.update_model();
-				if (this.evaluate_model(count/_updateIteration, solutions, evalfile)){
-					END=true;
+				if (Settings.LR_STOP_CONDITION && this.check_stop_update()){
 					break;
 				}
 			}
@@ -158,9 +166,10 @@ public class SecondPhase {
 				sampleWCET = this.sampling_byDistance(1, Settings.SAMPLE_CANDIDATES, _probability);
 			}
 			//Evaluate using scheduler
-			int taskID = solID/Settings.GA_POPULATION;
+			int taskID = targetTasks[solID/Settings.GA_POPULATION];
 			int D = this.evaluate(solutions.get(solID), taskID, sampleWCET);
 			merge_to_training_data(new int[]{D});
+			
 			
 			// Save information
 			String text = this.createSampleLine(D, sampleWCET);
@@ -171,10 +180,11 @@ public class SecondPhase {
 			solID = (solID + 1) % solutions.size();
 			count += 1;
 		} //while
-
-		this.update_model();
+		
+		this.finalize_phase2();
 		JMetalLogger.logger.info("Finished to run");
 	}
+	
 
 	public boolean setting_environment() {
 		try {
@@ -187,14 +197,25 @@ public class SecondPhase {
 			engine.eval("TASK_INFO<- data.frame(ID = c(1:34), TASK_INFO)");
 			engine.eval("colnames(TASK_INFO)<- c(\"ID\", \"NAME\", \"TYPE\", \"PRIORITY\", \"WCET.MIN\", \"WCET.MAX\", \"PERIOD\", \"INTER.MIN\", \"INTER.MAX\", \"DEADLINE\")");
 			String update_time_str =
-				"TASK_INFO$WCET.MIN = as.integer(TASK_INFO$WCET.MIN/TIME_QUANTA)\n" +
-				"TASK_INFO$WCET.MAX = as.integer(TASK_INFO$WCET.MAX/TIME_QUANTA)\n" +
-				"TASK_INFO$PERIOD = as.integer(TASK_INFO$PERIOD/TIME_QUANTA)\n" +
-				"TASK_INFO$INTER.MIN = as.integer(TASK_INFO$INTER.MIN/TIME_QUANTA)\n" +
-				"TASK_INFO$INTER.MAX = as.integer(TASK_INFO$INTER.MAX/TIME_QUANTA)\n" +
-				"TASK_INFO$DEADLINE = as.integer(TASK_INFO$DEADLINE/TIME_QUANTA)";
+				"TASK_INFO$WCET.MIN = as.integer(round(TASK_INFO$WCET.MIN/TIME_QUANTA))\n" +
+				"TASK_INFO$WCET.MAX = as.integer(round(TASK_INFO$WCET.MAX/TIME_QUANTA))\n" +
+				"TASK_INFO$PERIOD = as.integer(round(TASK_INFO$PERIOD/TIME_QUANTA))\n" +
+				"TASK_INFO$INTER.MIN = as.integer(round(TASK_INFO$INTER.MIN/TIME_QUANTA))\n" +
+				"TASK_INFO$INTER.MAX = as.integer(round(TASK_INFO$INTER.MAX/TIME_QUANTA))\n" +
+				"TASK_INFO$DEADLINE = as.integer(round(TASK_INFO$DEADLINE/TIME_QUANTA))";
 			engine.eval(update_time_str);
 			engine.eval("source(\"R/LogisticRegressionN/lib_quadratic.R\")");
+			engine.eval("source(\"R/LogisticRegressionN/lib_RQ3.R\")");
+			
+			engine.eval("get_uncertain_tasks<-function(){\n" +
+							"    diffWCET <- TASK_INFO$WCET.MAX - TASK_INFO$WCET.MIN\n" +
+							"    tasks <- c()\n" +
+							"    for(x in 1:length(diffWCET)){\n" +
+							"       if (diffWCET[x] <= 0) next\n" +
+							"       tasks <- c(tasks, sprintf(\"T%d\",as.integer(x)))\n" +
+							"    }\n" +
+							"    return(tasks)\n" +
+							"}\n");
 		}
 		catch (ScriptException | EvalException e) {
 			JMetalLogger.logger.info("R Error:: " + e.getMessage());
@@ -221,16 +242,44 @@ public class SecondPhase {
 			return false;
 		}
 		
-		
 		Object[] samples = null;
 		try {
 			// load data
 			engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXPORT_PATH, filepath));
 			engine.eval("training <- read.csv(datafile, header=TRUE)");
-			engine.eval(String.format("testDataPool <-get_evaluate_data_pool(\"%s/testdata\")", basePath));
+			
+			if (Settings.TEST_DATA_TYPE.compareTo("initial")==0){
+				engine.eval("half_size <-nrow(training)/2");
+				engine.eval("testPool <-training[(half_size+1):nrow(training),]");
+				engine.eval("training <-training[1:half_size,]");
+				
+				engine.eval("positive <-testPool[testPool$result==0,]");
+				engine.eval("negative <-testPool[testPool$result==1,]");
+				engine.eval("negative <-negative[sample(nrow(negative),nrow(positive)),]");
+				engine.eval("test_data <- rbind(positive, negative)");
+				Vector dataVector = (Vector)engine.eval("nrow(positive)");
+				int nPositive = dataVector.getElementAsInt(0);
+				dataVector = (Vector)engine.eval("nrow(negative)");
+				int nNegative = dataVector.getElementAsInt(0);
+				JMetalLogger.logger.info("Test Data (positive): " + nPositive);
+				JMetalLogger.logger.info("Test Data (negative): " + nNegative);
+			}
+			else if (Settings.TEST_DATA_TYPE.compareTo("pool")==0){
+				engine.eval(String.format("test_data <-read.csv(sprintf(\"%s/testdata/%s\"), header=TRUE)", basePath, Settings.TEST_DATA));
+				engine.eval("positive <-test_data[test_data$result==0,]");
+				engine.eval("negative <-test_data[test_data$result==1,]");
+				engine.eval(String.format("positive <-positive[sample(nrow(positive), %d),]",Settings.TEST_NSAMPLES/2));
+				engine.eval(String.format("negative <-negative[sample(nrow(negative), %d),]",Settings.TEST_NSAMPLES/2));
+				engine.eval("test_data <-rbind(positive, negative)");
+				Vector dataVector = (Vector)engine.eval("nrow(positive)");
+				int nPositive = dataVector.getElementAsInt(0);
+				dataVector = (Vector)engine.eval("nrow(negative)");
+				int nNegative = dataVector.getElementAsInt(0);
+				JMetalLogger.logger.info("Test Data (positive): " + nPositive);
+				JMetalLogger.logger.info("Test Data (negative): " + nNegative);
+			}
 			
 			if (initialTrainingSize!=0){
-//				engine.eval(String.format("training <- training[1:%d,]",initialTrainingSize));  //sample_n(training, %d)
 				// sampling and save the result to the datafile
 				engine.eval(String.format("training <- training[sample(nrow(training), %d), ]",initialTrainingSize));  //
 				engine.eval("write.table(training, datafile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
@@ -239,9 +288,11 @@ public class SecondPhase {
 			// learning logistic regression with simple formula
 			JMetalLogger.logger.info("Started logistic regression...");
 			
-//			engine.eval(String.format("formula <- read.delim(\"%s\", header=FALSE)",formula));
 			engine.eval(String.format("formula_str<- \"%s\"",formula));
 			engine.eval("base_model <- glm(formula = formula_str, family = \"binomial\", data = training)");
+			engine.eval("cntUpdate <- 0");
+			engine.eval(String.format("test.results <- calculate_metrics(base_model, test_data, %.2f, cntUpdate)", Settings.BORDER_PROBABILITY));
+			
 			
 			JMetalLogger.logger.info("Initialized model: " + getModelText("base_model"));
 			
@@ -251,25 +302,94 @@ public class SecondPhase {
 		}
 		return true;
 	}
-	
-	public ArrayList<long[]> sampling_byRange(int nSample, double Ps, double Prange){
 
-		ArrayList<long[]> samples = new ArrayList<long[]>();
+	public boolean merge_to_training_data(int[] answers){
+		// generate list of evaluated result
+		StringBuilder sb = new StringBuilder();
+		for(int x=0; x<answers.length; x++){
+			if (x==0) sb.append(answers[x]);
+			else{
+				sb.append(",");
+				sb.append(answers[x]);
+			}
+		}
+		
 		try {
-			engine.eval("tnames <- get_task_names(training)");
-			String codeText = String.format("sampled_data<-get_range_sampling(tnames, base_model, %d, Ps=%.3f, Prange=%.3f)", nSample, Ps, Prange);
-			engine.eval(codeText);
+			engine.eval(String.format("training.item <- data.frame(result=c(%s), sampled_data)", sb.toString()));
+			engine.eval("training <- rbind(training, training.item) ");
 			
-			for(int x=1; x<=nSample; x++) {
-				samples.add(get_row_longlist(String.format("sampled_data[%d,]",x)));
+		} catch (ScriptException | EvalException e) {
+			JMetalLogger.logger.info("R Error:: " + e.getMessage());
+			return false;
+		}
+		return true;
+	}
+	
+	public boolean update_model(){
+		boolean result=true;
+		try {
+			engine.eval("print(sprintf(\"Number of data set: %d\", nrow(training)))");
+			engine.eval("prev_model<-base_model");
+			engine.eval("base_model <- glm(formula = prev_model$formula, family = \"binomial\", data = training)");
+			engine.eval("cntUpdate <- cntUpdate + 1");
+			JMetalLogger.logger.info("Updated model: " + getModelText("base_model"));
+			
+			
+			if (Settings.TEST_DATA_TYPE.compareTo("training")==0)
+				engine.eval("test_data<-training");
+			else if (Settings.TEST_DATA_TYPE.compareTo("new")==0) {
+				engine.eval("tSize<-nrow(training)");
+				engine.eval(String.format("test_data<-training[(tSize-%d):tSize,]", Settings.UPDATE_ITERATION));
 			}
 			
 		} catch (ScriptException | EvalException e) {
 			JMetalLogger.logger.info("R Error:: " + e.getMessage());
-			return null;
+			return false;
 		}
-		
-		return samples;
+		return result;
+	}
+	
+	public boolean check_stop_update(){
+		JMetalLogger.logger.info("checking update");
+		boolean result=false;
+		try {
+			engine.eval(String.format("test.result <- calculate_metrics(base_model, test_data, %.2f, cntUpdate)", Settings.BORDER_PROBABILITY));
+			engine.eval("test.results <- rbind(test.results, test.result)");
+			
+			String test = "";
+			test = String.format("terminate.value <- test.%s(prev_model, base_model, testData=test_data, predictionLevel=%.2f)",
+					Settings.TEST_FUNCTION_NAME, Settings.BORDER_PROBABILITY);
+			JMetalLogger.logger.info(test);
+			engine.eval(test);
+			
+
+			Vector dataVector = (Vector)engine.eval("terminate.value");
+			double test_result = dataVector.getElementAsDouble(0);
+			JMetalLogger.logger.info("TEST_FUNC_RESULT: " + test_result);
+			if (test_result <= Settings.TEST_ACCEPT_RATE)
+				result = true;
+			
+		} catch (ScriptException | EvalException e) {
+			JMetalLogger.logger.info("R Error:: " + e.getMessage());
+			return false;
+		}
+		return result;
+	}
+	
+	public boolean finalize_phase2(){
+		boolean result=false;
+		try {
+			String resultfile = String.format("%s/%s/%s_result.csv", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename);
+			engine.eval(String.format("filename<- \"%s\"", resultfile));
+			engine.eval("write.table(test.results, filename, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+			JMetalLogger.logger.info("Saved result into " +resultfile);
+			result = true;
+			
+		} catch (ScriptException | EvalException e) {
+			JMetalLogger.logger.info("R Error:: " + e.getMessage());
+			return false;
+		}
+		return result;
 	}
 	
 	public long[] get_row_longlist(String varName) throws ScriptException, EvalException {
@@ -301,7 +421,7 @@ public class SecondPhase {
 			JMetalLogger.logger.info("R Error:: " + e.getMessage());
 			return null;
 		}
-
+		
 		return samples;
 	}
 	
@@ -327,76 +447,6 @@ public class SecondPhase {
 		return samples;
 	}
 	
-	public boolean merge_to_training_data(int[] answers){
-		// generate list of evaluated result
-		StringBuilder sb = new StringBuilder();
-		for(int x=0; x<answers.length; x++){
-			if (x==0) sb.append(answers[x]);
-			else{
-				sb.append(",");
-				sb.append(answers[x]);
-			}
-		}
-		
-		try {
-			engine.eval(String.format("training.item <- data.frame(result=c(%s), sampled_data)", sb.toString()));
-			engine.eval("training <- rbind(training, training.item) ");
-			
-		} catch (ScriptException | EvalException e) {
-			JMetalLogger.logger.info("R Error:: " + e.getMessage());
-			return false;
-		}
-		return true;
-	}
-	
-	public boolean update_model(){
-		boolean result=true;
-		try {
-			engine.eval("print(sprintf(\"Number of data set: %d\", nrow(training)))");
-			engine.eval("prev_model<-base_model");
-			engine.eval("base_model <- glm(formula = prev_model$formula, family = \"binomial\", data = training)");
-			JMetalLogger.logger.info("Updated model: " + getModelText("base_model"));
-			
-		} catch (ScriptException | EvalException e) {
-			JMetalLogger.logger.info("R Error:: " + e.getMessage());
-			return false;
-		}
-		return result;
-	}
-	
-	public boolean evaluate_model(int count, List<TimeListSolution> _solutions, String workpath){
-		JMetalLogger.logger.info(String.format("Sampling %d points for evaluating model %.2f+-%.2f...", Settings.TEST_NSAMPLES, Settings.BORDER_PROBABILITY, Settings.TEST_RANGE_PROB));
-		ArrayList<long[]> samples = sampling_byRange(Settings.TEST_NSAMPLES, Settings.BORDER_PROBABILITY, Settings.TEST_RANGE_PROB);
-		
-		JMetalLogger.logger.info("Evaluating model ...");
-		int solID = 0;
-		int sumNegative = 0;
-		for(int x=0; x<samples.size(); x++){
-			int taskID = solID/Settings.GA_POPULATION;
-			int D = this.evaluate(_solutions.get(solID), taskID, samples.get(x));
-			
-			// Save information
-			String text = this.createSampleLine(D, samples.get(x));
-			this.appendEvaluationData(workpath, String.format("%d,%s",count, text));
-			JMetalLogger.logger.info(String.format("#model=%d, Evaluated data %d/%d: %s", count+1, (x+1), samples.size(), text));
-			
-			sumNegative += D;
-			solID = (solID + 1) / Settings.GA_POPULATION;
-		}
-		
-		// Compare the evaluation result
-		double riskness = sumNegative/(double)samples.size();  //deadline miss rate
-		double diff = Math.abs(Settings.BORDER_PROBABILITY - riskness);
-		JMetalLogger.logger.info(String.format("Rate of deadline miss: %.3f", riskness));
-		JMetalLogger.logger.info(String.format("Diff with border Ps: %.3f", diff));
-		
-		double upperBound = Settings.BORDER_PROBABILITY + Settings.TEST_ACCEPT_RATE;
-		double underBound = Settings.BORDER_PROBABILITY - Settings.TEST_ACCEPT_RATE;
-		if (riskness >= underBound && riskness <= upperBound)
-			return true;
-		return false;
-		
-	}
 	
 	public String getModelText(String modelname) throws ScriptException, EvalException {
 		StringBuilder sb = new StringBuilder();
@@ -419,36 +469,6 @@ public class SecondPhase {
 			sb.append(names[x]);
 		}
 		return sb.toString();
-	}
-	
-	/**
-	 * Load solution from the file
-	 * @param _path
-	 * @return
-	 */
-	public List<TimeListSolution> loadSolutions(String _path, int _bestRunID) {
-		String path = _path+"/solutions/";
-		ArrayList<TimeListSolution> solutions = new ArrayList<TimeListSolution>();
-		
-		File f = new File(path);
-		File[] files = f.listFiles();
-		if (files == null) return null;
-		
-		Arrays.sort(files);
-		JMetalLogger.logger.info("loading solution from " + path);
-//		JMetalLogger.logger.info("Number of solutions to load: " + String.valueOf(files.length));
-		for (File file : files) {
-			if (!file.isFile()) continue;
-			String name = file.getName();
-			if (!name.endsWith(".json")) continue;
-			String runID = name.substring(name.indexOf('_')+4, name.lastIndexOf('_'));
-			if (Integer.parseInt(runID) != _bestRunID) continue;
-			
-			TimeListSolution s = TimeListSolution.loadFromJSON(problem, file.getAbsolutePath());
-			solutions.add(s);
-//			JMetalLogger.logger.info("loaded solution from " + file.getName());
-		}
-		return solutions;
 	}
 	
 	/**
@@ -492,24 +512,6 @@ public class SecondPhase {
 	public void appendNewDataset(String _filename, String _datatext){
 		GAWriter writer = new GAWriter(_filename, Level.INFO, null, Settings.EXPORT_PATH, true);
 		writer.info(_datatext);
-		writer.close();
-	}
-	
-	public void createEvaluationDataFile(String _filename){
-		List<Integer> uncertainTasks  = problem.getUncertainTasks();
-		GAWriter writer = new GAWriter(_filename, Level.INFO, null, Settings.EXPORT_PATH, false);
-		StringBuilder sb = new StringBuilder();
-		sb.append("nUpdate,result");
-		for (int x=0; x<uncertainTasks.size(); x++) {
-			sb.append(String.format(",T%d",uncertainTasks.get(x)));
-		}
-		writer.info(sb.toString());
-		writer.close();
-	}
-	
-	public void appendEvaluationData(String _filename, String datatext){
-		GAWriter writer = new GAWriter(_filename, Level.INFO, null, Settings.EXPORT_PATH, true);
-		writer.info(datatext);
 		writer.close();
 	}
 	
