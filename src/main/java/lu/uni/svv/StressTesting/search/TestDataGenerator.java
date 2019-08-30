@@ -107,7 +107,12 @@ public class TestDataGenerator {
 		}
 		sb.append(targetTasks[x]);
 		
-		String evalfile = String.format("%s/testdata_T%s_N%d_run%02d.csv", Settings.LR_WORKPATH, sb.toString(), Settings.MAX_ITERATION, Settings.BEST_RUN);
+		String appendix = "";
+		if (Settings.GA_RUN !=0){
+			appendix = String.format("_S%d", Settings.GA_RUN);
+		}
+		
+		String evalfile = String.format("%s/testdata_T%s_N%d_run%02d%s.csv", Settings.LR_WORKPATH, sb.toString(), Settings.MAX_ITERATION, Settings.BEST_RUN, appendix);
 		
 		// Initialize model
 		this.setting_environment();
@@ -268,6 +273,10 @@ public class TestDataGenerator {
 	
 	public void savePoints(String _filename){
 		String filepath = String.format("%s/%s", basePath, _filename);
+		File file = new File(filepath);
+		if (!file.getParentFile().exists())
+			file.getParentFile().mkdirs();
+		
 		String savecode = String.format("write.table(samples, \"%s\", append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)",filepath);
 		try {
 			engine.eval("positive<-test_set[test_set$result==0,]");
