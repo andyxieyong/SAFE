@@ -110,7 +110,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		RMScheduler scheduler = null;
 		try {
 			Constructor constructor = schedulerClass.getConstructors()[0];
-			Object[] parameters = {this};
+			Object[] parameters = {this, Settings.TASK_FITNESS};
 			scheduler = (RMScheduler)constructor.newInstance(parameters);
 		} catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
 			e.printStackTrace();

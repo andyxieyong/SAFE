@@ -91,7 +91,7 @@ public class ModelComparing {
 			Class schedulerClass = Class.forName("lu.uni.svv.StressTesting.scheduler." + _schedulerName);
 			
 			Constructor constructor = schedulerClass.getConstructors()[0];
-			Object[] parameters = {_problem};
+			Object[] parameters = {_problem, Settings.TASK_FITNESS};
 			scheduler = (RMScheduler)constructor.newInstance(parameters);
 			
 		} catch (ClassNotFoundException| InstantiationException | IllegalAccessException | InvocationTargetException e) {
