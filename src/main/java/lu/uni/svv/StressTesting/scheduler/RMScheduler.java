@@ -33,7 +33,7 @@ public class RMScheduler {
 	
 	/* For Scheduling */
 	private long        timeLapsed;		// current CPU time quanta
-	private ReadyQueue  readyQueue;
+	PriorityQueue<Task> readyQueue;
 	private Task        lastExecutedTask;
 	private Task        previousTask;
 	
@@ -73,7 +73,7 @@ public class RMScheduler {
 		timeLapsed = 0;
 		lastExecutedTask = null;
 		previousTask = null;
-		readyQueue = new ReadyQueue();
+		readyQueue = new PriorityQueue<Task>(60000, queueComparator);
 		
 		sampledWCET = new ArrayList<>();
 	}
@@ -430,42 +430,22 @@ public class RMScheduler {
 	 * @author jaekwon.lee
 	 *
 	 */
-	public class ReadyQueue {
-		Task lastExecutedTask;
-		ArrayList<Task> TheQueue;
-		
-		ReadyQueue() {
-			TheQueue = new ArrayList<Task>();
-			lastExecutedTask = null;
-		}
-		
-		public Task get(int index) { return TheQueue.get(index); }
-		public int size() {
-			return TheQueue.size();
-		}
-		
-		public boolean isEmpty(){ return TheQueue.isEmpty(); }
-		public Task peek() { return TheQueue.get(0); }
-		public Task poll() { return TheQueue.remove(0); }
-		
-		
-		/**
-		 *
-		 * @param T
-		 * @return
-		 */
-		
-		public int add(Task T) {
-			for (int i = 0; i < TheQueue.size(); i++) {
-				if (T.Priority < TheQueue.get(i).Priority) {
-					TheQueue.add(i, T);
+	public Comparator<Task> queueComparator = new Comparator<Task>(){
+		@Override
+		public int compare(Task t1, Task t2) {
+			if (t1.Priority > t2.Priority)
+				return 1;
+			else if (t1.Priority < t2.Priority)
+				return -1;
+			else{
+				if (t1.ExecutionID < t2.ExecutionID)
+					return -1;
+				else if (t1.ExecutionID > t2.ExecutionID)
 					return 1;
-				}
+				return 0;
 			}
-			TheQueue.add(T);
-			return 1;
 		}
-	}
+	};
 	
 	/////////////////////////////////////////////////////////////////
 	//  Evaluation functions
