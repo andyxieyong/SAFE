@@ -3,11 +3,9 @@ package lu.uni.svv.StressTesting.search;
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
-import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
 import org.renjin.script.RenjinScriptEngineFactory;
-import org.renjin.sexp.StringVector;
 import org.renjin.sexp.Vector;
 import org.uma.jmetal.util.JMetalLogger;
 
@@ -18,12 +16,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
-
-import static java.nio.file.StandardOpenOption.*;
-
 
 public class TestDataGenerator {
 	/**********************************
@@ -136,14 +130,13 @@ public class TestDataGenerator {
 			
 			// Save information
 			String text = this.createSampleLine(D, samples.get(0));
-			JMetalLogger.logger.info(String.format("Evaluated data (P: %d/%d, N: %d/%d) - %s", cntPosivive, Settings.MAX_ITERATION, cntNegative, Settings.MAX_ITERATION, text));
+			JMetalLogger.logger.info(String.format("Evaluated data (P: %d/%d, N: %d/%d) with sol %d - %s", cntPosivive, Settings.MAX_ITERATION, cntNegative, Settings.MAX_ITERATION, solID, text));
 			
-			solID = (solID + 1) / Settings.GA_POPULATION;
+			solID = (solID + 1) % solutions.size();
 		}
 		
 		//Save all points
 		savePoints(evalfile);
-		
 	}
 	
 	public boolean setting_environment() {
