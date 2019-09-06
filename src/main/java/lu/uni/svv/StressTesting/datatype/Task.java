@@ -23,4 +23,8 @@ public class Task {
 		Deadline 		= _deadline;
 		Priority		= _priority;
 	}
+	
+	public String str(){
+		return String.format("{ID:%d (%d), exID:%d, arrival:%d, started:%d, ended:%d, remain:%d}", ID, Priority, ExecutionID, ArrivedTime, StartedTime, FinishedTime, RemainTime);
+	}
 }
