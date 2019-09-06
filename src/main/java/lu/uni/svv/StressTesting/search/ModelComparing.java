@@ -123,7 +123,7 @@ public class ModelComparing {
 		}
 		
 		// Setting initial points to use for learning
-		String datapath = String.format("%s/sampledata_%s.csv", this.basePath, Settings.LR_SAMPLEDATA_CODE);
+		String datapath = String.format("%s/samples/sampledata_run%02d.csv", this.basePath, Settings.BEST_RUN);
 		
 		String formulaCode = Settings.LR_FORMULA_PATH.replace("/", "_");
 		String run = "";
@@ -137,10 +137,10 @@ public class ModelComparing {
 		
 		String workfile = String.format("/%s/workdata_%s_%d_%d_%.2f_%s%s%s.csv", Settings.LR_WORKPATH, _run_type, _maxIteration, _updateIteration, _probability, formulaCode, run, testID);
 		
-		String workpath = this.basePath + workfile;
+		String workpath = Settings.EXPORT_PATH + workfile;
 		File file = new File(workpath);
 		if (!file.getParentFile().exists())
-			file.getParentFile().mkdir();
+			file.getParentFile().mkdirs();
 		
 		Files.copy(Paths.get(datapath), Paths.get(workpath), StandardCopyOption.REPLACE_EXISTING);
 		JMetalLogger.logger.info("Started second phase");
