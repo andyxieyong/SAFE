@@ -87,7 +87,7 @@ public class RMScheduler {
 	 */
 	public void run(TimeListSolution _solution) {
 		initilizeEvaluationTools();
-				
+		
 		try {
 			// get total number of jobs
 			initializeRun(_solution.getNumberOfVariables());
@@ -112,7 +112,7 @@ public class RMScheduler {
 					printer.println("Here are extra execution because of ramaining tasks in queue");
 					printer.println("------------------------------------------");
 				}
-
+				
 				while(readyQueue.size() > 0) {
 					int output = executeOneUnit();
 					if (output == -1) return ;
@@ -145,7 +145,8 @@ public class RMScheduler {
 			TaskDescriptor task = problem.Tasks[taskIDX];
 			long WCET = getSampleWCET(task);
 			Task t = new Task(task.ID, indexTable[taskIDX], WCET, _time, task.Deadline, task.Priority);
-			readyQueue.addNewTask(t);
+			t.ArrivedTime = timeLapsed;
+			readyQueue.add(t);
 			indexTable[taskIDX]++;
 			if (Settings.N_SAMPLE_WCET!=0 && task.MinWCET != task.MaxWCET)
 				sampledWCET.add(t);
@@ -164,7 +165,7 @@ public class RMScheduler {
 		}
 		
 		RandomGenerator randomGenerator = new RandomGenerator();
-			
+		
 		// make a random WCET
 		long sampleWCET = 0;
 		if (Settings.UNIFORM_SAMPLE==false) {
@@ -224,7 +225,7 @@ public class RMScheduler {
 		}
 		else {
 			// Get one task and execute!
-			T = readyQueue.getFirst();
+			T = readyQueue.peek();
 			if (T.RemainTime <= 0) 	throw new Exception(); //Somehow remaining time became negative, or is 0 from first
 			
 			// preemption check;
@@ -246,7 +247,7 @@ public class RMScheduler {
 			
 			// Check task finished and deadline misses
 			if (T.RemainTime == 0) {
-				readyQueue.pollFirst();  // Task finished, poll the Task out.
+				readyQueue.poll();    // Task finished, poll the Task out.
 				
 				// Log a time the task ended
 				T.FinishedTime = timeLapsed;
@@ -431,55 +432,37 @@ public class RMScheduler {
 	 */
 	public class ReadyQueue {
 		Task lastExecutedTask;
-		LinkedList<Task> TheQueue;
+		ArrayList<Task> TheQueue;
 		
 		ReadyQueue() {
-			TheQueue = new LinkedList<Task>();
+			TheQueue = new ArrayList<Task>();
 			lastExecutedTask = null;
 		}
 		
-		public Task get(int index) {
-			return TheQueue.get(index);
-		}
+		public Task get(int index) { return TheQueue.get(index); }
 		public int size() {
 			return TheQueue.size();
 		}
 		
-		public boolean isEmpty(){
-			return TheQueue.isEmpty();
-		}
+		public boolean isEmpty(){ return TheQueue.isEmpty(); }
+		public Task peek() { return TheQueue.get(0); }
+		public Task poll() { return TheQueue.remove(0); }
 		
-		public Task getFirst() {
-			return TheQueue.getFirst();
-		}
-		
-		public Task getLast() {
-			return TheQueue.getLast();
-		}
-		
-		
-		public Task pollFirst() {
-			return TheQueue.pollFirst();
-		}
-		
-		public Task pollLast() {
-			return TheQueue.pollLast();
-		}
 		
 		/**
 		 *
 		 * @param T
 		 * @return
 		 */
-		public int addNewTask(Task T) {
+		
+		public int add(Task T) {
 			for (int i = 0; i < TheQueue.size(); i++) {
 				if (T.Priority < TheQueue.get(i).Priority) {
 					TheQueue.add(i, T);
-					T.ArrivedTime = timeLapsed;
 					return 1;
 				}
 			}
-			TheQueue.addLast(T);
+			TheQueue.add(T);
 			return 1;
 		}
 	}
