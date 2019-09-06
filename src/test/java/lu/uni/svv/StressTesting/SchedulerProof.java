@@ -7,7 +7,9 @@ import java.util.logging.Level;
 
 import junit.framework.TestCase;
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
+import lu.uni.svv.StressTesting.scheduler.RMSchedulerEx;
 import lu.uni.svv.StressTesting.scheduler.RMSchedulerNorm;
+import lu.uni.svv.StressTesting.scheduler.RMSchedulerRange;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
 import lu.uni.svv.StressTesting.utils.GAWriter;
@@ -37,15 +39,18 @@ public class SchedulerProof extends TestCase
 	 */
 	public void testProof() throws Exception
 	{
-		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 3000, "RMScheduler"); // append last item
-		//TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 100); // full data set
+//		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 3000, "RMScheduler"); // append last item
+//		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 3000, "RMScheduler"); // append last item
+//		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 100); // full data set
+		TestingProblem problem = new TestingProblem("../res/samples/sample_mixed_1.csv", 0.1, 100, "RMSchedulerRange"); // append last item
 		TimeListSolution solution = problem.createSolution();
 
 		RMScheduler.DETAIL = true;
 		RMScheduler.PROOF = true;
-		//RMScheduler scheduler = new RMScheduler(this);
-		//RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TASK_FITNESS);
-		RMScheduler scheduler = new RMSchedulerNorm(problem, Settings.TASK_FITNESS);
+//		RMScheduler scheduler = new RMScheduler(this);
+//		RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TASK_FITNESS);
+//		RMScheduler scheduler = new RMSchedulerNorm(problem, Settings.TASK_FITNESS);
+		RMScheduler scheduler = new RMSchedulerRange(problem, Settings.TASK_FITNESS);
 
 		try {
 			PrintStream printer = new PrintStream(new File(BASE_PATH+"/cpulog.log"));
