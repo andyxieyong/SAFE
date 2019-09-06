@@ -7,7 +7,6 @@ import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
 import org.renjin.script.RenjinScriptEngineFactory;
-import org.renjin.sexp.Logical;
 import org.renjin.sexp.StringVector;
 import org.renjin.sexp.Vector;
 import org.uma.jmetal.util.JMetalLogger;
@@ -105,6 +104,7 @@ public class SecondPhase {
 		JMetalLogger.logger.info("Settings.BEST_RUN in Phase 1: "+ Settings.BEST_RUN);
 		JMetalLogger.logger.info("Settings.RUNID in Phase 2: "+ Settings.GA_RUN);
 		JMetalLogger.logger.info("Settings.LR_WORKPATH     : "+ Settings.LR_WORKPATH);
+		JMetalLogger.logger.info("Settings.LR_STOP_CONDITION: "+ Settings.LR_STOP_CONDITION);
 		
 		
 		
@@ -148,12 +148,15 @@ public class SecondPhase {
 		// Sampling new data point and evaluation
 		int count = 0;
 		int solID = 0;
+		boolean meetCondition = false;
 		while (count < _maxIteration) {
 			// Learning model again with more data
 			if ((count != 0) && (count % _updateIteration == 0)) {
 				JMetalLogger.logger.info("update logistic regression " + count + "/" + _maxIteration);
 				this.update_model();
-				if (Settings.LR_STOP_CONDITION && this.check_stop_update()){
+				boolean check = this.check_stop_update();
+				if (Settings.LR_STOP_CONDITION && check){
+					meetCondition = check;
 					break;
 				}
 			}
@@ -181,6 +184,11 @@ public class SecondPhase {
 			count += 1;
 		} //while
 		
+		if (meetCondition == false) {
+			JMetalLogger.logger.info("update logistic regression " + count + "/" + _maxIteration);
+			this.update_model();
+			this.check_stop_update();
+		}
 		this.finalize_phase2();
 		JMetalLogger.logger.info("Finished to run");
 	}
@@ -350,16 +358,14 @@ public class SecondPhase {
 	}
 	
 	public boolean check_stop_update(){
-		JMetalLogger.logger.info("checking update");
 		boolean result=false;
 		try {
 			engine.eval(String.format("test.result <- calculate_metrics(base_model, test_data, %.2f, cntUpdate)", Settings.BORDER_PROBABILITY));
 			engine.eval("test.results <- rbind(test.results, test.result)");
-			
+			engine.eval("print(test.result)");
 			String test = "";
 			test = String.format("terminate.value <- test.%s(prev_model, base_model, testData=test_data, predictionLevel=%.2f)",
 					Settings.TEST_FUNCTION_NAME, Settings.BORDER_PROBABILITY);
-			JMetalLogger.logger.info(test);
 			engine.eval(test);
 			
 
@@ -379,10 +385,10 @@ public class SecondPhase {
 	public boolean finalize_phase2(){
 		boolean result=false;
 		try {
-			String resultfile = String.format("%s/%s/%s_result.csv", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename);
-			engine.eval(String.format("filename<- \"%s\"", resultfile));
-			engine.eval("write.table(test.results, filename, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
-			JMetalLogger.logger.info("Saved result into " +resultfile);
+			engine.eval(String.format("resultfile<- \"%s/%s/%s_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+			engine.eval(String.format("testfile<- \"%s/%s/%s_testdata.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+			engine.eval("write.table(test.results, resultfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+			engine.eval("write.table(test_data, testfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
 			result = true;
 			
 		} catch (ScriptException | EvalException e) {
@@ -392,6 +398,17 @@ public class SecondPhase {
 		return result;
 	}
 	
+	/*********************
+	 *
+	 */
+	
+	/**
+	 * convert R variable to Java long[]
+	 * @param varName
+	 * @return
+	 * @throws ScriptException
+	 * @throws EvalException
+	 */
 	public long[] get_row_longlist(String varName) throws ScriptException, EvalException {
 		long[] items = null;
 		
