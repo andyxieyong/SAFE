@@ -147,7 +147,7 @@ public class TestDataGenerator {
 			engine.eval(String.format("TIME_QUANTA<- %.2f", Settings.TIME_QUANTA));
 			engine.eval(String.format("RESOURCE_FILE<- \"%s\"", Settings.INPUT_FILE));
 			engine.eval("TASK_INFO <- read.csv(file=RESOURCE_FILE, header = TRUE)");
-			engine.eval("TASK_INFO<- data.frame(ID = c(1:34), TASK_INFO)");
+			engine.eval("TASK_INFO<- data.frame(ID = c(1:nrow(TASK_INFO)), TASK_INFO)");
 			engine.eval("colnames(TASK_INFO)<- c(\"ID\", \"NAME\", \"TYPE\", \"PRIORITY\", \"WCET.MIN\", \"WCET.MAX\", \"PERIOD\", \"INTER.MIN\", \"INTER.MAX\", \"DEADLINE\")");
 			String update_time_str =
 					"TASK_INFO$WCET.MIN = as.integer(round(TASK_INFO$WCET.MIN/TIME_QUANTA))\n" +
@@ -170,6 +170,10 @@ public class TestDataGenerator {
 			engine.eval("source(\"R/LogisticRegressionN/lib_quadratic.R\")");
 			
 			engine.eval("test_set <- data.frame()");
+			engine.eval("print(RESOURCE_FILE)");
+			engine.eval("print(get_uncertain_tasks())");
+			engine.eval("print(nrow(TASK_INFO))");
+			
 			
 		}
 		catch (ScriptException | EvalException e) {
@@ -178,7 +182,6 @@ public class TestDataGenerator {
 		}
 		return true;
 	}
-	
 	
 	public long[] get_row_longlist(String varName) throws ScriptException, EvalException {
 		long[] items = null;

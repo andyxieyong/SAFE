@@ -23,7 +23,7 @@ import lu.uni.svv.StressTesting.utils.Settings;
  * Deadline misses detection
  * 	- We count the number of deadline misses while the scheduling(by QUANTA_LENGTH)
  * 	- And, if the ready queue has tasks after being done scheduling(after QUANTA_LENGTH),
- * 			we will execute this scheduler by finishing all tasks in the ready queue.
+ * 			we will execute this scheduler by finishQuing all tasks in the ready queue.
  * @author jaekwon.lee
  *
  */
@@ -122,6 +122,12 @@ public class RMScheduler {
 			printer.println("Some error occurred. Program will now terminate: " + e);
 			e.printStackTrace();
 		}
+		if (missedDeadlines.size()>0) {
+			Task t = missedDeadlines.get(0);
+			int missed = (int) (t.FinishedTime - (t.ArrivedTime + t.Deadline));
+			printer.println(String.format("Deadline missed: Task%02d (%d)", t.ID, missed));
+		}
+		
 	}
 	
 	
@@ -299,7 +305,7 @@ public class RMScheduler {
 	
 	protected double checkDeadlineMisses(Task _T) { //int _tid, long _arrival_tq, long _started_tq, long _deadline_tq, long _finished_tq) {
 		int missed = (int)(_T.FinishedTime - (_T.ArrivedTime + _T.Deadline));
-		
+
 		// calculate deadline misses for evaluating
 		double factor = evaluateDeadlineMiss(_T, missed);
 		evaluatedValue = evaluatedValue + factor;
