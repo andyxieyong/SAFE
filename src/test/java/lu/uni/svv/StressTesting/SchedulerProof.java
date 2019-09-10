@@ -3,9 +3,15 @@ package lu.uni.svv.StressTesting;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.PriorityQueue;
+import java.util.Random;
 import java.util.logging.Level;
 
+import javafx.scene.layout.Priority;
 import junit.framework.TestCase;
+import lu.uni.svv.StressTesting.datatype.Task;
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
 import lu.uni.svv.StressTesting.scheduler.RMSchedulerEx;
 import lu.uni.svv.StressTesting.scheduler.RMSchedulerNorm;
@@ -33,6 +39,47 @@ public class SchedulerProof extends TestCase
 		}
 	}
 
+	public void testQueue() throws Exception{
+//		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 3000, "RMScheduler"); // append last item
+//		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 3000, "RMScheduler"); // append last item
+//		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 100); // full data set
+		TestingProblem problem = new TestingProblem("../res/samples/sample_mixed_1.csv", 0.1, 100, "RMSchedulerRange"); // append last item
+		TimeListSolution solution = problem.createSolution();
+		
+		int[] indexTable = new int[problem.Tasks.length];
+		Arrays.fill(indexTable, 0);
+		
+		PriorityQueue<Task> Q = new PriorityQueue<>(60000, queueComparator);
+		Random rand =new Random();
+		
+		for(int time=0; time<100; time++){
+			int tID = rand.nextInt(problem.Tasks.length) + 1;
+			Q.add(new Task(tID, indexTable[tID-1], 5, time,10, problem.Tasks[tID-1].Priority));
+			
+			indexTable[tID-1] += 1;
+		}
+		while(!Q.isEmpty()){
+			Task t = Q.poll();
+			System.out.println(t.str());
+		}
+	}
+	public Comparator<Task> queueComparator = new Comparator<Task>(){
+		@Override
+		public int compare(Task t1, Task t2) {
+			if (t1.Priority > t2.Priority)
+				return 1;
+			else if (t1.Priority < t2.Priority)
+				return -1;
+			else{
+				if (t1.ExecutionID < t2.ExecutionID)
+					return -1;
+				else if (t1.ExecutionID > t2.ExecutionID)
+					return 1;
+				return 0;
+			}
+		}
+	};
+	
 	/**
 	 * Test with Periodic tasks
 	 * No deadline misses
@@ -44,7 +91,9 @@ public class SchedulerProof extends TestCase
 //		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 100); // full data set
 		TestingProblem problem = new TestingProblem("../res/samples/sample_mixed_1.csv", 0.1, 100, "RMSchedulerRange"); // append last item
 		TimeListSolution solution = problem.createSolution();
-
+		
+		//testQueue(problem);
+		
 		RMScheduler.DETAIL = true;
 		RMScheduler.PROOF = true;
 //		RMScheduler scheduler = new RMScheduler(this);
