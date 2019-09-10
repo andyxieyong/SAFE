@@ -54,14 +54,16 @@ public class Settings {
 	public static String  LR_WORKPATH         = "seconds";
 	public static int     LR_INITIAL_SIZE     = 0;
 	public static String  TARGET_TASKLIST     = "";
-	public static boolean LR_STOP_CONDITION   = false;
 	
+	public static boolean STOP_CONDITION      = false;
+	public static String  STOP_DATA_TYPE      = "training";
+	public static String  STOP_FUNCTION_NAME  = "fpr";
+	public static double  STOP_ACCEPT_RATE    = 0.01;
 	public static double  TEST_RANGE_PROB     = 0.01;
-	public static double  TEST_ACCEPT_RATE    = 0.01;
+	
 	public static String  TEST_DATA           = "testdata";
 	public static int     TEST_NSAMPLES       = 100;
-	public static String  TEST_DATA_TYPE      = "training";
-	public static String  TEST_FUNCTION_NAME  = "fpr";
+	
 	
 	
 	//printing
@@ -116,10 +118,10 @@ public class Settings {
 		parser.addOption(false,"testSamples", DataType.INTEGER, null, "testSamples", "number of samples for testing of each model");
 		parser.addOption(false,"testData", DataType.STRING, null, "testData", "test data file");
 		parser.addOption(false,"testProbRange", DataType.DOUBLE, null, "testProbRange", "range of probability selecting test data");
-		parser.addOption(false,"testProbAccept", DataType.DOUBLE, null, "testProbAccept", "acceptance probability of second phase model");
-		parser.addOption(false,"testDataType", DataType.STRING, null, "testDataType", "test data type: training, new, initial, pool");
-		parser.addOption(false,"testFuncName", DataType.STRING, null, "testFuncName", "function name for testing to decide when we stop");
-		parser.addOption(false,"LRstopCondition", DataType.BOOLEAN, "x", "LRstopCondition", "Stop with stopping condition when this parameter set", false);
+		parser.addOption(false,"stopProbAccept", DataType.DOUBLE, null, "stopProbAccept", "acceptance probability of second phase model");
+		parser.addOption(false,"stopDataType", DataType.STRING, null, "stopDataType", "test data type: training, new, initial, pool");
+		parser.addOption(false,"stopFuncName", DataType.STRING, null, "stopFuncName", "function name for testing to decide when we stop");
+		parser.addOption(false,"stopCondition", DataType.BOOLEAN, "x", null, "Stop with stopping condition when this parameter set", false);
 		
 		// parsing args;
 		try{
@@ -178,13 +180,13 @@ public class Settings {
 		if (parser.containsParam("workPath"))       LR_WORKPATH = (String) parser.getParam("workPath");
 		if (parser.containsParam("LRinitSize"))     LR_INITIAL_SIZE = (Integer) parser.getParam("LRinitSize");
 		if (parser.containsParam("targets"))        TARGET_TASKLIST = (String) parser.getParam("targets");
+		if (parser.containsParam("stopProbAccept")) STOP_ACCEPT_RATE = (Double) parser.getParam("stopProbAccept");
+		if (parser.containsParam("stopDataType"))   STOP_DATA_TYPE = (String) parser.getParam("stopDataType");
+		if (parser.containsParam("stopFuncName"))   STOP_FUNCTION_NAME = (String) parser.getParam("stopFuncName");
+		if (parser.containsParam("stopCondition"))  STOP_CONDITION = (Boolean) parser.getParam("stopCondition");
 		if (parser.containsParam("testProbRange"))  TEST_RANGE_PROB = (Double) parser.getParam("testProbRange");
-		if (parser.containsParam("testProbAccept")) TEST_ACCEPT_RATE = (Double) parser.getParam("testProbAccept");
-		if (parser.containsParam("testSamples"))    TEST_NSAMPLES = (Integer) parser.getParam("testSamples");
-		if (parser.containsParam("testDataType"))   TEST_DATA_TYPE = (String) parser.getParam("testDataType");
-		if (parser.containsParam("testFuncName"))   TEST_FUNCTION_NAME = (String) parser.getParam("testFuncName");
-		if (parser.containsParam("LRstopCondition"))LR_STOP_CONDITION = (Boolean) parser.getParam("LRstopCondition");
 		if (parser.containsParam("testData"))       TEST_DATA = (String) parser.getParam("testData");
+		if (parser.containsParam("testSamples"))    TEST_NSAMPLES = (Integer) parser.getParam("testSamples");
 		
 		
 	}

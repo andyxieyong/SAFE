@@ -98,13 +98,15 @@ public class SecondPhase {
 	 */
 	public void run(String _run_type, int _updateIteration, int _maxIteration, double _probability) throws IOException {
 		// Print settings
-		JMetalLogger.logger.info("Settings.TEST_DATA_TYPE  : "+ Settings.TEST_DATA_TYPE);
-		JMetalLogger.logger.info("Settings.TEST_FUNC_NAME  : "+ Settings.TEST_FUNCTION_NAME);
-		JMetalLogger.logger.info("Settings.TEST_NSAMPLES   : "+ Settings.TEST_NSAMPLES);
 		JMetalLogger.logger.info("Settings.BEST_RUN in Phase 1: "+ Settings.BEST_RUN);
-		JMetalLogger.logger.info("Settings.RUNID in Phase 2: "+ Settings.GA_RUN);
-		JMetalLogger.logger.info("Settings.LR_WORKPATH     : "+ Settings.LR_WORKPATH);
-		JMetalLogger.logger.info("Settings.LR_STOP_CONDITION: "+ Settings.LR_STOP_CONDITION);
+		JMetalLogger.logger.info("Settings.RUNID in Phase 2 : "+ Settings.GA_RUN);
+		JMetalLogger.logger.info("Settings.LR_WORKPATH      : "+ Settings.LR_WORKPATH);
+		JMetalLogger.logger.info("Settings.TEST_DATA        : "+ Settings.TEST_DATA);
+		JMetalLogger.logger.info("Settings.TEST_NSAMPLES    : "+ Settings.TEST_NSAMPLES);
+		
+		JMetalLogger.logger.info("Settings.STOP_DATA_TYPE  : "+ Settings.STOP_DATA_TYPE);
+		JMetalLogger.logger.info("Settings.STOP_FUNC_NAME  : "+ Settings.STOP_FUNCTION_NAME);
+		JMetalLogger.logger.info("Settings.STOP_CONDITION  : "+ Settings.STOP_CONDITION);
 		
 		
 		
@@ -155,7 +157,7 @@ public class SecondPhase {
 				JMetalLogger.logger.info("update logistic regression " + count + "/" + _maxIteration);
 				this.update_model();
 				boolean check = this.check_stop_update();
-				if (Settings.LR_STOP_CONDITION && check){
+				if (Settings.STOP_CONDITION && check){
 					meetCondition = check;
 					break;
 				}
@@ -202,7 +204,7 @@ public class SecondPhase {
 			engine.eval(String.format("TIME_QUANTA<- %.2f", Settings.TIME_QUANTA));
 			engine.eval(String.format("RESOURCE_FILE<- \"%s\"", Settings.INPUT_FILE));
 			engine.eval("TASK_INFO <- read.csv(file=RESOURCE_FILE, header = TRUE)");
-			engine.eval("TASK_INFO<- data.frame(ID = c(1:34), TASK_INFO)");
+			engine.eval("TASK_INFO<- data.frame(ID = c(1:nrow(TASK_INFO)), TASK_INFO)");
 			engine.eval("colnames(TASK_INFO)<- c(\"ID\", \"NAME\", \"TYPE\", \"PRIORITY\", \"WCET.MIN\", \"WCET.MAX\", \"PERIOD\", \"INTER.MIN\", \"INTER.MAX\", \"DEADLINE\")");
 			String update_time_str =
 				"TASK_INFO$WCET.MIN = as.integer(round(TASK_INFO$WCET.MIN/TIME_QUANTA))\n" +
@@ -244,7 +246,10 @@ public class SecondPhase {
 		//Load formula from formulaPath
 		String formula="";
 		try{
-			formula = new String(Files.readAllBytes(Paths.get(formulaPath)), StandardCharsets.UTF_8);
+			if (formulaPath.length()==0)
+				formulaPath = String.format("%s/formula/T%s_S%d_run%02d", Settings.BASE_PATH, Settings.TARGET_TASKLIST, Settings.N_SAMPLE_WCET, Settings.BEST_RUN);
+			formula = new String(Files.readAllBytes(Paths.get(formulaPath)), StandardCharsets.UTF_8).trim();
+			JMetalLogger.logger.info("Loaded formula from " + formulaPath);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
@@ -256,23 +261,7 @@ public class SecondPhase {
 			engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXPORT_PATH, filepath));
 			engine.eval("training <- read.csv(datafile, header=TRUE)");
 			
-			if (Settings.TEST_DATA_TYPE.compareTo("initial")==0){
-				engine.eval("half_size <-nrow(training)/2");
-				engine.eval("testPool <-training[(half_size+1):nrow(training),]");
-				engine.eval("training <-training[1:half_size,]");
-				
-				engine.eval("positive <-testPool[testPool$result==0,]");
-				engine.eval("negative <-testPool[testPool$result==1,]");
-				engine.eval("negative <-negative[sample(nrow(negative),nrow(positive)),]");
-				engine.eval("test_data <- rbind(positive, negative)");
-				Vector dataVector = (Vector)engine.eval("nrow(positive)");
-				int nPositive = dataVector.getElementAsInt(0);
-				dataVector = (Vector)engine.eval("nrow(negative)");
-				int nNegative = dataVector.getElementAsInt(0);
-				JMetalLogger.logger.info("Test Data (positive): " + nPositive);
-				JMetalLogger.logger.info("Test Data (negative): " + nNegative);
-			}
-			else if (Settings.TEST_DATA_TYPE.compareTo("pool")==0){
+			if (Settings.TEST_DATA.length()!=0){
 				engine.eval(String.format("test_data <-read.csv(sprintf(\"%s/testdata/%s\"), header=TRUE)", basePath, Settings.TEST_DATA));
 				engine.eval("positive <-test_data[test_data$result==0,]");
 				engine.eval("negative <-test_data[test_data$result==1,]");
@@ -287,6 +276,26 @@ public class SecondPhase {
 				JMetalLogger.logger.info("Test Data (negative): " + nNegative);
 			}
 			
+			if (Settings.STOP_DATA_TYPE.compareTo("initial")==0){
+				engine.eval("half_size <-nrow(training)/2");
+				engine.eval("testPool <-training[(half_size+1):nrow(training),]");
+				engine.eval("training <-training[1:half_size,]");
+				
+				engine.eval("positive <-testPool[testPool$result==0,]");
+				engine.eval("negative <-testPool[testPool$result==1,]");
+				engine.eval("negative <-negative[sample(nrow(negative),nrow(positive)),]");
+				engine.eval("termination_data <- rbind(positive, negative)");
+				Vector dataVector = (Vector)engine.eval("nrow(positive)");
+				int nPositive = dataVector.getElementAsInt(0);
+				dataVector = (Vector)engine.eval("nrow(negative)");
+				int nNegative = dataVector.getElementAsInt(0);
+				JMetalLogger.logger.info("Test Data (positive): " + nPositive);
+				JMetalLogger.logger.info("Test Data (negative): " + nNegative);
+			}
+			else if (Settings.STOP_DATA_TYPE.compareTo("pool")==0){
+				engine.eval("termination_data <- test_data");
+			}
+			
 			if (initialTrainingSize!=0){
 				// sampling and save the result to the datafile
 				engine.eval(String.format("training <- training[sample(nrow(training), %d), ]",initialTrainingSize));  //
@@ -299,7 +308,10 @@ public class SecondPhase {
 			engine.eval(String.format("formula_str<- \"%s\"",formula));
 			engine.eval("base_model <- glm(formula = formula_str, family = \"binomial\", data = training)");
 			engine.eval("cntUpdate <- 0");
-			engine.eval(String.format("test.results <- calculate_metrics(base_model, test_data, %.2f, cntUpdate)", Settings.BORDER_PROBABILITY));
+
+			if (Settings.TEST_DATA.length()!=0) {
+				engine.eval(String.format("test.results <- calculate_metrics(base_model, test_data, %.2f, cntUpdate)", Settings.BORDER_PROBABILITY));
+			}
 			
 			
 			JMetalLogger.logger.info("Initialized model: " + getModelText("base_model"));
@@ -343,11 +355,11 @@ public class SecondPhase {
 			JMetalLogger.logger.info("Updated model: " + getModelText("base_model"));
 			
 			
-			if (Settings.TEST_DATA_TYPE.compareTo("training")==0)
-				engine.eval("test_data<-training");
-			else if (Settings.TEST_DATA_TYPE.compareTo("new")==0) {
+			if (Settings.STOP_DATA_TYPE.compareTo("training")==0)
+				engine.eval("termination_data<-training");
+			else if (Settings.STOP_DATA_TYPE.compareTo("new")==0) {
 				engine.eval("tSize<-nrow(training)");
-				engine.eval(String.format("test_data<-training[(tSize-%d):tSize,]", Settings.UPDATE_ITERATION));
+				engine.eval(String.format("termination_data<-training[(tSize-%d):tSize,]", Settings.UPDATE_ITERATION));
 			}
 			
 		} catch (ScriptException | EvalException e) {
@@ -360,19 +372,22 @@ public class SecondPhase {
 	public boolean check_stop_update(){
 		boolean result=false;
 		try {
-			engine.eval(String.format("test.result <- calculate_metrics(base_model, test_data, %.2f, cntUpdate)", Settings.BORDER_PROBABILITY));
-			engine.eval("test.results <- rbind(test.results, test.result)");
-			engine.eval("print(test.result)");
+			if (Settings.TEST_DATA.length()!=0) {
+				engine.eval(String.format("test.result <- calculate_metrics(base_model, test_data, %.2f, cntUpdate)", Settings.BORDER_PROBABILITY));
+				engine.eval("test.results <- rbind(test.results, test.result)");
+				engine.eval("print(test.result)");
+			}
+			
 			String test = "";
-			test = String.format("terminate.value <- test.%s(prev_model, base_model, testData=test_data, predictionLevel=%.2f)",
-					Settings.TEST_FUNCTION_NAME, Settings.BORDER_PROBABILITY);
+			test = String.format("terminate.value <- test.%s(prev_model, base_model, testData=termination_data, predictionLevel=%.2f)",
+					Settings.STOP_FUNCTION_NAME, Settings.BORDER_PROBABILITY);
 			engine.eval(test);
 			
 
 			Vector dataVector = (Vector)engine.eval("terminate.value");
 			double test_result = dataVector.getElementAsDouble(0);
 			JMetalLogger.logger.info("TEST_FUNC_RESULT: " + test_result);
-			if (test_result <= Settings.TEST_ACCEPT_RATE)
+			if (test_result <= Settings.STOP_ACCEPT_RATE)
 				result = true;
 			
 		} catch (ScriptException | EvalException e) {
@@ -385,10 +400,12 @@ public class SecondPhase {
 	public boolean finalize_phase2(){
 		boolean result=false;
 		try {
-			engine.eval(String.format("resultfile<- \"%s/%s/%s_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
-			engine.eval(String.format("testfile<- \"%s/%s/%s_testdata.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
-			engine.eval("write.table(test.results, resultfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
-			engine.eval("write.table(test_data, testfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+			if (Settings.TEST_DATA.length()!=0) {
+				engine.eval(String.format("testfile<- \"%s/%s/%s_test_data.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+				engine.eval(String.format("resultfile<- \"%s/%s/%s_test_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+				engine.eval("write.table(test_data, testfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+				engine.eval("write.table(test.results, resultfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+			}
 			result = true;
 			
 		} catch (ScriptException | EvalException e) {
