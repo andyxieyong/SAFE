@@ -1,4 +1,4 @@
-package lu.uni.svv.StressTesting.search;
+package lu.uni.svv.StressTesting.search.update;
 
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;

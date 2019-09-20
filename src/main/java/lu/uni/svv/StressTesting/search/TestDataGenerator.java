@@ -3,6 +3,7 @@ package lu.uni.svv.StressTesting.search;
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
+import lu.uni.svv.StressTesting.search.update.Phase1Loader;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
 import org.renjin.script.RenjinScriptEngineFactory;
