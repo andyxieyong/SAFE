@@ -221,6 +221,7 @@ public class RMScheduler {
 		int result = 0;
 		boolean preemption = false;
 		Task T = null;
+		boolean missedTime = false;
 		
 		// CPU time increased!
 		timeLapsed++;
@@ -245,6 +246,8 @@ public class RMScheduler {
 			//Execute!
 			T.RemainTime--;
 			CPUusages++;
+			
+			missedTime = (timeLapsed > (T.ArrivedTime + T.Deadline));
 			
 			// updated status
 			previousTask = lastExecutedTask;
@@ -276,6 +279,10 @@ public class RMScheduler {
 				if (preemption == true)	started = "*";
 				else					started = "+";
 			}
+			
+			//showing deadline miss time
+			if (missedTime) terminated ="x";
+			
 			//After running if remaining time becomes zero, i.e. process is completely executed
 			if ((lastExecutedTask != null) && (lastExecutedTask.RemainTime == 0)) {
 				
@@ -293,7 +300,7 @@ public class RMScheduler {
 			}
 			
 			if (T!=null && RMScheduler.PROOF == true) {
-				int type = (terminated.compareTo(" ")!=0)? 4: (started.compareTo(" ")!=0)?2:3;
+				int type = (terminated.compareTo(" ")!=0 && terminated.compareTo("x")!=0)? 4: (started.compareTo(" ")!=0)?2:3;
 				timelines.get(T.ID -1)[(int)timeLapsed-1] = type;
 			}
 		}
@@ -463,7 +470,7 @@ public class RMScheduler {
 		if (RMScheduler.PROOF == true) {
 			timelines = new ArrayList<int[]>();
 			for (TaskDescriptor task : this.problem.Tasks)
-				timelines.add(new int[(int) this.problem.QUANTA_LENGTH]);
+				timelines.add(new int[(int) this.problem.QUANTA_LENGTH*2]);
 		}
 		
 		executedTasks = new ArrayList<Task>();
@@ -536,7 +543,7 @@ public class RMScheduler {
 		{
 			boolean isActive = false;
 			for(int idx:IDXs) {
-				if(timelines.get(idx)[tq] != 0) {
+				if(timelines.get(idx)[tq] > 1) {
 					isActive = true;
 					break;
 				}
@@ -614,11 +621,11 @@ public class RMScheduler {
 			sb.append(String.format("Task %02d: ", tID+1));
 			for (int x=0; x<this.problem.QUANTA_LENGTH; x++) {
 				switch(timelines.get(tID)[x]) {
-					case 0:	sb.append("0 "); break;
-					case 1:	sb.append("A "); break;
-					case 2:	sb.append("S "); break;
-					case 3:	sb.append("W "); break;
-					case 4:	sb.append("E "); break;
+					case 0:	sb.append("0 "); break;     // Not working
+					case 1:	sb.append("A "); break;     // Arrived
+					case 2:	sb.append("S "); break;     // Started
+					case 3:	sb.append("W "); break;     // Working
+					case 4:	sb.append("E "); break;     // Ended
 				}
 			}
 			sb.append("\n");
@@ -668,4 +675,28 @@ public class RMScheduler {
 		return "";
 	}
 	
+	public Task getMissedDeadlineTask(int idx){
+		if (this.missedDeadlines.size()>idx)
+			return this.missedDeadlines.get(idx);
+		return null;
+	}
+	
+	public String getAllExecutedTasksString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("TaskID,ExecutionID,Arrival,Started,Finished,Deadline,Misses(finish-deadline),Pow\n");
+		
+		for (int tid=1; tid<=problem.Tasks.length; tid++) {
+			for (Task item:executedTasks) {
+				if (tid!=item.ID) continue;
+				
+				long deadline_tq = (item.ArrivedTime + item.Deadline);
+				int missed = (int)(item.FinishedTime - deadline_tq);
+				double fitness_item = evaluateDeadlineMiss(item, missed);
+				
+				sb.append(String.format("%d,%d,%d,%d,%d,%d,%d,%.32e\n",
+						item.ID, item.ExecutionID,item.ArrivedTime, item.StartedTime, item.FinishedTime, deadline_tq, missed, fitness_item));
+			}
+		}
+		return sb.toString();
+	}
 }

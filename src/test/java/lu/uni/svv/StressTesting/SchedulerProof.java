@@ -26,7 +26,7 @@ import lu.uni.svv.StressTesting.utils.Settings;
  */
 public class SchedulerProof extends TestCase
 {
-	public static String BASE_PATH = "logs_test";
+	public static String BASE_PATH = "../results/TimelineLX3";
 	
 	public SchedulerProof( String testName )
 	{
@@ -35,7 +35,7 @@ public class SchedulerProof extends TestCase
 		// open Directory
 		File dir = new File(BASE_PATH);
 		if (dir.exists() == false) {
-			dir.mkdir();
+			dir.mkdirs();
 		}
 	}
 
@@ -43,7 +43,7 @@ public class SchedulerProof extends TestCase
 //		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 3000, "RMScheduler"); // append last item
 //		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 3000, "RMScheduler"); // append last item
 //		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 100); // full data set
-		TestingProblem problem = new TestingProblem("../res/samples/sample_mixed_1.csv", 0.1, 100, "RMSchedulerRange"); // append last item
+		TestingProblem problem = new TestingProblem("../res/samples/sample_mixed_1.csv", 0.1, 1000, "RMSchedulerRange"); // append last item
 		TimeListSolution solution = problem.createSolution();
 		
 		int[] indexTable = new int[problem.Tasks.length];
@@ -89,7 +89,8 @@ public class SchedulerProof extends TestCase
 //		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 3000, "RMScheduler"); // append last item
 //		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 3000, "RMScheduler"); // append last item
 //		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 100); // full data set
-		TestingProblem problem = new TestingProblem("../res/samples/sample_mixed_1.csv", 0.1, 100, "RMSchedulerRange"); // append last item
+//		TestingProblem problem = new TestingProblem("../res/samples/sample_mixed_1.csv", 0.1, 100, "RMSchedulerRange"); // append last item
+		TestingProblem problem = new TestingProblem("../res/LS_data_20190905_fixed.csv", 0.1, 3000, "RMSchedulerRange"); // append last item
 		TimeListSolution solution = problem.createSolution();
 		
 		//testQueue(problem);
@@ -132,6 +133,56 @@ public class SchedulerProof extends TestCase
 		}
 		result_writer.close();
 		System.out.println("All test are done.");
+	}
+	
+	/**
+	 * Test with Periodic tasks
+	 * No deadline misses
+	 */
+	public void testLuxSpace() throws Exception {
+		String workingPath = String.format("%s/testcases", BASE_PATH);
+		String schedulerPath = String.format("%s/scheduler", BASE_PATH);
+		// open Directory
+		File dir = new File(workingPath);
+		if (dir.exists() == false) dir.mkdirs();
+		dir = new File(schedulerPath);
+		if (dir.exists() == false) dir.mkdirs();
+		
+		TestingProblem problem = new TestingProblem("../res/LS_data_20190905_fixed.csv", 0.1, 6000, "RMSchedulerRange"); // append last item
+		RMScheduler.DETAIL = true;
+		RMScheduler.PROOF = true;
+		
+		PrintStream resultsStream = new PrintStream(new File(BASE_PATH + "/message.txt"));
+		
+		for(int testID=0; testID < 1000; testID++){
+			System.out.println(String.format("Testing %d ...", testID));
+			RMScheduler scheduler = new RMSchedulerRange(problem, Settings.TASK_FITNESS);
+			TimeListSolution solution = problem.createSolution();
+			try {
+				PrintStream printer = new PrintStream(new File(String.format("%s/cpulog_%d.log", workingPath, testID)));
+				scheduler.setPrinter(printer);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+			scheduler.run(solution);
+			
+			String details = scheduler.getAllExecutedTasksString();
+			GAWriter writer = new GAWriter(String.format("executions_%d.csv", testID), Level.INFO,  null, schedulerPath);
+			writer.info(details);
+			writer.close();
+			
+			Task t = scheduler.getMissedDeadlineTask(0);
+			if (t==null){
+				resultsStream.println(String.format("Test %d:\tNo Deadline miss",testID));
+			}
+			else{
+				int missed = (int) (t.FinishedTime - (t.ArrivedTime + t.Deadline));
+				resultsStream.println(String.format("Test %d:\tDeadline missed: Task%02d (%d)", testID, t.ID, missed));
+				System.out.println(String.format("Deadline missed: Task%02d (%d)", t.ID, missed));
+			}
+		}
+		System.out.println("Finished all");
+		resultsStream.close();
 	}
 
 }
