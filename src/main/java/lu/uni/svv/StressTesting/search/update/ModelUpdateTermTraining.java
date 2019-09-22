@@ -11,20 +11,15 @@ public class ModelUpdateTermTraining extends ModelUpdate {
 		super(_targetTasks);
 	}
 	
-	public boolean prepareTerminationData() {
+	public boolean prepareTerminationData()  throws ScriptException, EvalException{
 		super.prepareTerminationData();
 		JMetalLogger.logger.info("Termination data will be updated every model update");
 		return true;
 	}
 	
-	public boolean updateTerminationData(){
-		try {
-			engine.eval("termination_data<-training");
+	public boolean updateTerminationData() throws ScriptException, EvalException{
+		engine.eval("termination_data<-training");
 
-		} catch (ScriptException | EvalException e) {
-			JMetalLogger.logger.info("R Error:: " + e.getMessage());
-			return false;
-		}
 		return true;
 		
 	}

@@ -13,15 +13,10 @@ public class ModelUpdateTermPool extends ModelUpdate {
 		super(_targetTasks);
 	}
 	
-	public boolean prepareTerminationData() {
+	public boolean prepareTerminationData()  throws ScriptException, EvalException{
 		super.prepareTerminationData();
-		try {
-			engine.eval("termination_data <- test_data");
 
-		} catch (ScriptException | EvalException e) {
-			JMetalLogger.logger.info("R Error:: " + e.getMessage());
-			return false;
-		}
+		engine.eval("termination_data <- test_data");
 		return true;
 	}
 }

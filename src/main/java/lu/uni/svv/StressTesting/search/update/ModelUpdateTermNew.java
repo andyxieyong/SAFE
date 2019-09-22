@@ -12,21 +12,17 @@ public class ModelUpdateTermNew extends ModelUpdate {
 		super(_targetTasks);
 	}
 	
-	public boolean prepareTerminationData() {
+	public boolean prepareTerminationData() throws ScriptException, EvalException {
 		super.prepareTerminationData();
 		JMetalLogger.logger.info("Termination data will be updated every model update");
 		return true;
 	}
 	
-	public boolean updateTerminationData(){
+	public boolean updateTerminationData() throws ScriptException, EvalException{
 		// use newly added data in the training
-		try {
-			engine.eval("tSize<-nrow(training)");
-			engine.eval(String.format("termination_data<-training[(tSize-%d):tSize,]", Settings.UPDATE_ITERATION));
-		} catch (ScriptException | EvalException e) {
-			JMetalLogger.logger.info("R Error:: " + e.getMessage());
-			return false;
-		}
+		engine.eval("tSize<-nrow(training)");
+		engine.eval(String.format("termination_data<-training[(tSize-%d):tSize,]", Settings.UPDATE_ITERATION));
+
 		return true;
 		
 	}

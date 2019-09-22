@@ -2,7 +2,10 @@ package lu.uni.svv.StressTesting.search;
 
 import lu.uni.svv.StressTesting.search.update.*;
 import lu.uni.svv.StressTesting.utils.Settings;
+import org.renjin.eval.EvalException;
 import org.uma.jmetal.util.JMetalLogger;
+
+import javax.script.ScriptException;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.LogRecord;
@@ -102,7 +105,11 @@ public class SecondPhase {
 		else{
 			object = new ModelUpdate(targetTasks);
 		}
-		
-		object.run();
+		try {
+			object.run();
+		} catch(ScriptException | EvalException e){
+			JMetalLogger.logger.info("R Error:: " + e.getMessage());
+			e.printStackTrace();
+		}
 	}
 }

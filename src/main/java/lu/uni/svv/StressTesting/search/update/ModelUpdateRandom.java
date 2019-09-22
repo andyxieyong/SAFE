@@ -15,23 +15,19 @@ public class ModelUpdateRandom extends ModelUpdate {
 		super(_targetTasks);
 	}
 	
-	public long[] samplingNewPoints(int nSample, int nCandidate, double P){
+	public long[] samplingNewPoints(int nSample, int nCandidate, double P)  throws ScriptException, EvalException{
 		// sampling new points by random
 		long[] samples = null;
-		try {
-			engine.eval("tnames <- get_task_names(training)");
-			String codeText = String.format("sampled_data <- get_random_sampling(tnames, nSample=%d)", nSample);
-			engine.eval(codeText);
-			
-			StringVector nameVector = (StringVector)engine.eval("colnames(sampled_data)");
-			String[] names = nameVector.toArray();
-			
-			samples = get_row_longlist("sampled_data");
-			
-		} catch (ScriptException | EvalException e) {
-			JMetalLogger.logger.info("R Error:: " + e.getMessage());
-			return null;
-		}
+		
+		engine.eval("tnames <- get_task_names(training)");
+		String codeText = String.format("sampled_data <- get_random_sampling(tnames, nSample=%d)", nSample);
+		engine.eval(codeText);
+		
+		StringVector nameVector = (StringVector)engine.eval("colnames(sampled_data)");
+		String[] names = nameVector.toArray();
+		
+		samples = get_row_longlist("sampled_data");
+
 		
 		return samples;
 	}
