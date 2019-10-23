@@ -113,9 +113,6 @@ public class SecondPhase {
 		else if (Settings.STOP_DATA_TYPE.compareTo("new") == 0) {
 			object = new ModelUpdateTermNew(targetTasks);
 		}
-		else if (Settings.STOP_DATA_TYPE.compareTo("line") == 0) {
-			object = new ModelUpdateTermLine(targetTasks);
-		}
 		else{
 			JMetalLogger.logger.fine("Error:: Unknown Stop data type");
 			return ;
