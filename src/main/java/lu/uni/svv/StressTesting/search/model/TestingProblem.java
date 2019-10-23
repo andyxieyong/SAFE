@@ -107,6 +107,8 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	@Override
 	public void evaluate(TimeListSolution solution) {
 		// get scheduler object
+//		RMScheduler.DETAIL = true;
+//		RMScheduler.PROOF = true;
 		RMScheduler scheduler = null;
 		try {
 			Constructor constructor = schedulerClass.getConstructors()[0];
@@ -296,6 +298,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			aJob.MinIA 		= getTimeFromString(cols[6].trim(), 0);
 			aJob.MaxIA		= getTimeFromString(cols[7].trim(), this.QUANTA_LENGTH);
 			aJob.Deadline 	= getTimeFromString(cols[8].trim(), this.QUANTA_LENGTH);
+			aJob.Severity 	= cols[9].trim();	// Severity type
 			
 			listJobs.add(aJob);
 		}
@@ -347,14 +350,14 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	public String getInputs(){
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append("Task Name,Task Type,Task Priority,WCET min,WCET max,Task Period (ms),Minimum interarrival-time (ms),Maximum Interarrival time,Task Deadline\n");
+		sb.append("Task Name,Task Type,Task Priority,WCET min,WCET max,Task Period (ms),Minimum interarrival-time (ms),Maximum Interarrival time,Task Deadline, Deadline Type\n");
 		for(TaskDescriptor task:this.Tasks)
 		{
-			sb.append(String.format("%s,%s,%d,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f\n",
+			sb.append(String.format("%s,%s,%d,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%s\n",
 									task.Name, task.Type.toString(), task.Priority,
 									task.MinWCET * TIME_QUANTA, task.MaxWCET* TIME_QUANTA,
 									task.Period * TIME_QUANTA,
-									task.MinIA* TIME_QUANTA, task.MaxIA* TIME_QUANTA, task.Deadline* TIME_QUANTA));
+									task.MinIA* TIME_QUANTA, task.MaxIA* TIME_QUANTA, task.Deadline* TIME_QUANTA, task.Severity));
 		}
 		return sb.toString();
 	}

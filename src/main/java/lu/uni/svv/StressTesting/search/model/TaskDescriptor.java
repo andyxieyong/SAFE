@@ -18,6 +18,7 @@ public class TaskDescriptor implements Comparable<TaskDescriptor>{
 	public long		MaxIA;		// Maximum inter-arrival time, This variable is for Aperiodic or Sporadic Task
 	public long		Deadline;	// Time period which a task should be finished
 	public long		Priority;	// Fixed Priority read from input data
+	public String	Severity;	// {Hard, Soft}
 	
 	
 	public TaskDescriptor() {
@@ -31,9 +32,10 @@ public class TaskDescriptor implements Comparable<TaskDescriptor>{
 		MaxIA  		= 0;
 		Deadline 	= 0;
 		Priority 	= 0;
+		Severity    = "";
 	}
 	
-	public TaskDescriptor(String _name, TaskType _type, long _minWCET, long _maxWCET, long _period, long _minIA, long _maxIA, long _deadline) {
+	public TaskDescriptor(String _name, TaskType _type, long _minWCET, long _maxWCET, long _period, long _minIA, long _maxIA, long _deadline, String _severity) {
 		ID 		    = TaskDescriptor.UNIQUE_ID++;
 		Name 		= _name;
 		Type 		= _type;
@@ -44,6 +46,7 @@ public class TaskDescriptor implements Comparable<TaskDescriptor>{
 		MaxIA  		= _maxIA;
 		Deadline 	= _deadline;
 		Priority 	= 0;
+		Severity    = _severity;
 	}
 
 	@Override
