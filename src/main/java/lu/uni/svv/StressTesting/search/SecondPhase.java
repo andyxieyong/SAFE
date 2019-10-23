@@ -6,6 +6,7 @@ import org.renjin.eval.EvalException;
 import org.uma.jmetal.util.JMetalLogger;
 
 import javax.script.ScriptException;
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.LogRecord;
