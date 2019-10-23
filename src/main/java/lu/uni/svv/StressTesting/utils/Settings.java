@@ -63,6 +63,7 @@ public class Settings {
 	
 	public static String  TEST_DATA           = "testdata";
 	public static int     TEST_NSAMPLES       = 100;
+	public static int     TEST_NGROUP         = 10;
 	
 	
 	
@@ -115,8 +116,9 @@ public class Settings {
 		parser.addOption(false,"workPath", DataType.STRING, null, "workPath", "the path for saving workdata in second phase");
 		parser.addOption(false,"LRinitSize", DataType.INTEGER, null, "LRinitSize", "the number of initial training data size for the second phase");
 		parser.addOption(false,"targets", DataType.STRING, null, "targets", "target tasks for second phase");
-		parser.addOption(false,"testSamples", DataType.INTEGER, null, "testSamples", "number of samples for testing of each model");
 		parser.addOption(false,"testData", DataType.STRING, null, "testData", "test data file");
+		parser.addOption(false,"testSamples", DataType.INTEGER, null, "testSamples", "number of samples for testing of each model");
+		parser.addOption(false,"testGroups", DataType.INTEGER, null, "testGroups", "the number of test data set");
 		parser.addOption(false,"testProbRange", DataType.DOUBLE, null, "testProbRange", "range of probability selecting test data");
 		parser.addOption(false,"stopProbAccept", DataType.DOUBLE, null, "stopProbAccept", "acceptance probability of second phase model");
 		parser.addOption(false,"stopDataType", DataType.STRING, null, "stopDataType", "test data type: training, new, initial, pool");
@@ -187,6 +189,7 @@ public class Settings {
 		if (parser.containsParam("testProbRange"))  TEST_RANGE_PROB = (Double) parser.getParam("testProbRange");
 		if (parser.containsParam("testData"))       TEST_DATA = (String) parser.getParam("testData");
 		if (parser.containsParam("testSamples"))    TEST_NSAMPLES = (Integer) parser.getParam("testSamples");
+		if (parser.containsParam("testGroups"))     TEST_NGROUP = (Integer) parser.getParam("testGroups");
 		
 		
 	}

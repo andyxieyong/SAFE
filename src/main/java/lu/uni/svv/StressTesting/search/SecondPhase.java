@@ -47,12 +47,27 @@ public class SecondPhase {
 	
 	public static void displaySettings(){
 		JMetalLogger.logger.info("Settings.BEST_RUN in Phase 1: "+ Settings.BEST_RUN);
-		JMetalLogger.logger.info("Settings.INPUT_FILE: "+ Settings.INPUT_FILE);
+		JMetalLogger.logger.info("Settings.INPUT_FILE         : "+ Settings.INPUT_FILE);
+		JMetalLogger.logger.info("Settings.MAX_ITERATION      : "+ Settings.MAX_ITERATION);
+		JMetalLogger.logger.info("Settings.UPDATE_ITERATION   : "+ Settings.UPDATE_ITERATION);
+		JMetalLogger.logger.info("Settings.TARGET_TASKLIST    : "+ Settings.TARGET_TASKLIST);
+		JMetalLogger.logger.info("Settings.GA_POPULATION      : "+ Settings.GA_POPULATION);
+		JMetalLogger.logger.info("Settings.N_SAMPLE_WCET      : "+ Settings.N_SAMPLE_WCET);
+		JMetalLogger.logger.info("");
+		JMetalLogger.logger.info("Settings.RUNID in Phase 2   : "+ Settings.GA_RUN);
+		JMetalLogger.logger.info("Settings.MAX_ITERATION      : "+ Settings.MAX_ITERATION);
+		JMetalLogger.logger.info("Settings.UPDATE_ITERATION   : "+ Settings.UPDATE_ITERATION);
+		JMetalLogger.logger.info("Settings.LR_WORKPATH        : "+ Settings.LR_WORKPATH);
+		JMetalLogger.logger.info("Settings.TEST_DATA          : "+ Settings.TEST_DATA);
+		JMetalLogger.logger.info("Settings.TEST_NSAMPLES      : "+ Settings.TEST_NSAMPLES);
+		JMetalLogger.logger.info("Settings.TEST_NGROUP        : "+ Settings.TEST_NGROUP);
 		
-		JMetalLogger.logger.info("Settings.RUNID in Phase 2 : "+ Settings.GA_RUN);
-		JMetalLogger.logger.info("Settings.LR_WORKPATH      : "+ Settings.LR_WORKPATH);
-		JMetalLogger.logger.info("Settings.TEST_DATA        : "+ Settings.TEST_DATA);
-		JMetalLogger.logger.info("Settings.TEST_NSAMPLES    : "+ Settings.TEST_NSAMPLES);
+		JMetalLogger.logger.info("");
+		JMetalLogger.logger.info("Settings.STOP_DATA_TYPE     : "+ Settings.STOP_DATA_TYPE);
+		JMetalLogger.logger.info("Settings.STOP_FUNC_NAME     : "+ Settings.STOP_FUNCTION_NAME);
+		JMetalLogger.logger.info("Settings.STOP_CONDITION     : "+ Settings.STOP_CONDITION);
+		JMetalLogger.logger.info("");
+		JMetalLogger.logger.info("Settings.STOP_ACCEPT_RATE  : " + Settings.STOP_ACCEPT_RATE);
 		
 		JMetalLogger.logger.info("Settings.STOP_DATA_TYPE  : "+ Settings.STOP_DATA_TYPE);
 		JMetalLogger.logger.info("Settings.STOP_FUNC_NAME  : "+ Settings.STOP_FUNCTION_NAME);
@@ -81,34 +96,41 @@ public class SecondPhase {
 		
 		//Run phase 2
 		ModelUpdate object = null;
-		if (Settings.STOP_CONDITION) {
-			if (Settings.STOP_DATA_TYPE.compareTo("initial") == 0) {
-				object = new ModelUpdateTermInitial(targetTasks);
-			}
-			else if (Settings.STOP_DATA_TYPE.compareTo("training") == 0) {
-				object = new ModelUpdateTermTraining(targetTasks);
-			}
-			else if (Settings.STOP_DATA_TYPE.compareTo("pool") == 0) {
-				object = new ModelUpdateTermPool(targetTasks);
-			}
-			else if (Settings.STOP_DATA_TYPE.compareTo("new") == 0) {
-				object = new ModelUpdateTermNew(targetTasks);
-			}
-			else if (Settings.STOP_DATA_TYPE.compareTo("line") == 0) {
-				object = new ModelUpdateTermLine(targetTasks);
-			}
-			else{
-				JMetalLogger.logger.fine("Error:: Unknown Stop data type");
-				return ;
-			}
+		//if (Settings.STOP_CONDITION) {
+		if (Settings.TEST_DATA.compareTo("kfold")==0){
+			object = new ModelUpdateKFold(targetTasks);
+		}
+		else if (Settings.STOP_DATA_TYPE.compareTo("initial") == 0) {
+			object = new ModelUpdateTermInitial(targetTasks);
+		}
+		else if (Settings.STOP_DATA_TYPE.compareTo("training") == 0) {
+			object = new ModelUpdateTermTraining(targetTasks);
+		}
+		else if (Settings.STOP_DATA_TYPE.compareTo("pool") == 0) {
+			object = new ModelUpdateTermPool(targetTasks);
+		}
+		else if (Settings.STOP_DATA_TYPE.compareTo("new") == 0) {
+			object = new ModelUpdateTermNew(targetTasks);
+		}
+		else if (Settings.STOP_DATA_TYPE.compareTo("line") == 0) {
+			object = new ModelUpdateTermLine(targetTasks);
 		}
 		else{
-			object = new ModelUpdate(targetTasks);
+			JMetalLogger.logger.fine("Error:: Unknown Stop data type");
+			return ;
 		}
+//		}
+//		else{
+//			object = new ModelUpdate(targetTasks);
+//		}
 		try {
 			object.run();
 		} catch(ScriptException | EvalException e){
 			JMetalLogger.logger.info("R Error:: " + e.getMessage());
+			e.printStackTrace();
+		}
+		catch(Exception e){
+			JMetalLogger.logger.info("Error:: " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
