@@ -321,8 +321,10 @@ public class RMScheduler {
 		if (RMScheduler.DETAIL == true) executedTasks.add(_T);
 		
 		if ( missed > 0 ){
-			missedDeadlines.add(_T);
-			return 1;
+			if (this.taskFitness == 0 || _T.ID == this.taskFitness){
+				missedDeadlines.add(_T);
+				return 1;
+			}
 		}
 		return 0;
 	}
