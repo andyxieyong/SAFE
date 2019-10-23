@@ -7,6 +7,7 @@ import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
 import org.renjin.script.RenjinScriptEngineFactory;
+import org.renjin.sexp.DoubleVector;
 import org.renjin.sexp.StringVector;
 import org.renjin.sexp.Vector;
 import org.uma.jmetal.util.JMetalLogger;
@@ -28,6 +29,7 @@ public class ModelUpdate {
 	
 	String basePath;
 	TestingProblem problem;
+	List<TimeListSolution> solutions= null;
 	
 	//	RMScheduler scheduler = null;
 	Constructor constructor = null;
@@ -73,16 +75,16 @@ public class ModelUpdate {
 	 * Run the second phase
 	 * @throws IOException
 	 */
-	public void run() throws IOException, ScriptException, EvalException {
+	public void run() throws IOException, ScriptException, EvalException, Exception {
 		
-		JMetalLogger.logger.info("Loading solutions from phase 1...");
-		List<TimeListSolution> solutions = phase1.loadMultiTaskSolutions(this.basePath, Settings.BEST_RUN);
+		//JMetalLogger.logger.info("Loading solutions from phase 1...");
+		solutions = phase1.loadMultiTaskSolutions(this.basePath, Settings.BEST_RUN);
 		if (solutions == null) {
 			JMetalLogger.logger.info("There are no solutions in the path:" + this.basePath);
 			return;
 		}
 		
-		JMetalLogger.logger.info("Loading formula for phase 2...");
+		//JMetalLogger.logger.info("Loading formula for phase 2...");
 		String formula = loadFormula(Settings.LR_FORMULA_PATH);
 		if (formula == null) {
 			JMetalLogger.logger.info("Failed to load formula in " + Settings.LR_FORMULA_PATH);
@@ -117,32 +119,51 @@ public class ModelUpdate {
 			}
 		}
 		
-		if (Settings.STOP_CONDITION) {
-			JMetalLogger.logger.info("Preparing termination data ...");
-			if(!this.prepareTerminationData()) {
-				JMetalLogger.logger.info("Failed to load input data");
-				return;
-			}
+		//if (Settings.STOP_CONDITION) {
+		JMetalLogger.logger.info("Preparing termination data ...");
+		if(!this.prepareTerminationData()) {
+			JMetalLogger.logger.info("Failed to load input data");
+			return;
 		}
+		//}
+		
 		
 		JMetalLogger.logger.info("Learning initial model ...");
 		if (!this.initializeModel(formula)) {
 			JMetalLogger.logger.info("Error to initialze model");
 			return;
 		}
-		if (Settings.TEST_DATA.length() != 0 && !evaluateModel()){
+		
+		if (this.checkingBalance()<0.2){
+			JMetalLogger.logger.info("Adjusting training data balance to be above 20%...");
+			if (!this.adjustingBalance(workfile)) {
+				JMetalLogger.logger.info("Error to adjust data balancing");
+				return;
+			}
+		
+			JMetalLogger.logger.info("Learning initial model with balance data...");
+			if (!this.initializeModel(formula)) {
+				JMetalLogger.logger.info("Error to initialze model");
+				return;
+			}
+		}
+		JMetalLogger.logger.info("Saving task info...");
+		this.saveTaskInfo();
+		
+		
+		if (Settings.TEST_DATA.length() != 0 && !evaluateModel(0)){
 			JMetalLogger.logger.info("Failed to evaluate model with test data");
 			return;
 		}
 		
 		JMetalLogger.logger.info("Update model process ...");
-		if (!this.update(solutions, workfile)) {
+		if (!this.update(workfile)) {
 			JMetalLogger.logger.info("Failed to update model process");
 			return;
 		}
 	}
 	
-	public boolean update(String workfile) throws ScriptException, EvalException{
+	public boolean update(String workfile) throws ScriptException, EvalException, Exception{
 		// Sampling new data point and evaluation
 		int count = 0;
 		int solID = 0;
@@ -152,12 +173,11 @@ public class ModelUpdate {
 			if ((count != 0) && (count % Settings.UPDATE_ITERATION == 0)) {
 				JMetalLogger.logger.info("update logistic regression " + count + "/" + Settings.MAX_ITERATION);
 				this.updateModel();
-				if (Settings.TEST_DATA.length() != 0 && !evaluateModel()){
+				if (Settings.TEST_DATA.length() != 0 && !evaluateModel(count/Settings.MAX_ITERATION)){
 					JMetalLogger.logger.info("Failed to evaluate model with test data in "+ count + "/" + Settings.MAX_ITERATION);
 					return false;
 				}
-				boolean check = this.checkStopCondition();
-				if (Settings.STOP_CONDITION && check) break;
+				if (Settings.STOP_CONDITION && this.checkStopCondition()) break;
 			}
 			
 			//Sampling
@@ -187,7 +207,7 @@ public class ModelUpdate {
 		if (Settings.TEST_DATA.length()!=0 && !this.saveTestResults()) {
 			JMetalLogger.logger.fine("Failed to save test results");
 		}
-		if (!Settings.STOP_CONDITION && !this.saveTerminationResults()) {
+		if (Settings.STOP_CONDITION && !this.saveTerminationResults()) {
 			JMetalLogger.logger.fine("Failed to save termination results");
 		}
 		JMetalLogger.logger.info("Finished to run Phase 2");
@@ -247,6 +267,7 @@ public class ModelUpdate {
 		engine.eval("UNIT<- 1");
 		engine.eval(String.format("TIME_QUANTA<- %.2f", Settings.TIME_QUANTA));
 		engine.eval(String.format("RESOURCE_FILE<- \"%s\"", Settings.INPUT_FILE));
+		engine.eval("print(RESOURCE_FILE)");
 		engine.eval("TASK_INFO <- read.csv(file=RESOURCE_FILE, header = TRUE)");
 		engine.eval("TASK_INFO<- data.frame(ID = c(1:nrow(TASK_INFO)), TASK_INFO)");
 		engine.eval("colnames(TASK_INFO)<- c(\"ID\", \"NAME\", \"TYPE\", \"PRIORITY\", \"WCET.MIN\", \"WCET.MAX\", \"PERIOD\", \"INTER.MIN\", \"INTER.MAX\", \"DEADLINE\")");
@@ -260,7 +281,7 @@ public class ModelUpdate {
 		engine.eval(update_time_str);
 		engine.eval("source(\"R/LogisticRegressionN/lib_quadratic.R\")");
 		engine.eval("source(\"R/LogisticRegressionN/lib_RQ3.R\")");
-		
+		engine.eval("source(\"R/LogisticRegressionN/lib_pruning.R\")");
 		engine.eval("get_uncertain_tasks<-function(){\n" +
 				"    diffWCET <- TASK_INFO$WCET.MAX - TASK_INFO$WCET.MIN\n" +
 				"    tasks <- c()\n" +
@@ -290,6 +311,26 @@ public class ModelUpdate {
 		}
 		return true;
 	}
+	
+	public double checkingBalance() throws ScriptException, EvalException{
+		// Check imbalance way
+		// Minimum rate : 20%
+		engine.eval("positive <- nrow(training[training$result==0,])");
+		engine.eval("negative <- nrow(training[training$result==1,])");
+		engine.eval("if (positive > negative){\n"+
+				"    balanceRate <- negative/positive\n"+
+				"    balanceSide <- \"positive\"\n"+
+				"    balanceProb <- 0.0001\n"+
+				"}else{\n"+
+				"    balanceRate <- positive/negative\n"+
+				"    balanceSide <- \"negative\"\n"+
+				"    balanceProb <- 0.9999\n"+
+				"}");
+		
+		// get the rate information
+		Vector dataVector = (Vector) engine.eval("balanceRate");
+		return dataVector.getElementAsDouble(0);
+	}
 
 	/**
 	 *
@@ -304,11 +345,59 @@ public class ModelUpdate {
 		engine.eval("base_model <- glm(formula = formula_str, family = \"binomial\", data = training)");
 		engine.eval("cntUpdate <- 0");
 		engine.eval("cntUpdate <- 0");
+
+		// keep coefficients
+		engine.eval("coef <- t(data.frame(base_model$coefficients))");
+		engine.eval("colnames(coef) <- get_raw_names(names(base_model$coefficients))");
+		engine.eval("coef.item <- data.frame(nUpdate=cntUpdate, TrainingSize=nrow(training), coef)");
+		engine.eval("rownames(coef.item) <- c(cntUpdate)");
+		engine.eval("coef.results <- coef.item");
 		
 		JMetalLogger.logger.info("Initialized model: " + getModelText("base_model"));
 
 		return true;
 	}
+	
+	
+	public boolean adjustingBalance(String inputpath) throws ScriptException, EvalException {
+		//TODO:: Where should I get uncertainIDs
+		engine.eval("uncertainIDs <- c(30, 33)");
+		engine.eval("intercepts <- get_intercepts(base_model, balanceProb, uncertainIDs)");
+		engine.eval("training <- prunning(training, balanceSide, intercepts, uncertainIDs)");
+		
+		// Prune WCET ranges
+		engine.eval("print(data.frame(TASK_INFO$WCET.MIN, TASK_INFO$WCET.MAX))");
+		engine.eval("print(intercepts)");
+		engine.eval("print(uncertainIDs)");
+		engine.eval("for (tID in uncertainIDs){\n" +
+				"    tname <- sprintf(\"T%d\", tID)\n" +
+				"    TASK_INFO$WCET.MAX[[tID]] <- ceiling(intercepts[[tname]])\n" +
+				"}");
+		engine.eval("print(data.frame(TASK_INFO$WCET.MIN, TASK_INFO$WCET.MAX))");
+		
+		// load data
+		engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXPORT_PATH, inputpath));
+		
+		// save training data
+		engine.eval("write.table(training, datafile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+		return true;
+	}
+	
+	public boolean saveTaskInfo() throws ScriptException, EvalException {
+		engine.eval("taskinfo <- TASK_INFO");
+		engine.eval("taskinfo <- taskinfo[-c(1)]");
+		engine.eval("taskinfo$WCET.MIN = taskinfo$WCET.MIN*TIME_QUANTA");
+		engine.eval("taskinfo$WCET.MAX = taskinfo$WCET.MAX*TIME_QUANTA");
+		engine.eval("taskinfo$PERIOD = taskinfo$PERIOD*TIME_QUANTA");
+		engine.eval("taskinfo$INTER.MIN = taskinfo$INTER.MIN*TIME_QUANTA");
+		engine.eval("taskinfo$INTER.MAX = taskinfo$INTER.MAX*TIME_QUANTA");
+		engine.eval("taskinfo$DEADLINE = taskinfo$DEADLINE*TIME_QUANTA");
+		engine.eval(String.format("taskinfofile<- \"%s/%s/%s_input.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH,filename));
+		engine.eval("write.table(taskinfo, taskinfofile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+
+		return true;
+	}
+	
 	
 	/**
 	 * Sample new points
@@ -372,6 +461,13 @@ public class ModelUpdate {
 		engine.eval("prev_model<-base_model");
 		engine.eval("base_model <- glm(formula = prev_model$formula, family = \"binomial\", data = training)");
 		engine.eval("cntUpdate <- cntUpdate + 1");
+		
+		engine.eval("coef <- t(data.frame(base_model$coefficients))");
+		engine.eval("colnames(coef) <- get_raw_names(names(base_model$coefficients))");
+		engine.eval("coef.item <- data.frame(nUpdate=cntUpdate, TrainingSize=nrow(training), coef)");
+		engine.eval("rownames(coef.item) <- c(cntUpdate)");
+		engine.eval("coef.results <- rbind(coef.results, coef.item)");
+		
 		JMetalLogger.logger.info("Updated model: " + getModelText("base_model"));
 		
 		updateTerminationData();
@@ -400,7 +496,7 @@ public class ModelUpdate {
 		return true;
 	}
 	
-	public boolean checkStopCondition() throws ScriptException, EvalException{
+	public boolean checkStopCondition() throws ScriptException, EvalException, Exception {
 		boolean result=false;
 		String code = "";
 		code = String.format("terminate.value <- test.%s(prev_model, base_model, testData=termination_data, predictionLevel=%.2f)",
@@ -420,39 +516,69 @@ public class ModelUpdate {
 	////////////////////////////////////////////////////////////////////////
 	// Related test model
 	////////////////////////////////////////////////////////////////////////
-	public boolean includeTestData()throws ScriptException, EvalException{
+	public boolean includeTestData()throws ScriptException, EvalException, Exception{
+		if (Settings.TEST_NSAMPLES<=0)
+		{
+			JMetalLogger.logger.severe("You need to set TEST_NSAMPLES to get test values");
+			throw new Exception("Setting Error for TEST_NSAMPLES");
+		}
+		
 		engine.eval("test.results <- data.frame()");
 		
-		engine.eval(String.format("test_data <-read.csv(sprintf(\"%s/testdata/%s\"), header=TRUE)", basePath, Settings.TEST_DATA));
+		String cmd = String.format("test_data <-read.csv(sprintf(\"%s/testdata/%s\"), header=TRUE)", basePath, Settings.TEST_DATA);
+		engine.eval(cmd);
 		engine.eval("positive <-test_data[test_data$result==0,]");
 		engine.eval("negative <-test_data[test_data$result==1,]");
-		engine.eval(String.format("positive <-positive[sample(nrow(positive), %d),]", Settings.TEST_NSAMPLES / 2));
-		engine.eval(String.format("negative <-negative[sample(nrow(negative), %d),]", Settings.TEST_NSAMPLES / 2));
-		engine.eval("test_data <-rbind(positive, negative)");
-		Vector dataVector = (Vector) engine.eval("nrow(positive)");
-		int nPositive = dataVector.getElementAsInt(0);
-		dataVector = (Vector) engine.eval("nrow(negative)");
-		int nNegative = dataVector.getElementAsInt(0);
-		JMetalLogger.logger.info("Test Data (positive): " + nPositive);
-		JMetalLogger.logger.info("Test Data (negative): " + nNegative);
-
+		engine.eval("test.samples <- list()");
+		
+		int[] nPositives = new int[Settings.TEST_NGROUP];
+		int[] nNegatives = new int[Settings.TEST_NGROUP];
+		for(int i=0; i<Settings.TEST_NGROUP; i++) {
+			engine.eval(String.format("sub.positive <-positive[sample(nrow(positive), %d),]", Settings.TEST_NSAMPLES / 2));
+			engine.eval(String.format("sub.negative <-negative[sample(nrow(negative), %d),]", Settings.TEST_NSAMPLES / 2));
+			engine.eval(String.format("test.samples[[%d]] <-rbind(sub.positive, sub.negative)", i+1));
+			
+			Vector dataVector = (Vector) engine.eval("nrow(sub.positive)");
+			nPositives[i] = dataVector.getElementAsInt(0);
+			dataVector = (Vector) engine.eval("nrow(sub.negative)");
+			nNegatives[i] = dataVector.getElementAsInt(0);
+		}
+		
+		JMetalLogger.logger.info("Test Group Count    : " + Settings.TEST_NGROUP);
+		JMetalLogger.logger.info("Test Data (positive): " + nPositives[0]);
+		JMetalLogger.logger.info("Test Data (negative): " + nNegatives[0]);
+		
+		engine.eval(String.format("testfile <- \"%s/%s/%s_test_data.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+		engine.eval("test.sample <- data.frame(TestSet=rep(1, nrow(test.samples[[1]])), test.samples[[1]])");
+		engine.eval("write.table(test.sample, testfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+		for(int x=1; x<Settings.TEST_NGROUP; x++) {
+			engine.eval(String.format("test.sample <- data.frame(TestSet=rep(%d, nrow(test.samples[[%d]])), test.samples[[%d]])",x+1,x+1,x+1));
+			engine.eval("write.table(test.sample, testfile, append = TRUE, sep = \",\", dec = \".\",row.names = FALSE, col.names = FALSE)");
+		}
 		return true;
 	}
 	
-	public boolean evaluateModel()throws ScriptException, EvalException{
-		engine.eval(String.format("test.results <- calculate_metrics(base_model, test_data, %.2f, cntUpdate)", Settings.BORDER_PROBABILITY));
-		engine.eval("test.results <- rbind(test.results, test.result)");
-		engine.eval("print(test.result)");
+	public boolean evaluateModel(int _cntUpdate)throws ScriptException, EvalException{
+		engine.eval("test.result.group <- data.frame()");
+		for(int x=0; x<Settings.TEST_NGROUP; x++) {
+			String cmd = String.format("result.item <- calculate_metrics(base_model, test.samples[[%d]], %.2f, cntUpdate)", x+1, Settings.BORDER_PROBABILITY);
+			engine.eval(cmd);
+			engine.eval(String.format("result.item <- data.frame(TestSet=%d, result.item)", x+1));
+			engine.eval("test.result.group <- rbind(test.result.group, result.item)");
+		}
+		engine.eval("print(test.result.group)");
+		engine.eval("test.results <- rbind(test.results, test.result.group)");
 		return true;
-		
 	}
 	
 	public boolean saveTestResults()throws ScriptException, EvalException{
-		engine.eval(String.format("testfile<- \"%s/%s/%s_test_data.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
-		engine.eval(String.format("resultfile<- \"%s/%s/%s_test_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
-		engine.eval("write.table(test_data, testfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+		engine.eval(String.format("resultfile <- \"%s/%s/%s_test_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
 		engine.eval("write.table(test.results, resultfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
 		
+		engine.eval(String.format("modelfile <- \"%s/%s/%s_model_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+		engine.eval("write.table(coef.results, modelfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
+		engine.eval("print(coef.results)");
+		engine.eval("print(format(coef.results, digits=16,scientific=T))");
 		return true;
 	}
 	
