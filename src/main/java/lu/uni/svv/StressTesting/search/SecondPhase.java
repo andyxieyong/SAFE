@@ -6,7 +6,9 @@ import org.renjin.eval.EvalException;
 import org.uma.jmetal.util.JMetalLogger;
 
 import javax.script.ScriptException;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.LogRecord;
@@ -90,7 +92,13 @@ public class SecondPhase {
 		// Settings update
 		if(Settings.N_SAMPLE_WCET==0) Settings.N_SAMPLE_WCET=1;   // Scheduling option:
 		int[] targetTasks = convertToIntArray(Settings.TARGET_TASKLIST);
-		Settings.INPUT_FILE = Settings.BASE_PATH + String.format("/Task%02d/input.csv", targetTasks[0]);
+		File inputFile = new File(Settings.BASE_PATH + String.format("/Task%02d/input_reduced.csv", targetTasks[0]));
+		if (inputFile.exists()){
+			Settings.INPUT_FILE = inputFile.getPath();
+		}
+		else {
+			Settings.INPUT_FILE = Settings.BASE_PATH + String.format("/Task%02d/input.csv", targetTasks[0]);
+		}
 		
 		// Showing settings
 		displaySettings();

@@ -126,16 +126,10 @@ public class ModelUpdate {
 			return;
 		}
 		//}
-		
-		
+
 		JMetalLogger.logger.info("Learning initial model ...");
-		if (!this.initializeModel(formula)) {
-			JMetalLogger.logger.info("Error to initialze model");
-			return;
-		}
-		
-		if (this.checkingBalance()<0.2){
-			JMetalLogger.logger.info("Adjusting training data balance to be above 20%...");
+		if(Settings.INPUT_FILE.endsWith("reduced.csv")){
+			JMetalLogger.logger.info("Adjusting training data in a balanced way...");
 			if (!this.adjustingBalance(workfile)) {
 				JMetalLogger.logger.info("Error to adjust data balancing");
 				return;
@@ -146,9 +140,17 @@ public class ModelUpdate {
 				JMetalLogger.logger.info("Error to initialze model");
 				return;
 			}
+//			JMetalLogger.logger.info("Saving task info...");
+//			this.saveTaskInfo();
 		}
-		JMetalLogger.logger.info("Saving task info...");
-		this.saveTaskInfo();
+		else{
+			
+			if (!this.initializeModel(formula)) {
+				JMetalLogger.logger.info("Error to initialze model");
+				return;
+			}
+		}
+
 		
 		
 		if (Settings.TEST_DATA.length() != 0 && !evaluateModel(0)){
@@ -279,9 +281,9 @@ public class ModelUpdate {
 						"TASK_INFO$INTER.MAX = as.integer(round(TASK_INFO$INTER.MAX/TIME_QUANTA))\n" +
 						"TASK_INFO$DEADLINE = as.integer(round(TASK_INFO$DEADLINE/TIME_QUANTA))";
 		engine.eval(update_time_str);
-		engine.eval("source(\"R/LogisticRegressionN/lib_quadratic.R\")");
-		engine.eval("source(\"R/LogisticRegressionN/lib_RQ3.R\")");
-		engine.eval("source(\"R/LogisticRegressionN/lib_pruning.R\")");
+		engine.eval("source(\"R/libs/lib_quadratic.R\")");
+		engine.eval("source(\"R/libs/lib_RQ3.R\")");
+		engine.eval("source(\"R/libs/lib_pruning.R\")");
 		engine.eval("get_uncertain_tasks<-function(){\n" +
 				"    diffWCET <- TASK_INFO$WCET.MAX - TASK_INFO$WCET.MIN\n" +
 				"    tasks <- c()\n" +
@@ -320,11 +322,9 @@ public class ModelUpdate {
 		engine.eval("if (positive > negative){\n"+
 				"    balanceRate <- negative/positive\n"+
 				"    balanceSide <- \"positive\"\n"+
-				"    balanceProb <- 0.0001\n"+
 				"}else{\n"+
 				"    balanceRate <- positive/negative\n"+
 				"    balanceSide <- \"negative\"\n"+
-				"    balanceProb <- 0.9999\n"+
 				"}");
 		
 		// get the rate information
@@ -362,18 +362,13 @@ public class ModelUpdate {
 	public boolean adjustingBalance(String inputpath) throws ScriptException, EvalException {
 		//TODO:: Where should I get uncertainIDs
 		engine.eval("uncertainIDs <- c(30, 33)");
-		engine.eval("intercepts <- get_intercepts(base_model, balanceProb, uncertainIDs)");
-		engine.eval("training <- prunning(training, balanceSide, intercepts, uncertainIDs)");
+		engine.eval("intercepts<-data.frame(T30=TASK_INFO$WCET.MAX[[30]], T33=TASK_INFO$WCET.MAX[[33]])");
+		engine.eval("df<-list()");
+		engine.eval("for(tID in uncertainIDs){df[sprintf(\"T%d\",tID)] <- TASK_INFO$WCET.MAX[[tID]]}");
+		engine.eval("intercepts<-as.data.frame(df)");
+		checkingBalance();
 		
-		// Prune WCET ranges
-		engine.eval("print(data.frame(TASK_INFO$WCET.MIN, TASK_INFO$WCET.MAX))");
-		engine.eval("print(intercepts)");
-		engine.eval("print(uncertainIDs)");
-		engine.eval("for (tID in uncertainIDs){\n" +
-				"    tname <- sprintf(\"T%d\", tID)\n" +
-				"    TASK_INFO$WCET.MAX[[tID]] <- ceiling(intercepts[[tname]])\n" +
-				"}");
-		engine.eval("print(data.frame(TASK_INFO$WCET.MIN, TASK_INFO$WCET.MAX))");
+		engine.eval("training <- prunning(training, balanceSide, intercepts, uncertainIDs)");
 		
 		// load data
 		engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXPORT_PATH, inputpath));
@@ -392,7 +387,7 @@ public class ModelUpdate {
 		engine.eval("taskinfo$INTER.MIN = taskinfo$INTER.MIN*TIME_QUANTA");
 		engine.eval("taskinfo$INTER.MAX = taskinfo$INTER.MAX*TIME_QUANTA");
 		engine.eval("taskinfo$DEADLINE = taskinfo$DEADLINE*TIME_QUANTA");
-		engine.eval(String.format("taskinfofile<- \"%s/%s/%s_input.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH,filename));
+		engine.eval(String.format("taskinfofile<- \"%s/Task%02d/input_reduced.csv\"", Settings.BASE_PATH, targetTasks[0]));
 		engine.eval("write.table(taskinfo, taskinfofile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
 
 		return true;
