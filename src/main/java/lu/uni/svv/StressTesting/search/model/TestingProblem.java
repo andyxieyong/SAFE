@@ -177,20 +177,20 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			}
 			sampledata.info(sb.toString());
 		}
-		solution.setObjective(0, AverageList(fitnessList));
+		solution.setObjective(0, MinimumList(fitnessList));
 		solution.setObjectiveList(0, fitnessList);
 		solution.setByproduct(byproduct.toString());
 		
 		sampledata.close();
 	}
 	
-	public double AverageList(FitnessList list){
-		double avg = 0.0;
-		for (int x=0; x<list.size(); x++){
-			avg = avg + list.get(x);
+	public double MinimumList(FitnessList list){
+		double min = list.get(0);
+		for (int x=1; x<list.size(); x++){
+			if (list.get(x)<=min)
+				min = list.get(x);
 		}
-		avg = avg / list.size();
-		return avg;
+		return min;
 	}
 	
 	private String getUncertainTasksString(String header, List<Integer> uncertainTasks){
