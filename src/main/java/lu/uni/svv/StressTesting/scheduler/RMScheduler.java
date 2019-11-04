@@ -12,6 +12,7 @@ import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.utils.RandomGenerator;
 import lu.uni.svv.StressTesting.utils.Settings;
+import weka.core.pmml.jaxbbindings.True;
 
 
 /**
@@ -41,7 +42,7 @@ public class RMScheduler {
 	private List<Task>  missedDeadlines;
 	private double  evaluatedValue;
 	private long        CPUusages;
-	protected int       taskFitness;
+	protected int[]       targetTasks;
 	
 	
 	/* For Debugging */
@@ -56,9 +57,9 @@ public class RMScheduler {
 	HashMap<Integer, Long> WCETSamples = null;// for storing sampled WCET
 	
 	
-	public RMScheduler(TestingProblem _problem, int _taskFitness) {
+	public RMScheduler(TestingProblem _problem, int[] _targetTasks) {
 		problem = _problem;
-		taskFitness = _taskFitness;
+		targetTasks = _targetTasks;
 		
 		initialize();
 		
@@ -318,21 +319,26 @@ public class RMScheduler {
 		evaluatedValue = evaluatedValue + factor;
 		
 		// For Debugging
-		if (RMScheduler.DETAIL == true) executedTasks.add(_T);
+		if (RMScheduler.DETAIL) executedTasks.add(_T);
 		
-		if ( missed > 0 ){
-			if (this.taskFitness == 0 || _T.ID == this.taskFitness){
-				missedDeadlines.add(_T);
-				return 1;
-			}
+		if ( missed > 0 && isTargetTask(_T.ID) ){
+			missedDeadlines.add(_T);
+			return 1;
 		}
 		return 0;
 	}
 	
-	protected double evaluateDeadlineMiss(Task _T, int _missed){
-		if (this.taskFitness == 0 || _T.ID == this.taskFitness){
-			return 0.0;
+	protected boolean isTargetTask(int _id){
+		if (this.targetTasks.length==0) return true;
+		
+		for (int ID :this.targetTasks){
+			if (_id==ID) return true;
 		}
+		return false;
+	}
+	
+	protected double evaluateDeadlineMiss(Task _T, int _missed){
+		if ( !isTargetTask(_T.ID) ) return 0.0;
 		return (_missed>0) ? 1 : 0;
 	}
 	

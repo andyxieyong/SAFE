@@ -23,8 +23,8 @@ public class RMSchedulerMin extends RMScheduler{
 	
 	protected int[]     minimumMissed;
 	
-	public RMSchedulerMin(TestingProblem _problem, int _taskFitness) {
-		super(_problem, _taskFitness);
+	public RMSchedulerMin(TestingProblem _problem, int[] _targetTasks) {
+		super(_problem, _targetTasks);
 		
 		minimumMissed = new int[_problem.Tasks.length];
 		Arrays.fill(minimumMissed, (int)_problem.QUANTA_LENGTH);
@@ -35,7 +35,7 @@ public class RMSchedulerMin extends RMScheduler{
 		//save minimum of missed value
 		if (Math.abs(_missed) < minimumMissed[_T.ID-1]) minimumMissed[_T.ID-1] = Math.abs(_missed);
 		
-		if (!(this.taskFitness == 0 || _T.ID == this.taskFitness)) return 0.0;
+		if (!isTargetTask(_T.ID)) return 0.0;
 		
 		return _missed;
 	}
@@ -50,7 +50,7 @@ public class RMSchedulerMin extends RMScheduler{
 		double a = 2;
 		for (int x=0; x<minimumMissed.length; x ++) {
 			int ID = x + 1;
-			if (this.taskFitness == 0 || ID == this.taskFitness) {
+			if (isTargetTask(ID)) {
 				result = result + Math.pow(a, Math.abs(minimumMissed[x]));
 			}
 		}

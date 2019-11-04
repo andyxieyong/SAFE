@@ -28,8 +28,8 @@ public class RMSchedulerRange extends RMScheduler{
 	public int[] maximumMissed;
 	public List<Task> bestExecutions;
 	
-	public RMSchedulerRange(TestingProblem _problem, int _taskFitness) {
-		super(_problem, _taskFitness);
+	public RMSchedulerRange(TestingProblem _problem, int[] _targetTasks) {
+		super(_problem, _targetTasks);
 		
 		initialize();
 	}
@@ -65,13 +65,16 @@ public class RMSchedulerRange extends RMScheduler{
 	public double getEvaluatedValue() {
 		double fitness = 0.0;
 		
-		if (this.taskFitness==0){
+		if (this.targetTasks.length==0){
 			for (int id=0; id<maximumMissed.length; id++){
 				fitness += maximumMissed[id];
 			}
 		}
 		else{
-			fitness = maximumMissed[this.taskFitness-1];
+			for (int id: this.targetTasks){
+				// ID in the targetTasks are started number 1
+				fitness += maximumMissed[id-1];
+			}
 		}
 		
 		return fitness;
