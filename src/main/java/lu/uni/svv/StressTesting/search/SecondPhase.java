@@ -3,6 +3,7 @@ package lu.uni.svv.StressTesting.search;
 import lu.uni.svv.StressTesting.search.update.*;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
+import org.uma.jmetal.util.JMetalException;
 import org.uma.jmetal.util.JMetalLogger;
 
 import javax.script.ScriptException;
@@ -92,7 +93,9 @@ public class SecondPhase {
 		// Settings update
 		if(Settings.N_SAMPLE_WCET==0) Settings.N_SAMPLE_WCET=1;   // Scheduling option:
 		int[] targetTasks = convertToIntArray(Settings.TARGET_TASKLIST);
-		File inputFile = new File(Settings.BASE_PATH + String.format("/Task%02d/input_reduced.csv", targetTasks[0]));
+		Arrays.sort(targetTasks);
+		int lastTask = targetTasks[targetTasks.length-1];
+		File inputFile = new File(Settings.BASE_PATH + String.format("/Task%02d/input_reduced_run%02d.csv", lastTask, Settings.BEST_RUN));
 		if (inputFile.exists()){
 			Settings.INPUT_FILE = inputFile.getPath();
 		}
@@ -133,7 +136,11 @@ public class SecondPhase {
 //			object = new ModelUpdate(targetTasks);
 //		}
 		try {
+			long initTime = System.currentTimeMillis();
 			object.run();
+			long computingTime = System.currentTimeMillis() - initTime ;
+			JMetalLogger.logger.info("Total execution time: " + computingTime + "ms");
+			
 		} catch(ScriptException | EvalException e){
 			JMetalLogger.logger.info("R Error:: " + e.getMessage());
 			e.printStackTrace();
