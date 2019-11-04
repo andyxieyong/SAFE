@@ -109,6 +109,9 @@ public class SecondPhase {
 		if (Settings.TEST_DATA.compareTo("kfold")==0){
 			object = new ModelUpdateKFold(targetTasks);
 		}
+		else if (Settings.STOP_DATA_TYPE.compareTo("refine")==0){
+			object = new ModelUpdateRefine(targetTasks);
+		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("initial") == 0) {
 			object = new ModelUpdateTermInitial(targetTasks);
 		}

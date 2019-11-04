@@ -140,8 +140,6 @@ public class ModelUpdate {
 				JMetalLogger.logger.info("Error to initialze model");
 				return;
 			}
-//			JMetalLogger.logger.info("Saving task info...");
-//			this.saveTaskInfo();
 		}
 		else{
 			
@@ -169,12 +167,13 @@ public class ModelUpdate {
 		// Sampling new data point and evaluation
 		int count = 0;
 		int solID = 0;
+		double borderProbability = Settings.BORDER_PROBABILITY;
 
 		while (count <= Settings.MAX_ITERATION) {
 			// Learning model again with more data
 			if ((count != 0) && (count % Settings.UPDATE_ITERATION == 0)) {
 				JMetalLogger.logger.info("update logistic regression " + count + "/" + Settings.MAX_ITERATION);
-				this.updateModel();
+				borderProbability = this.updateModel(borderProbability);
 				if (Settings.TEST_DATA.length() != 0 && !evaluateModel(count/Settings.MAX_ITERATION)){
 					JMetalLogger.logger.info("Failed to evaluate model with test data in "+ count + "/" + Settings.MAX_ITERATION);
 					return false;
@@ -188,7 +187,7 @@ public class ModelUpdate {
 				sampleWCET = samplingNewPointsRandom(1);
 			}
 			else{
-				sampleWCET = this.samplingNewPoints(1, Settings.SAMPLE_CANDIDATES, Settings.BORDER_PROBABILITY);
+				sampleWCET = this.samplingNewPoints(1, Settings.SAMPLE_CANDIDATES, borderProbability);
 			}
 			
 			//Evaluate using scheduler
@@ -205,6 +204,8 @@ public class ModelUpdate {
 			solID = (solID + 1) % solutions.size();
 			count += 1;
 		} //while
+		
+		saveModelResults();
 		
 		if (Settings.TEST_DATA.length()!=0 && !this.saveTestResults()) {
 			JMetalLogger.logger.fine("Failed to save test results");
@@ -252,8 +253,10 @@ public class ModelUpdate {
 	public String loadFormula(String formulaPath) {
 		String formula = "";
 		try {
-			if (formulaPath.length() == 0)
-				formulaPath = String.format("%s/formula/T%s_S%d_run%02d", Settings.BASE_PATH, Settings.TARGET_TASKLIST, Settings.N_SAMPLE_WCET, Settings.BEST_RUN);
+			if (formulaPath.length() == 0) {
+				int lastTask = targetTasks[targetTasks.length-1];
+				formulaPath = String.format("%s/formula/T%s_S%d_run%02d", Settings.BASE_PATH, lastTask,Settings.N_SAMPLE_WCET, Settings.BEST_RUN);
+			}
 			formula = new String(Files.readAllBytes(Paths.get(formulaPath)), StandardCharsets.UTF_8).trim();
 			JMetalLogger.logger.info("Loaded formula from " + formulaPath);
 		} catch (IOException e) {
@@ -264,12 +267,13 @@ public class ModelUpdate {
 	}
 	
 	public boolean settingEnvironment() throws ScriptException, EvalException{
+		JMetalLogger.logger.info("Load input tasks info from " + Settings.INPUT_FILE);
 		engine.eval("library('org.renjin.cran:MASS')");
 		engine.eval("library('org.renjin.cran:MLmetrics')");
 		engine.eval("UNIT<- 1");
 		engine.eval(String.format("TIME_QUANTA<- %.2f", Settings.TIME_QUANTA));
 		engine.eval(String.format("RESOURCE_FILE<- \"%s\"", Settings.INPUT_FILE));
-		engine.eval("print(RESOURCE_FILE)");
+		
 		engine.eval("TASK_INFO <- read.csv(file=RESOURCE_FILE, header = TRUE)");
 		engine.eval("TASK_INFO<- data.frame(ID = c(1:nrow(TASK_INFO)), TASK_INFO)");
 		engine.eval("colnames(TASK_INFO)<- c(\"ID\", \"NAME\", \"TYPE\", \"PRIORITY\", \"WCET.MIN\", \"WCET.MAX\", \"PERIOD\", \"INTER.MIN\", \"INTER.MAX\", \"DEADLINE\")");
@@ -283,7 +287,10 @@ public class ModelUpdate {
 		engine.eval(update_time_str);
 		engine.eval("source(\"R/libs/lib_quadratic.R\")");
 		engine.eval("source(\"R/libs/lib_RQ3.R\")");
+		engine.eval("source(\"R/libs/lib_task.R\")");
 		engine.eval("source(\"R/libs/lib_pruning.R\")");
+		engine.eval("source(\"R/libs/lib_metrics.R\")");
+		engine.eval("source(\"R/libs/lib_math.R\")");
 		engine.eval("get_uncertain_tasks<-function(){\n" +
 				"    diffWCET <- TASK_INFO$WCET.MAX - TASK_INFO$WCET.MIN\n" +
 				"    tasks <- c()\n" +
@@ -378,22 +385,6 @@ public class ModelUpdate {
 		return true;
 	}
 	
-	public boolean saveTaskInfo() throws ScriptException, EvalException {
-		engine.eval("taskinfo <- TASK_INFO");
-		engine.eval("taskinfo <- taskinfo[-c(1)]");
-		engine.eval("taskinfo$WCET.MIN = taskinfo$WCET.MIN*TIME_QUANTA");
-		engine.eval("taskinfo$WCET.MAX = taskinfo$WCET.MAX*TIME_QUANTA");
-		engine.eval("taskinfo$PERIOD = taskinfo$PERIOD*TIME_QUANTA");
-		engine.eval("taskinfo$INTER.MIN = taskinfo$INTER.MIN*TIME_QUANTA");
-		engine.eval("taskinfo$INTER.MAX = taskinfo$INTER.MAX*TIME_QUANTA");
-		engine.eval("taskinfo$DEADLINE = taskinfo$DEADLINE*TIME_QUANTA");
-		engine.eval(String.format("taskinfofile<- \"%s/Task%02d/input_reduced.csv\"", Settings.BASE_PATH, targetTasks[0]));
-		engine.eval("write.table(taskinfo, taskinfofile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
-
-		return true;
-	}
-	
-	
 	/**
 	 * Sample new points
 	 * @param nSample
@@ -451,7 +442,7 @@ public class ModelUpdate {
 		return true;
 	}
 	
-	public boolean updateModel() throws ScriptException, EvalException{
+	public double updateModel(double _prob) throws ScriptException, EvalException{
 		engine.eval("print(sprintf(\"Number of data set: %d\", nrow(training)))");
 		engine.eval("prev_model<-base_model");
 		engine.eval("base_model <- glm(formula = prev_model$formula, family = \"binomial\", data = training)");
@@ -466,7 +457,7 @@ public class ModelUpdate {
 		JMetalLogger.logger.info("Updated model: " + getModelText("base_model"));
 		
 		updateTerminationData();
-		return true;
+		return _prob;
 	}
 	
 	
@@ -569,7 +560,11 @@ public class ModelUpdate {
 	public boolean saveTestResults()throws ScriptException, EvalException{
 		engine.eval(String.format("resultfile <- \"%s/%s/%s_test_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
 		engine.eval("write.table(test.results, resultfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
-		
+
+		return true;
+	}
+	
+	public boolean saveModelResults()throws ScriptException, EvalException{
 		engine.eval(String.format("modelfile <- \"%s/%s/%s_model_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
 		engine.eval("write.table(coef.results, modelfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
 		engine.eval("print(coef.results)");
