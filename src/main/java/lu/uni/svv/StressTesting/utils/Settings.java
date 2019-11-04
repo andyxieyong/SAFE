@@ -9,10 +9,13 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 
 public class Settings {
-	
+	// Common
 	public static String  INPUT_FILE          = "";
+	public static String  TARGET_TASKLIST     = "";
+	public static int[]   TARGET_TASKS        = null;
 	
 	// Scheduler
 	public static String  SCHEDULER           = "";
@@ -53,7 +56,6 @@ public class Settings {
 	public static int     BEST_RUN            = 10;
 	public static String  LR_WORKPATH         = "seconds";
 	public static int     LR_INITIAL_SIZE     = 0;
-	public static String  TARGET_TASKLIST     = "";
 	
 	public static boolean STOP_CONDITION      = false;
 	public static String  STOP_DATA_TYPE      = "training";
@@ -72,7 +74,6 @@ public class Settings {
 	public static boolean PRINT_RESULTS       = false;
 	
 	
-	
 	public Settings()
 	{
 	}
@@ -82,6 +83,7 @@ public class Settings {
 		ArgumentParser parser = new ArgumentParser();
 		parser.addOption(false,"Help", DataType.BOOLEAN, "h", "help", "Show how to use this program");
 		parser.addOption(false,"SettingFile", DataType.STRING, "f", null, "Base setting file.", "settings.json");
+		parser.addOption(false,"targets", DataType.STRING, "t", "targets","target tasks for search");
 		parser.addOption(false,"RunMax", DataType.INTEGER, "r", null, "Maximum run times for GA");
 		parser.addOption(false,"Run", DataType.INTEGER, null, "runID", "Specific run ID when you execute run separately");
 		parser.addOption(false,"Populations", DataType.INTEGER, "p", null, "Population for GA");
@@ -90,7 +92,6 @@ public class Settings {
 		parser.addOption(false,"MutationRate", DataType.DOUBLE, "m", null, "Mutation rate for GA");
 		parser.addOption(false,"BasePath", DataType.STRING, "b", null, "Base path to save the result of experiments");
 		parser.addOption(false,"ExportPath", DataType.STRING, "e", null, "Exported path to move the result of experiments");
-		parser.addOption(false,"TaskFitness", DataType.INTEGER, "t", null, "Task number to use for calculating fitness. If this is unset or sets 0, We will calculate fitness for all tasks.");
 		parser.addOption(false,"Scheduler", DataType.STRING, "s", null, "Scheduler");
 		parser.addOption(false,"FitnessRange", DataType.DOUBLE, null, "range", "fitness rage");
 		parser.addOption(false,"TimeQuanta", DataType.DOUBLE, null, "quanta", "Scheduler time quanta");
@@ -115,7 +116,6 @@ public class Settings {
 		parser.addOption(false,"bestRun", DataType.INTEGER, null, "bestRun", "select best run in first phase");
 		parser.addOption(false,"workPath", DataType.STRING, null, "workPath", "the path for saving workdata in second phase");
 		parser.addOption(false,"LRinitSize", DataType.INTEGER, null, "LRinitSize", "the number of initial training data size for the second phase");
-		parser.addOption(false,"targets", DataType.STRING, null, "targets", "target tasks for second phase");
 		parser.addOption(false,"testData", DataType.STRING, null, "testData", "test data file");
 		parser.addOption(false,"testSamples", DataType.INTEGER, null, "testSamples", "number of samples for testing of each model");
 		parser.addOption(false,"testGroups", DataType.INTEGER, null, "testGroups", "the number of test data set");
@@ -192,7 +192,26 @@ public class Settings {
 		if (parser.containsParam("testGroups"))     TEST_NGROUP = (Integer) parser.getParam("testGroups");
 		
 		
+		Settings.TARGET_TASKS = convertToIntArray(Settings.TARGET_TASKLIST);
+		Arrays.sort(Settings.TARGET_TASKS);
+		
 	}
+	
+	public static int[] convertToIntArray(String commaSeparatedStr)
+	{
+		if (commaSeparatedStr.startsWith("["))
+			commaSeparatedStr = commaSeparatedStr.substring(1);
+		if (commaSeparatedStr.endsWith("]"))
+			commaSeparatedStr = commaSeparatedStr.substring(0,commaSeparatedStr.length()-1);
+		
+		String[] commaSeparatedArr = commaSeparatedStr.split("\\s*,\\s*");
+		int[] result = new int[commaSeparatedArr.length];
+		for(int x=0; x<commaSeparatedArr.length; x++){
+			result[x] = Integer.parseInt(commaSeparatedArr[x]);
+		}
+		return result;
+	}
+	
 	
 	/**
 	 * update setting information from json file
