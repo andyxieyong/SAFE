@@ -42,7 +42,7 @@ public class ModelUpdateKFold extends ModelUpdate {
 	public boolean updateTerminationData() throws ScriptException, EvalException{
 		// use newly added data in the training
 		engine.eval("tSize<-nrow(training)");
-		engine.eval(String.format("termination_data<-training[(tSize-%d):tSize,]", Settings.UPDATE_ITERATION));
+		engine.eval(String.format("termination_data<-training[(tSize-%d):tSize,]", Settings.N_EXAMPLE_POINTS));
 		
 		return true;
 		

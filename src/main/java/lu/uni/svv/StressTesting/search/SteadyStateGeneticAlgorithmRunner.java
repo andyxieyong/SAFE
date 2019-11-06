@@ -60,7 +60,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 			experiment( run,
 						problem,
 						Settings.GA_POPULATION,
-						Settings.GA_MAX_ITERATION,
+						Settings.GA_ITERATION,
 						Settings.GA_CROSSOVER_PROB,
 						Settings.GA_MUTATION_PROB);
 		}
@@ -69,10 +69,11 @@ public class SteadyStateGeneticAlgorithmRunner {
 	public static void printInput(String changed, String inputs){
 		if (Settings.RUN_NUM<=1) {
 			// multi run mode and single run mode with runID 1)
+			String settingStr = Settings.getString();
+			System.out.print(settingStr);
 			GAWriter writer = new GAWriter("settings.txt", Level.FINE, null, Settings.BASE_PATH);
-			writer.info(Settings.getString());
+			writer.info(settingStr);
 			writer.close();
-			System.out.print(Settings.getString());
 			
 			if (changed != null) {
 				writer = new GAWriter("changed.txt", Level.INFO, null, Settings.BASE_PATH);

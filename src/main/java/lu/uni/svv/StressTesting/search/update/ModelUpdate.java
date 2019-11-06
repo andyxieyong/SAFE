@@ -7,7 +7,6 @@ import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
 import org.renjin.script.RenjinScriptEngineFactory;
-import org.renjin.sexp.DoubleVector;
 import org.renjin.sexp.StringVector;
 import org.renjin.sexp.Vector;
 import org.uma.jmetal.util.JMetalLogger;
@@ -168,16 +167,21 @@ public class ModelUpdate {
 		int count = 0;
 		int solID = 0;
 		double borderProbability = Settings.BORDER_PROBABILITY;
-
-		while (count <= Settings.MAX_ITERATION) {
+		
+		int nUpdates = 0;
+		int totalCount = Settings.N_MODEL_UPDATES * Settings.N_EXAMPLE_POINTS;
+		while (nUpdates <= totalCount) {
 			// Learning model again with more data
-			if ((count != 0) && (count % Settings.UPDATE_ITERATION == 0)) {
-				JMetalLogger.logger.info("update logistic regression " + count + "/" + Settings.MAX_ITERATION);
+			if ((nUpdates != 0) && (count == Settings.N_EXAMPLE_POINTS)) {
+				
+				JMetalLogger.logger.info("update logistic regression " + nUpdates + "/" + Settings.N_MODEL_UPDATES);
 				borderProbability = this.updateModel(borderProbability);
-				if (Settings.TEST_DATA.length() != 0 && !evaluateModel(count/Settings.MAX_ITERATION)){
-					JMetalLogger.logger.info("Failed to evaluate model with test data in "+ count + "/" + Settings.MAX_ITERATION);
+				if (Settings.TEST_DATA.length() != 0 && !evaluateModel(nUpdates)){
+					JMetalLogger.logger.info("Failed to evaluate model with test data in "+ nUpdates + "/" + Settings.N_MODEL_UPDATES);
 					return false;
 				}
+				nUpdates += 1;
+				count = 0;
 				if (Settings.STOP_CONDITION && this.checkStopCondition()) break;
 			}
 			
@@ -197,7 +201,7 @@ public class ModelUpdate {
 			// Save information
 			String text = this.createSampleLine(D, sampleWCET);
 			this.appendNewDataset(workfile, text);
-			JMetalLogger.logger.info(String.format("New data %d/%d: %s", (count % Settings.UPDATE_ITERATION) + 1, Settings.UPDATE_ITERATION, text));
+			JMetalLogger.logger.info(String.format("New data %d/%d: %s", count+1, Settings.N_EXAMPLE_POINTS, text));
 			
 			// update index
 			solID = (solID + 1) % solutions.size();
@@ -235,8 +239,8 @@ public class ModelUpdate {
 		
 		filename = String.format("workdata_%s_%d_%d_%.2f%s_run%02d%s",
 				Settings.SECOND_PHASE_RUNTYPE,
-				Settings.MAX_ITERATION,
-				Settings.UPDATE_ITERATION,
+				Settings.N_MODEL_UPDATES,
+				Settings.N_EXAMPLE_POINTS,
 				Settings.BORDER_PROBABILITY,
 				formulaCode,
 				Settings.RUN_NUM,

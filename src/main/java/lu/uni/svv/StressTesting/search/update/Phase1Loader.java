@@ -33,7 +33,7 @@ public class Phase1Loader {
 	 * @param _path
 	 * @return
 	 */
-	public List<TimeListSolution> loadSolutions(String _path, int _bestRunID) {
+	public List<TimeListSolution> loadSolutions(String _path, int _runID) {
 		String path = _path + "/solutions/";
 		ArrayList<TimeListSolution> solutions = new ArrayList<TimeListSolution>();
 		
@@ -49,7 +49,7 @@ public class Phase1Loader {
 			String name = file.getName();
 			if (!name.endsWith(".json")) continue;
 			String runID = name.substring(name.indexOf('_') + 4, name.lastIndexOf('_'));
-			if (Integer.parseInt(runID) != _bestRunID) continue;
+			if (Integer.parseInt(runID) != _runID) continue;
 			
 			TimeListSolution s = TimeListSolution.loadFromJSON(problem, file.getAbsolutePath());
 			solutions.add(s);

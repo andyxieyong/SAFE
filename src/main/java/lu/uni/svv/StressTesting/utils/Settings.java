@@ -18,6 +18,7 @@ public class Settings {
 	public static String  EXPORT_PATH         = "";
 	public static int     RUN_NUM             = 1;
 	public static int     RUN_MAX             = 1;
+	public static int     RUN_PARTITION       = 0;
 	
 	// Scheduler
 	public static String  SCHEDULER           = "";
@@ -29,7 +30,7 @@ public class Settings {
 
 	// GA
 	public static int     GA_POPULATION       = 10;
-	public static int     GA_MAX_ITERATION    = 1000;
+	public static int     GA_ITERATION        = 1000;
 	public static double  GA_CROSSOVER_PROB   = 0.9;
 	public static double  GA_MUTATION_PROB    = 0.5;
 	public static boolean SIMPLE_SEARCH       = false;
@@ -43,8 +44,8 @@ public class Settings {
 	
 	//Second phase
 	public static String  SECOND_PHASE_RUNTYPE= "distance";
-	public static int     MAX_ITERATION       = 200;
-	public static int     UPDATE_ITERATION    = 10;
+	public static int     N_MODEL_UPDATES     = 20;
+	public static int     N_EXAMPLE_POINTS    = 100;
 	public static double  BORDER_PROBABILITY  = 0.5;
 	public static int     SAMPLE_CANDIDATES   = 20;
 	
@@ -74,6 +75,9 @@ public class Settings {
 		parser.addOption(false,"INPUT_FILE", DataType.STRING, null, "data", "input data that including job information");
 		parser.addOption(false,"BASE_PATH", DataType.STRING, "b", null, "Base path to save the result of experiments");
 		parser.addOption(false,"EXPORT_PATH", DataType.STRING, "e", null, "Exported path to move the result of experiments");
+		parser.addOption(false,"RUN_NUM", DataType.INTEGER, null, "runID", "Specific run ID when you execute run separately");
+		parser.addOption(false,"RUN_MAX", DataType.INTEGER, "r", null, "Maximum run times for GA");
+		parser.addOption(false,"RUN_PARTITION", DataType.INTEGER, null, "part", "partition for Test Generation");
 		
 		//scheduler
 		parser.addOption(false,"SCHEDULER", DataType.STRING, "s", null, "Scheduler");
@@ -83,10 +87,8 @@ public class Settings {
 		parser.addOption(false,"EXTEND_SCHEDULER", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", true);
 		
 		// GA
-		parser.addOption(false,"RUN_NUM", DataType.INTEGER, null, "runID", "Specific run ID when you execute run separately");
-		parser.addOption(false,"RUN_MAX", DataType.INTEGER, "r", null, "Maximum run times for GA");
 		parser.addOption(false,"GA_POPULATION", DataType.INTEGER, "p", null, "Population for GA");
-		parser.addOption(false,"GA_MAX_ITERATION", DataType.INTEGER, "i", null, "Maximum iterations for GA");
+		parser.addOption(false,"GA_ITERATION", DataType.INTEGER, "i", null, "Maximum iterations for GA");
 		parser.addOption(false,"GA_CROSSOVER_PROB", DataType.DOUBLE, "c", null, "Crossover rate for GA");
 		parser.addOption(false,"GA_MUTATION_PROB", DataType.DOUBLE, "m", null, "Mutation rate for GA");
 		parser.addOption(false,"SIMPLE_SEARCH", DataType.BOOLEAN, null, "simpleSearch", "Simple search mode, not using crossover and mutation just produce children randomly", false);
@@ -101,8 +103,8 @@ public class Settings {
 		
 		//Second phase
 		parser.addOption(false,"SECOND_PHASE_RUNTYPE", DataType.STRING, null, "secondRuntype", "Second phase run type {\"random\", \"distance\"}");
-		parser.addOption(false,"MAX_ITERATION", DataType.INTEGER, null, "iterMax", "The iteration number to finish second phase");
-		parser.addOption(false,"UPDATE_ITERATION", DataType.INTEGER, null, "iterUpdate", "The iteration number to update logsitic regression model");
+		parser.addOption(false,"N_MODEL_UPDATES", DataType.INTEGER, null, "modelUpdates", "The iteration number to finish second phase");
+		parser.addOption(false,"N_EXAMPLE_POINTS", DataType.INTEGER, null, "exPoints", "The iteration number to update logsitic regression model");
 		parser.addOption(false,"BORDER_PROBABILITY", DataType.DOUBLE, null, "borderProb", "Border Probability for second phase");
 		parser.addOption(false,"SAMPLE_CANDIDATES", DataType.INTEGER, null, "sampleCandidates", "The number of sandidates to get one sample in second phase");
 		
@@ -143,6 +145,10 @@ public class Settings {
 		
 		Settings.TARGET_TASKS = convertToIntArray(Settings.TARGET_TASKLIST);
 		Arrays.sort(Settings.TARGET_TASKS);
+		
+		if (Settings.EXPORT_PATH.length()==0)
+			Settings.EXPORT_PATH = Settings.BASE_PATH + "/updates";
+			
 		
 	}
 	

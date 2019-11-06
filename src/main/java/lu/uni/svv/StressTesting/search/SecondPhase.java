@@ -31,31 +31,37 @@ public class SecondPhase {
 	
 	
 	public static void displaySettings(){
-		JMetalLogger.logger.info("Settings.RUN_NUM            : "+ Settings.RUN_NUM);
-		JMetalLogger.logger.info("Settings.INPUT_FILE         : "+ Settings.INPUT_FILE);
-		JMetalLogger.logger.info("Settings.MAX_ITERATION      : "+ Settings.MAX_ITERATION);
-		JMetalLogger.logger.info("Settings.UPDATE_ITERATION   : "+ Settings.UPDATE_ITERATION);
-		JMetalLogger.logger.info("Settings.TARGET_TASKLIST    : "+ Settings.TARGET_TASKLIST);
-		JMetalLogger.logger.info("Settings.GA_POPULATION      : "+ Settings.GA_POPULATION);
-		JMetalLogger.logger.info("Settings.N_SAMPLE_WCET      : "+ Settings.N_SAMPLE_WCET);
+		JMetalLogger.logger.info("INPUT_FILE         : "+ Settings.INPUT_FILE);
+		JMetalLogger.logger.info("BASE_PATH          : "+ Settings.BASE_PATH);
+		JMetalLogger.logger.info("EXPORT_PATH        : "+ Settings.EXPORT_PATH);
+		JMetalLogger.logger.info("RUN_NUM            : "+ Settings.RUN_NUM);
 		JMetalLogger.logger.info("");
-		JMetalLogger.logger.info("Settings.MAX_ITERATION      : "+ Settings.MAX_ITERATION);
-		JMetalLogger.logger.info("Settings.UPDATE_ITERATION   : "+ Settings.UPDATE_ITERATION);
-		JMetalLogger.logger.info("Settings.LR_WORKPATH        : "+ Settings.LR_WORKPATH);
-		JMetalLogger.logger.info("Settings.TEST_DATA          : "+ Settings.TEST_DATA);
-		JMetalLogger.logger.info("Settings.TEST_NSAMPLES      : "+ Settings.TEST_NSAMPLES);
-		JMetalLogger.logger.info("Settings.TEST_NGROUP        : "+ Settings.TEST_NGROUP);
+		// Scheduler variables
+		JMetalLogger.logger.info("SCHEDULER          :"+  Settings.SCHEDULER);
+		JMetalLogger.logger.info("TARGET_TASKS       :"+  Settings.TARGET_TASKLIST);
+		JMetalLogger.logger.info("TIME_QUANTA        :"+  Settings.TIME_QUANTA);;
+		JMetalLogger.logger.info("TIME_MAX           :"+  Settings.TIME_MAX);
+		JMetalLogger.logger.info("EXTEND_SCHEDULER   :"+  Settings.SCHEDULER);
+		JMetalLogger.logger.info("");
+		JMetalLogger.logger.info("GA_POPULATION      : "+ Settings.GA_POPULATION);
+		JMetalLogger.logger.info("GA_ITERATION       : "+ Settings.GA_ITERATION);
+		JMetalLogger.logger.info("N_SAMPLE_WCET      : "+ Settings.N_SAMPLE_WCET);
+		JMetalLogger.logger.info("");
+		JMetalLogger.logger.info("N_MODEL_UPDATES    : "+ Settings.N_MODEL_UPDATES);
+		JMetalLogger.logger.info("N_EXAMPLE_POINTS   : "+ Settings.N_EXAMPLE_POINTS);
+		JMetalLogger.logger.info("LR_WORKPATH        : "+ Settings.LR_WORKPATH);
+		JMetalLogger.logger.info("");
+		JMetalLogger.logger.info("TEST_DATA          : "+ Settings.TEST_DATA);
+		JMetalLogger.logger.info("TEST_NSAMPLES      : "+ Settings.TEST_NSAMPLES);
+		JMetalLogger.logger.info("TEST_NGROUP        : "+ Settings.TEST_NGROUP);
+		JMetalLogger.logger.info("");
+		JMetalLogger.logger.info("STOP_DATA_TYPE     : "+ Settings.STOP_DATA_TYPE);
+		JMetalLogger.logger.info("STOP_FUNC_NAME     : "+ Settings.STOP_FUNCTION_NAME);
+		JMetalLogger.logger.info("STOP_CONDITION     : "+ Settings.STOP_CONDITION);
+		JMetalLogger.logger.info("STOP_ACCEPT_RATE   : " + Settings.STOP_ACCEPT_RATE);
+		JMetalLogger.logger.info("");
 		
-		JMetalLogger.logger.info("");
-		JMetalLogger.logger.info("Settings.STOP_DATA_TYPE     : "+ Settings.STOP_DATA_TYPE);
-		JMetalLogger.logger.info("Settings.STOP_FUNC_NAME     : "+ Settings.STOP_FUNCTION_NAME);
-		JMetalLogger.logger.info("Settings.STOP_CONDITION     : "+ Settings.STOP_CONDITION);
-		JMetalLogger.logger.info("");
-		JMetalLogger.logger.info("Settings.STOP_ACCEPT_RATE  : " + Settings.STOP_ACCEPT_RATE);
 		
-		JMetalLogger.logger.info("Settings.STOP_DATA_TYPE  : "+ Settings.STOP_DATA_TYPE);
-		JMetalLogger.logger.info("Settings.STOP_FUNC_NAME  : "+ Settings.STOP_FUNCTION_NAME);
-		JMetalLogger.logger.info("Settings.STOP_CONDITION  : "+ Settings.STOP_CONDITION);
 	}
 	
 	/**

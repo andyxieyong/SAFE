@@ -98,8 +98,8 @@ public class TestDataGenerator {
 		
 		// create evaluation data
 		String appendix = "";
-		if (Settings.RUN_NUM !=0){
-			appendix = String.format("_S%d", Settings.RUN_NUM);
+		if (Settings.RUN_PARTITION !=0){
+			appendix = String.format("_part%d", Settings.RUN_PARTITION);
 		}
 		
 		// Initialize model
@@ -110,11 +110,11 @@ public class TestDataGenerator {
 		int cntNegative = 0;
 		int cntPosivive = 0;
 		
-		String evalfile = String.format("%s/testdata_T%s_N%d_run%02d%s.csv", Settings.LR_WORKPATH, Settings.TARGET_TASKLIST, Settings.MAX_ITERATION, Settings.RUN_NUM, appendix);
+		String evalfile = String.format("%s/testdata_T%s_N%d_run%02d%s.csv", Settings.LR_WORKPATH, Settings.TARGET_TASKLIST, Settings.N_EXAMPLE_POINTS, Settings.RUN_NUM, appendix);
 		GAWriter writer = new GAWriter(evalfile, Level.INFO, null, Settings.BASE_PATH, false);
 		writer.info(getUncertainTasks("result"));
 		int cnt = 0;
-		while (cnt < Settings.MAX_ITERATION) {
+		while (cnt < Settings.N_EXAMPLE_POINTS) {
 			
 			List<long[]> samples = sampling_byRandom(1);
 			
