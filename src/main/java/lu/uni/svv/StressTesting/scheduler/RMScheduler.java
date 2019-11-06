@@ -270,15 +270,15 @@ public class RMScheduler {
 		}
 		
 		// Represent working status ========================
-		if (RMScheduler.DETAIL == true) {
+		if (RMScheduler.DETAIL) {
 			String started = " ";
 			String terminated = " ";
 			
 			// Notification for a Task execution started.
 			if ((lastExecutedTask != null) &&
 					((lastExecutedTask.RemainTime + 1 == T.ExecutionTime) || (lastExecutedTask != previousTask))) {
-				if (preemption == true)	started = "*";
-				else					started = "+";
+				if (preemption)	started = "*";
+				else			started = "+";
 			}
 			
 			//showing deadline miss time
@@ -293,14 +293,14 @@ public class RMScheduler {
 					terminated = "!";	//finished after Deadline.
 			}
 			
-			if (RMScheduler.PROOF == true) {
+			if (RMScheduler.PROOF) {
 				if (((timeLapsed - 1) % LINEFEED) == 0)
 					printer.format("\nCPU[%010d]: ", (timeLapsed - 1));
 				
 				printer.format("%s%02d%s ", started, (T == null ? 0 : T.ID), terminated);
 			}
 			
-			if (T!=null && RMScheduler.PROOF == true) {
+			if (T!=null && RMScheduler.PROOF) {
 				int type = (terminated.compareTo(" ")!=0 && terminated.compareTo("x")!=0)? 4: (started.compareTo(" ")!=0)?2:3;
 				timelines.get(T.ID -1)[(int)timeLapsed-1] = type;
 			}
@@ -592,7 +592,7 @@ public class RMScheduler {
 	}
 	
 	public boolean assertScheduler(GAWriter writer) {
-		if (RMScheduler.DETAIL == false || RMScheduler.PROOF == false) return true;
+		if (!RMScheduler.DETAIL || !RMScheduler.PROOF) return true;
 		
 		for (Task task:executedTasks)
 		{
@@ -621,7 +621,7 @@ public class RMScheduler {
 	
 	public  String getTimelinesStr()
 	{
-		if (RMScheduler.DETAIL == false || RMScheduler.PROOF == false) return "";
+		if (!RMScheduler.DETAIL || !RMScheduler.PROOF) return "";
 		
 		StringBuilder sb = new StringBuilder();
 		for(int tID=0; tID<this.problem.Tasks.length; tID++)

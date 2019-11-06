@@ -171,7 +171,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 		if (Settings.GA_RUN == 0) {
 			// Only apply to multi run mode
 			File dir = new File(Settings.BASE_PATH);
-			if (dir.exists() == true) {
+			if (dir.exists()) {
 				try {
 					FileUtils.deleteDirectory(dir);
 				} catch (IOException e) {
