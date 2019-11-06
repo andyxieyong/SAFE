@@ -4,9 +4,11 @@ import lu.uni.svv.StressTesting.scheduler.RMScheduler;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
 import lu.uni.svv.StressTesting.search.update.Phase1Loader;
+import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
 import org.renjin.script.RenjinScriptEngineFactory;
+import org.renjin.sexp.StringVector;
 import org.renjin.sexp.Vector;
 import org.uma.jmetal.util.JMetalLogger;
 
@@ -17,6 +19,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
@@ -36,7 +39,7 @@ public class TestDataGenerator {
 		// Settings update
 		if(Settings.N_SAMPLE_WCET==0) Settings.N_SAMPLE_WCET=1;   // Scheduling option:
 		targetTasks = convertToIntArray(Settings.TARGET_TASKLIST);
-		Settings.INPUT_FILE = Settings.BASE_PATH + String.format("/Task%02d/input.csv", targetTasks[0]);
+		// Settings.INPUT_FILE = Settings.LR_WORKPATH;
 		
 		//load Testing Problem
 		problem = new TestingProblem(Settings.INPUT_FILE, Settings.TIME_QUANTA, Settings.TIME_MAX, Settings.SCHEDULER);
@@ -94,46 +97,43 @@ public class TestDataGenerator {
 		}
 		
 		// create evaluation data
-		StringBuilder sb = new StringBuilder();
-		int x=0;
-		for(; x<targetTasks.length-1; x++){
-			sb.append(targetTasks[x]);
-			sb.append(",");
-		}
-		sb.append(targetTasks[x]);
-		
 		String appendix = "";
 		if (Settings.GA_RUN !=0){
 			appendix = String.format("_S%d", Settings.GA_RUN);
 		}
 		
-		String evalfile = String.format("%s/testdata_T%s_N%d_run%02d%s.csv", Settings.LR_WORKPATH, sb.toString(), Settings.MAX_ITERATION, Settings.BEST_RUN, appendix);
-		
 		// Initialize model
 		this.setting_environment();
-		
 		
 		JMetalLogger.logger.info("Evaluating model ...");
 		int solID = 0;
 		int cntNegative = 0;
 		int cntPosivive = 0;
-
-		while (cntPosivive < Settings.MAX_ITERATION) {
+		
+		String evalfile = String.format("%s/testdata_T%s_N%d_run%02d%s.csv", Settings.LR_WORKPATH, Settings.TARGET_TASKLIST, Settings.MAX_ITERATION, Settings.BEST_RUN, appendix);
+		GAWriter writer = new GAWriter(evalfile, Level.INFO, null, Settings.BASE_PATH, false);
+		writer.info(getUncertainTasks("result"));
+		int cnt = 0;
+		while (cnt < Settings.MAX_ITERATION) {
 			
 			List<long[]> samples = sampling_byRandom(1);
 			
 			int D = this.evaluate(solutions.get(solID), samples.get(0));
 			merge_to_training_data(new int[]{D});
 			
+			cnt++;
 			if (D==0) cntPosivive += 1;
 			if (D==1) cntNegative += 1;
 			
 			// Save information
 			String text = this.createSampleLine(D, samples.get(0));
-			JMetalLogger.logger.info(String.format("Evaluated data (P: %d/%d, N: %d/%d) with sol %d - %s", cntPosivive, Settings.MAX_ITERATION, cntNegative, Settings.MAX_ITERATION, solID, text));
+			
+			writer.info(text);
+			JMetalLogger.logger.info(String.format("Evaluated data %d (P: %d, N: %d) with sol %d - %s", cnt, cntPosivive, cntNegative, solID, text));
 			
 			solID = (solID + 1) % solutions.size();
 		}
+		writer.close();
 		
 		//Save all points
 		savePoints(evalfile);
@@ -173,14 +173,31 @@ public class TestDataGenerator {
 			engine.eval("print(RESOURCE_FILE)");
 			engine.eval("print(get_uncertain_tasks())");
 			engine.eval("print(nrow(TASK_INFO))");
-			
-			
 		}
 		catch (ScriptException | EvalException e) {
 			JMetalLogger.logger.info("R Error:: " + e.getMessage());
 			return false;
 		}
 		return true;
+	}
+	
+	public String getUncertainTasks(String _head){
+		StringBuilder sb = new StringBuilder();
+		try{
+			StringVector vector = (StringVector) engine.eval("get_uncertain_tasks()");
+			String[] strs = vector.toArray();
+			
+			sb.append(_head);
+			for (int i = 0; i < strs.length; i++) {
+				sb.append(",");
+				sb.append(strs[i]);
+			}
+			
+		} catch (ScriptException | EvalException e) {
+			JMetalLogger.logger.info("R Error:: " + e.getMessage());
+			return null;
+		}
+		return sb.toString();
 	}
 	
 	public long[] get_row_longlist(String varName) throws ScriptException, EvalException {
@@ -273,16 +290,16 @@ public class TestDataGenerator {
 		if (!file.getParentFile().exists())
 			file.getParentFile().mkdirs();
 		
-		String savecode = String.format("write.table(samples, \"%s\", append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)",filepath);
-		try {
-			engine.eval("positive<-test_set[test_set$result==0,]");
-			engine.eval("negative<-test_set[test_set$result==1,]");
-			engine.eval(String.format("negative<-negative[sample(nrow(negative),%d),]",Settings.MAX_ITERATION));
-			engine.eval("samples<-rbind(positive, negative)");
-			engine.eval(savecode);
-		} catch (ScriptException e) {
-			e.printStackTrace();
-		}
+//		String savecode = String.format("write.table(samples, \"%s\", append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)",filepath);
+//		try {
+//			engine.eval("positive<-test_set[test_set$result==0,]");
+//			engine.eval("negative<-test_set[test_set$result==1,]");
+//			engine.eval(String.format("negative<-negative[sample(nrow(negative),%d),]",Settings.MAX_ITERATION));
+//			engine.eval("samples<-rbind(positive, negative)");
+//			engine.eval(savecode);
+//		} catch (ScriptException e) {
+//			e.printStackTrace();
+//		}
 	}
 	
 	public String createSampleLine(int _result, long[] _sample){
