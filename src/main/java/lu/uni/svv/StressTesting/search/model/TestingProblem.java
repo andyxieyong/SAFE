@@ -36,7 +36,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	public long     MAX_TIME;		// 1 hour (ms)
 	public long     MAX_PHASETIME;	// maximum phase time;
 	public long     QUANTA_LENGTH;	// MAX_TIME * (1/TIME_QUANTA) // to treat all time values as integer
-	public int      RUN_ID =0;
+	public int      RUN_ID;         // RUN_NUM, we set the name to distinguish with Settings property
 	
 	public TaskDescriptor[] Tasks = null;		// Task information
 	
@@ -161,7 +161,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			scheduler.setSamples(samples);
 			scheduler.run(solution);
 			
-			boolean titleFlag = ((sampleID==0)? true:false);
+			boolean titleFlag = (sampleID == 0);
 			String pretitle = "SampleID";
 			String prefix = String.format("%d", sampleID);
 			

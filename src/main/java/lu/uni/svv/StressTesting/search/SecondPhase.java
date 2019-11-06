@@ -31,7 +31,7 @@ public class SecondPhase {
 	
 	
 	public static void displaySettings(){
-		JMetalLogger.logger.info("Settings.BEST_RUN in Phase 1: "+ Settings.BEST_RUN);
+		JMetalLogger.logger.info("Settings.RUN_NUM            : "+ Settings.RUN_NUM);
 		JMetalLogger.logger.info("Settings.INPUT_FILE         : "+ Settings.INPUT_FILE);
 		JMetalLogger.logger.info("Settings.MAX_ITERATION      : "+ Settings.MAX_ITERATION);
 		JMetalLogger.logger.info("Settings.UPDATE_ITERATION   : "+ Settings.UPDATE_ITERATION);
@@ -39,7 +39,6 @@ public class SecondPhase {
 		JMetalLogger.logger.info("Settings.GA_POPULATION      : "+ Settings.GA_POPULATION);
 		JMetalLogger.logger.info("Settings.N_SAMPLE_WCET      : "+ Settings.N_SAMPLE_WCET);
 		JMetalLogger.logger.info("");
-		JMetalLogger.logger.info("Settings.RUNID in Phase 2   : "+ Settings.GA_RUN);
 		JMetalLogger.logger.info("Settings.MAX_ITERATION      : "+ Settings.MAX_ITERATION);
 		JMetalLogger.logger.info("Settings.UPDATE_ITERATION   : "+ Settings.UPDATE_ITERATION);
 		JMetalLogger.logger.info("Settings.LR_WORKPATH        : "+ Settings.LR_WORKPATH);
@@ -74,7 +73,7 @@ public class SecondPhase {
 		// Settings update
 		if(Settings.N_SAMPLE_WCET==0) Settings.N_SAMPLE_WCET=1;   // Scheduling option:
 		
-		File inputFile = new File(Settings.BASE_PATH + String.format("/input_reduced_run%02d.csv", Settings.BEST_RUN));
+		File inputFile = new File(Settings.BASE_PATH + String.format("/input_reduced_run%02d.csv", Settings.RUN_NUM));
 		if (inputFile.exists()){
 			Settings.INPUT_FILE = inputFile.getPath();
 		}

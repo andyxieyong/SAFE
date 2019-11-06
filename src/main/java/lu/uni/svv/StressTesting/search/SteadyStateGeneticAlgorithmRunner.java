@@ -54,8 +54,8 @@ public class SteadyStateGeneticAlgorithmRunner {
 		JMetalLogger.logger.info("Loaded problem");
 		
 		// experiment
-		for (int run = 1; run <= Settings.GA_RUN_MAX; run++) {
-			if (Settings.GA_RUN!=0 && run!=Settings.GA_RUN) continue;
+		for (int run = 1; run <= Settings.RUN_MAX; run++) {
+			if (Settings.RUN_NUM!=0 && run!=Settings.RUN_NUM) continue;
 			problem.RUN_ID = run;
 			experiment( run,
 						problem,
@@ -67,7 +67,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 	}
 	
 	public static void printInput(String changed, String inputs){
-		if (Settings.GA_RUN<=1) {
+		if (Settings.RUN_NUM<=1) {
 			// multi run mode and single run mode with runID 1)
 			GAWriter writer = new GAWriter("settings.txt", Level.FINE, null, Settings.BASE_PATH);
 			writer.info(Settings.getString());
@@ -168,7 +168,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 	}
 
 	public static void init() {
-		if (Settings.GA_RUN == 0) {
+		if (Settings.RUN_NUM == 0) {
 			// Only apply to multi run mode
 			File dir = new File(Settings.BASE_PATH);
 			if (dir.exists()) {

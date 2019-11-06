@@ -78,7 +78,7 @@ public class ModelUpdate {
 	public void run() throws IOException, ScriptException, EvalException, Exception {
 		
 		//JMetalLogger.logger.info("Loading solutions from phase 1...");
-		solutions = phase1.loadSolutions(this.basePath, Settings.BEST_RUN);
+		solutions = phase1.loadSolutions(this.basePath, Settings.RUN_NUM);
 		if (solutions == null) {
 			JMetalLogger.logger.info("There are no solutions in the path:" + this.basePath);
 			return;
@@ -223,8 +223,8 @@ public class ModelUpdate {
 		if (Settings.TEST_NSAMPLES != 0)
 			appendix = String.format("_T%d", Settings.TEST_NSAMPLES);
 		
-		if (Settings.GA_RUN != 0)
-			appendix = String.format("_P2run%d", Settings.GA_RUN);
+		if (Settings.RUN_NUM != 0)
+			appendix = String.format("_P2run%d", Settings.RUN_NUM);
 		
 		
 		// Setting initial points to use for learning
@@ -239,11 +239,11 @@ public class ModelUpdate {
 				Settings.UPDATE_ITERATION,
 				Settings.BORDER_PROBABILITY,
 				formulaCode,
-				Settings.BEST_RUN,
+				Settings.RUN_NUM,
 				appendix);
 		String workfile = String.format("%s/%s.csv", Settings.LR_WORKPATH, filename);
 		
-		if (!phase1.makeInitialPoints(this.basePath, Settings.EXPORT_PATH, Settings.BEST_RUN, workfile)) {
+		if (!phase1.makeInitialPoints(this.basePath, Settings.EXPORT_PATH, Settings.RUN_NUM, workfile)) {
 			return null;
 		}
 		return workfile;
@@ -254,7 +254,7 @@ public class ModelUpdate {
 		try {
 			if (formulaPath.length() == 0) {
 				int lastTask = targetTasks[targetTasks.length-1];
-				formulaPath = String.format("%s/formula/T%s_S%d_run%02d", Settings.BASE_PATH, lastTask,Settings.N_SAMPLE_WCET, Settings.BEST_RUN);
+				formulaPath = String.format("%s/formula/T%s_S%d_run%02d", Settings.BASE_PATH, lastTask,Settings.N_SAMPLE_WCET, Settings.RUN_NUM);
 			}
 			formula = new String(Files.readAllBytes(Paths.get(formulaPath)), StandardCharsets.UTF_8).trim();
 			JMetalLogger.logger.info("Loaded formula from " + formulaPath);

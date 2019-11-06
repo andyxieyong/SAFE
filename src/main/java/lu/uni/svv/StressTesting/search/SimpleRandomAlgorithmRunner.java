@@ -50,7 +50,7 @@ public class SimpleRandomAlgorithmRunner {
 		JMetalLogger.logger.info("Loaded problem");
 		
 		// experiment
-		for (int run = 0; run < Settings.GA_RUN_MAX; run++) {
+		for (int run = 0; run < Settings.RUN_MAX; run++) {
 			
 			experiment( run, problem);
 			

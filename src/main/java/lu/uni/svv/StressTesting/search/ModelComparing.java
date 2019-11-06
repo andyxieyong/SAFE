@@ -116,24 +116,24 @@ public class ModelComparing {
 	 */
 	public void run(String _run_type, int _updateIteration, int _maxIteration, double _probability) throws IOException {
 		// Load Solutions
-		List<TimeListSolution> solutions = this.loadSolutions(this.basePath, Settings.BEST_RUN);
+		List<TimeListSolution> solutions = this.loadSolutions(this.basePath, Settings.RUN_NUM);
 		if (solutions == null) {
 			JMetalLogger.logger.info("There are no solutions in the path:" + this.basePath);
 			return;
 		}
 		
 		// Setting initial points to use for learning
-		String datapath = String.format("%s/samples/sampledata_run%02d.csv", this.basePath, Settings.BEST_RUN);
+		String datapath = String.format("%s/samples/sampledata_run%02d.csv", this.basePath, Settings.RUN_NUM);
 		
 		String formulaCode = Settings.LR_FORMULA_PATH.replace("/", "_");
 		String run = "";
-		if (Settings.BEST_RUN != 0)
-			run = String.format("_run%02d", Settings.BEST_RUN);
+		if (Settings.RUN_NUM != 0)
+			run = String.format("_run%02d", Settings.RUN_NUM);
 		
 		// to execute multiple test (because we use subset of first phase data)
 		String testID = "";
-		if (Settings.GA_RUN != 0)
-			run = String.format("_test%02d", Settings.GA_RUN);
+		if (Settings.RUN_NUM != 0)
+			run = String.format("_test%02d", Settings.RUN_NUM);
 		
 		String workfile = String.format("/%s/workdata_%s_%d_%d_%.2f_%s%s%s.csv", Settings.LR_WORKPATH, _run_type, _maxIteration, _updateIteration, _probability, formulaCode, run, testID);
 		

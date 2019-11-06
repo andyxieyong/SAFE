@@ -16,6 +16,8 @@ public class Settings {
 	public static String  INPUT_FILE          = "";
 	public static String  BASE_PATH           = "logs";
 	public static String  EXPORT_PATH         = "";
+	public static int     RUN_NUM             = 1;
+	public static int     RUN_MAX             = 1;
 	
 	// Scheduler
 	public static String  SCHEDULER           = "";
@@ -26,8 +28,6 @@ public class Settings {
 	public static boolean EXTEND_SCHEDULER    = true;
 
 	// GA
-	public static int     GA_RUN              = 1;
-	public static int     GA_RUN_MAX          = 0;
 	public static int     GA_POPULATION       = 10;
 	public static int     GA_MAX_ITERATION    = 1000;
 	public static double  GA_CROSSOVER_PROB   = 0.9;
@@ -49,7 +49,6 @@ public class Settings {
 	public static int     SAMPLE_CANDIDATES   = 20;
 	
 	public static String  LR_FORMULA_PATH     = "";
-	public static int     BEST_RUN            = 10;
 	public static String  LR_WORKPATH         = "seconds";
 	public static int     LR_INITIAL_SIZE     = 0;
 	
@@ -84,8 +83,8 @@ public class Settings {
 		parser.addOption(false,"EXTEND_SCHEDULER", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", true);
 		
 		// GA
-		parser.addOption(false,"GA_RUN", DataType.INTEGER, null, "runID", "Specific run ID when you execute run separately");
-		parser.addOption(false,"GA_RUN_MAX", DataType.INTEGER, "r", null, "Maximum run times for GA");
+		parser.addOption(false,"RUN_NUM", DataType.INTEGER, null, "runID", "Specific run ID when you execute run separately");
+		parser.addOption(false,"RUN_MAX", DataType.INTEGER, "r", null, "Maximum run times for GA");
 		parser.addOption(false,"GA_POPULATION", DataType.INTEGER, "p", null, "Population for GA");
 		parser.addOption(false,"GA_MAX_ITERATION", DataType.INTEGER, "i", null, "Maximum iterations for GA");
 		parser.addOption(false,"GA_CROSSOVER_PROB", DataType.DOUBLE, "c", null, "Crossover rate for GA");
@@ -108,7 +107,6 @@ public class Settings {
 		parser.addOption(false,"SAMPLE_CANDIDATES", DataType.INTEGER, null, "sampleCandidates", "The number of sandidates to get one sample in second phase");
 		
 		parser.addOption(false,"LR_FORMULA_PATH", DataType.STRING, null, "formulaPath", "formula file path to use in second phase");
-		parser.addOption(false,"BEST_RUN", DataType.INTEGER, null, "bestRun", "select best run in first phase");
 		parser.addOption(false,"LR_WORKPATH", DataType.STRING, null, "workPath", "the path for saving workdata in second phase");
 		parser.addOption(false,"LR_INITIAL_SIZE", DataType.INTEGER, null, "LRinitSize", "the number of initial training data size for the second phase");
 		

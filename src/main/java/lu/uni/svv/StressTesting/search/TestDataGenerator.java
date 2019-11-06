@@ -90,7 +90,7 @@ public class TestDataGenerator {
 		Phase1Loader phase1 = new Phase1Loader(problem);
 		
 		// Load Solutions
-		List<TimeListSolution> solutions = phase1.loadSolutions(this.basePath, Settings.BEST_RUN);
+		List<TimeListSolution> solutions = phase1.loadSolutions(this.basePath, Settings.RUN_NUM);
 		if (solutions == null) {
 			JMetalLogger.logger.info("There are no solutions in the path:" + this.basePath);
 			return;
@@ -98,8 +98,8 @@ public class TestDataGenerator {
 		
 		// create evaluation data
 		String appendix = "";
-		if (Settings.GA_RUN !=0){
-			appendix = String.format("_S%d", Settings.GA_RUN);
+		if (Settings.RUN_NUM !=0){
+			appendix = String.format("_S%d", Settings.RUN_NUM);
 		}
 		
 		// Initialize model
@@ -110,7 +110,7 @@ public class TestDataGenerator {
 		int cntNegative = 0;
 		int cntPosivive = 0;
 		
-		String evalfile = String.format("%s/testdata_T%s_N%d_run%02d%s.csv", Settings.LR_WORKPATH, Settings.TARGET_TASKLIST, Settings.MAX_ITERATION, Settings.BEST_RUN, appendix);
+		String evalfile = String.format("%s/testdata_T%s_N%d_run%02d%s.csv", Settings.LR_WORKPATH, Settings.TARGET_TASKLIST, Settings.MAX_ITERATION, Settings.RUN_NUM, appendix);
 		GAWriter writer = new GAWriter(evalfile, Level.INFO, null, Settings.BASE_PATH, false);
 		writer.info(getUncertainTasks("result"));
 		int cnt = 0;
