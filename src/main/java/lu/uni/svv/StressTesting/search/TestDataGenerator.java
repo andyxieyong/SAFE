@@ -84,10 +84,10 @@ public class TestDataGenerator {
 	 */
 	public void run() throws IOException {
 		
-		Phase1Loader phase1 = new Phase1Loader(problem, targetTasks);
+		Phase1Loader phase1 = new Phase1Loader(problem);
 		
 		// Load Solutions
-		List<TimeListSolution> solutions = phase1.loadMultiTaskSolutions(this.basePath, Settings.BEST_RUN);
+		List<TimeListSolution> solutions = phase1.loadSolutions(this.basePath, Settings.BEST_RUN);
 		if (solutions == null) {
 			JMetalLogger.logger.info("There are no solutions in the path:" + this.basePath);
 			return;
@@ -122,8 +122,7 @@ public class TestDataGenerator {
 			
 			List<long[]> samples = sampling_byRandom(1);
 			
-			int taskID = targetTasks[solID/Settings.GA_POPULATION];
-			int D = this.evaluate(solutions.get(solID), taskID, samples.get(0));
+			int D = this.evaluate(solutions.get(solID), samples.get(0));
 			merge_to_training_data(new int[]{D});
 			
 			if (D==0) cntPosivive += 1;
@@ -219,7 +218,7 @@ public class TestDataGenerator {
 	 * @param _sample
 	 * @return
 	 */
-	public int evaluate(TimeListSolution _solution, int _taskFitness, long[] _sample){
+	public int evaluate(TimeListSolution _solution, long[] _sample){
 		int result = 0;
 		
 		List<Integer> uncertainTasks = problem.getUncertainTasks();
@@ -230,7 +229,7 @@ public class TestDataGenerator {
 		
 		try {
 			// Create Scheduler instance
-			Object[] parameters = {problem, _taskFitness};
+			Object[] parameters = {problem, Settings.TARGET_TASKS};
 			RMScheduler scheduler = (RMScheduler)constructor.newInstance(parameters);
 			
 			scheduler.initialize();

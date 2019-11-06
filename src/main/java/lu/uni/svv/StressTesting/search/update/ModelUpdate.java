@@ -68,7 +68,7 @@ public class ModelUpdate {
 
 		// load phase 1 loader
 		JMetalLogger.logger.info("Preparing Phase-1 loader...");
-		phase1 = new Phase1Loader(problem, targetTasks);
+		phase1 = new Phase1Loader(problem);
 	}
 	
 	/**
@@ -78,7 +78,7 @@ public class ModelUpdate {
 	public void run() throws IOException, ScriptException, EvalException, Exception {
 		
 		//JMetalLogger.logger.info("Loading solutions from phase 1...");
-		solutions = phase1.loadMultiTaskSolutions(this.basePath, Settings.BEST_RUN);
+		solutions = phase1.loadSolutions(this.basePath, Settings.BEST_RUN);
 		if (solutions == null) {
 			JMetalLogger.logger.info("There are no solutions in the path:" + this.basePath);
 			return;
@@ -191,8 +191,7 @@ public class ModelUpdate {
 			}
 			
 			//Evaluate using scheduler
-			int taskID = targetTasks[solID/Settings.GA_POPULATION];
-			int D = this.evaluate(solutions.get(solID), taskID, sampleWCET);
+			int D = this.evaluate(solutions.get(solID), sampleWCET);
 			this.mergeNewSample(new int[]{D});
 			
 			// Save information
@@ -600,7 +599,7 @@ public class ModelUpdate {
 	 * @param _sample
 	 * @return
 	 */
-	public int evaluate(TimeListSolution _solution, int _taskFitness, long[] _sample){
+	public int evaluate(TimeListSolution _solution, long[] _sample){
 		int result = 0;
 		
 		List<Integer> uncertainTasks = problem.getUncertainTasks();
@@ -611,7 +610,7 @@ public class ModelUpdate {
 		
 		try {
 			// Create Scheduler instance
-			Object[] parameters = {problem, _taskFitness};
+			Object[] parameters = {problem, Settings.TARGET_TASKS};
 			RMScheduler scheduler = (RMScheduler)constructor.newInstance(parameters);
 			
 			scheduler.initialize();

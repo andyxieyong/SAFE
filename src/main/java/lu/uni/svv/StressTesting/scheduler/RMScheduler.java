@@ -107,7 +107,7 @@ public class RMScheduler {
 			
 			//Check cycle complete or not  (It was before ExecuteOneUnit() originally)
 			if (Settings.EXTEND_SCHEDULER && readyQueue.size() > 0) {
-				if (RMScheduler.DETAIL == true)
+				if (RMScheduler.DETAIL)
 				{
 					printer.println("\nEnd of expected time quanta");
 					printer.println("Here are extra execution because of ramaining tasks in queue");

@@ -67,13 +67,13 @@ public class RMSchedulerRange extends RMScheduler{
 		
 		if (this.targetTasks.length==0){
 			for (int id=0; id<maximumMissed.length; id++){
-				fitness += maximumMissed[id];
+				if (fitness<maximumMissed[id]) fitness = maximumMissed[id];
 			}
 		}
 		else{
 			for (int id: this.targetTasks){
 				// ID in the targetTasks are started number 1
-				fitness += maximumMissed[id-1];
+				if (fitness<maximumMissed[id]) fitness = maximumMissed[id-1];
 			}
 		}
 		

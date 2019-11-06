@@ -156,7 +156,7 @@ public class SchedulerProof extends TestCase
 		
 		for(int testID=0; testID < 1000; testID++){
 			System.out.println(String.format("Testing %d ...", testID));
-			RMScheduler scheduler = new RMSchedulerRange(problem, Settings.TASK_FITNESS);
+			RMScheduler scheduler = new RMSchedulerRange(problem, Settings.TARGET_TASKS);
 			TimeListSolution solution = problem.createSolution();
 			try {
 				PrintStream printer = new PrintStream(new File(String.format("%s/cpulog_%d.log", workingPath, testID)));

@@ -3,13 +3,10 @@ package lu.uni.svv.StressTesting.search;
 import lu.uni.svv.StressTesting.search.update.*;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
-import org.uma.jmetal.util.JMetalException;
 import org.uma.jmetal.util.JMetalLogger;
 
 import javax.script.ScriptException;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.LogRecord;
@@ -31,22 +28,6 @@ public class SecondPhase {
 			);
 		}
 	};
-	
-	
-	public static int[] convertToIntArray(String commaSeparatedStr)
-	{
-		if (commaSeparatedStr.startsWith("["))
-			commaSeparatedStr = commaSeparatedStr.substring(1);
-		if (commaSeparatedStr.endsWith("]"))
-			commaSeparatedStr = commaSeparatedStr.substring(0,commaSeparatedStr.length()-1);
-		
-		String[] commaSeparatedArr = commaSeparatedStr.split("\\s*,\\s*");
-		int[] result = new int[commaSeparatedArr.length];
-		for(int x=0; x<commaSeparatedArr.length; x++){
-			result[x] = Integer.parseInt(commaSeparatedArr[x]);
-		}
-		return result;
-	}
 	
 	
 	public static void displaySettings(){
@@ -92,15 +73,13 @@ public class SecondPhase {
 		
 		// Settings update
 		if(Settings.N_SAMPLE_WCET==0) Settings.N_SAMPLE_WCET=1;   // Scheduling option:
-		int[] targetTasks = convertToIntArray(Settings.TARGET_TASKLIST);
-		Arrays.sort(targetTasks);
-		int lastTask = targetTasks[targetTasks.length-1];
-		File inputFile = new File(Settings.BASE_PATH + String.format("/Task%02d/input_reduced_run%02d.csv", lastTask, Settings.BEST_RUN));
+		
+		File inputFile = new File(Settings.BASE_PATH + String.format("/input_reduced_run%02d.csv", Settings.BEST_RUN));
 		if (inputFile.exists()){
 			Settings.INPUT_FILE = inputFile.getPath();
 		}
 		else {
-			Settings.INPUT_FILE = Settings.BASE_PATH + String.format("/Task%02d/input.csv", targetTasks[0]);
+			Settings.INPUT_FILE = Settings.BASE_PATH + "/input.csv";
 		}
 		
 		// Showing settings
@@ -110,22 +89,22 @@ public class SecondPhase {
 		ModelUpdate object = null;
 		//if (Settings.STOP_CONDITION) {
 		if (Settings.TEST_DATA.compareTo("kfold")==0){
-			object = new ModelUpdateKFold(targetTasks);
+			object = new ModelUpdateKFold(Settings.TARGET_TASKS);
 		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("refine")==0){
-			object = new ModelUpdateRefine(targetTasks);
+			object = new ModelUpdateRefine(Settings.TARGET_TASKS);
 		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("initial") == 0) {
-			object = new ModelUpdateTermInitial(targetTasks);
+			object = new ModelUpdateTermInitial(Settings.TARGET_TASKS);
 		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("training") == 0) {
-			object = new ModelUpdateTermTraining(targetTasks);
+			object = new ModelUpdateTermTraining(Settings.TARGET_TASKS);
 		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("pool") == 0) {
-			object = new ModelUpdateTermPool(targetTasks);
+			object = new ModelUpdateTermPool(Settings.TARGET_TASKS);
 		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("new") == 0) {
-			object = new ModelUpdateTermNew(targetTasks);
+			object = new ModelUpdateTermNew(Settings.TARGET_TASKS);
 		}
 		else{
 			JMetalLogger.logger.fine("Error:: Unknown Stop data type");
