@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
+
 public class Settings {
 	public static String  INPUT_FILE          = "";
 	public static String  BASE_PATH           = "logs";
@@ -47,7 +48,6 @@ public class Settings {
 	public static int     SAMPLE_CANDIDATES   = 20;
 	
 	public static String  LR_FORMULA_PATH     = "";
-	public static String  LR_SAMPLEDATA_CODE  = "1000";
 	public static int     BEST_RUN            = 10;
 	public static String  LR_WORKPATH         = "seconds";
 	public static int     LR_INITIAL_SIZE     = 0;
@@ -60,11 +60,7 @@ public class Settings {
 	public static String  TEST_DATA           = "testdata";
 	public static int     TEST_NSAMPLES       = 100;
 	public static int     TEST_NGROUP         = 10;
-	public static double  TEST_RANGE_PROB     = 0.01;
-	
-	
 
-	
 	
 	public Settings()
 	{
@@ -75,56 +71,53 @@ public class Settings {
 		ArgumentParser parser = new ArgumentParser();
 		parser.addOption(false,"Help", DataType.BOOLEAN, "h", "help", "Show how to use this program");
 		parser.addOption(false,"SettingFile", DataType.STRING, "f", null, "Base setting file.", "settings.json");
-		parser.addOption(false,"InputFile", DataType.STRING, null, "data", "input data that including job information");
-		parser.addOption(false,"BasePath", DataType.STRING, "b", null, "Base path to save the result of experiments");
-		parser.addOption(false,"ExportPath", DataType.STRING, "e", null, "Exported path to move the result of experiments");
+		parser.addOption(false,"INPUT_FILE", DataType.STRING, null, "data", "input data that including job information");
+		parser.addOption(false,"BASE_PATH", DataType.STRING, "b", null, "Base path to save the result of experiments");
+		parser.addOption(false,"EXPORT_PATH", DataType.STRING, "e", null, "Exported path to move the result of experiments");
 		
 		//scheduler
-		parser.addOption(false,"Scheduler", DataType.STRING, "s", null, "Scheduler");
-		parser.addOption(false,"targets", DataType.STRING, "t", "targets","target tasks for search");
-		parser.addOption(false,"TimeQuanta", DataType.DOUBLE, null, "quanta", "Scheduler time quanta");
-		parser.addOption(false,"TimeMax", DataType.INTEGER, null, "max", "scheduler time max");
-		parser.addOption(false,"extendScheduler", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", true);
+		parser.addOption(false,"SCHEDULER", DataType.STRING, "s", null, "Scheduler");
+		parser.addOption(false,"TARGET_TASKLIST", DataType.STRING, "t", "targets","target tasks for search");
+		parser.addOption(false,"TIME_QUANTA", DataType.DOUBLE, null, "quanta", "Scheduler time quanta");
+		parser.addOption(false,"TIME_MAX", DataType.INTEGER, null, "max", "scheduler time max");
+		parser.addOption(false,"EXTEND_SCHEDULER", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", true);
 		
 		// GA
-		parser.addOption(false,"Run", DataType.INTEGER, null, "runID", "Specific run ID when you execute run separately");
-		parser.addOption(false,"RunMax", DataType.INTEGER, "r", null, "Maximum run times for GA");
-		parser.addOption(false,"Populations", DataType.INTEGER, "p", null, "Population for GA");
-		parser.addOption(false,"Iterations", DataType.INTEGER, "i", null, "Maximum iterations for GA");
-		parser.addOption(false,"CrossoverRate", DataType.DOUBLE, "c", null, "Crossover rate for GA");
-		parser.addOption(false,"MutationRate", DataType.DOUBLE, "m", null, "Mutation rate for GA");
-		parser.addOption(false,"simpleSearch", DataType.BOOLEAN, null, "simpleSearch", "Simple search mode, not using crossover and mutation just produce children randomly", false);
-		parser.addOption(false,"ExportPath", DataType.STRING, "e", null, "Exported path to move the result of experiments");
+		parser.addOption(false,"GA_RUN", DataType.INTEGER, null, "runID", "Specific run ID when you execute run separately");
+		parser.addOption(false,"GA_RUN_MAX", DataType.INTEGER, "r", null, "Maximum run times for GA");
+		parser.addOption(false,"GA_POPULATION", DataType.INTEGER, "p", null, "Population for GA");
+		parser.addOption(false,"GA_MAX_ITERATION", DataType.INTEGER, "i", null, "Maximum iterations for GA");
+		parser.addOption(false,"GA_CROSSOVER_PROB", DataType.DOUBLE, "c", null, "Crossover rate for GA");
+		parser.addOption(false,"GA_MUTATION_PROB", DataType.DOUBLE, "m", null, "Mutation rate for GA");
+		parser.addOption(false,"SIMPLE_SEARCH", DataType.BOOLEAN, null, "simpleSearch", "Simple search mode, not using crossover and mutation just produce children randomly", false);
 		
-		parser.addOption(false,"printSamples", DataType.BOOLEAN, null, "printSamples", "If you set this parameter, The program will produce sampling detail information", false);
-		parser.addOption(false,"printResults", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
+		parser.addOption(false,"PRINT_SAMPLES", DataType.BOOLEAN, null, "printSamples", "If you set this parameter, The program will produce sampling detail information", false);
+		parser.addOption(false,"PRINT_RESULTS", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
 
-		parser.addOption(false,"nSampleWCET", DataType.INTEGER, null, "nSamples", "The number of samples that will extracted between minWCET and maxWCET");
-		parser.addOption(false,"uniformSample", DataType.BOOLEAN, null, "uniform", "uniform sample when we are sampling from a range of WCET", false);
-		parser.addOption(false,"A12Threshold", DataType.DOUBLE, null, "A12Threshold", "Threshold for A12");
+		parser.addOption(false,"N_SAMPLE_WCET", DataType.INTEGER, null, "nSamples", "The number of samples that will extracted between minWCET and maxWCET");
+		parser.addOption(false,"UNIFORM_SAMPLE", DataType.BOOLEAN, null, "uniform", "uniform sample when we are sampling from a range of WCET", false);
+		parser.addOption(false,"A12_THRESHOLD", DataType.DOUBLE, null, "A12Threshold", "Threshold for A12");
 		
 		//Second phase
-		parser.addOption(false,"secondRuntype", DataType.STRING, null, "secondRuntype", "Second phase run type {\"random\", \"distance\"}");
-		parser.addOption(false,"iterMax", DataType.INTEGER, null, "iterMax", "The iteration number to finish second phase");
-		parser.addOption(false,"iterUpdate", DataType.INTEGER, null, "iterUpdate", "The iteration number to update logsitic regression model");
-		parser.addOption(false,"borderProb", DataType.DOUBLE, null, "borderProb", "Border Probability for second phase");
-		parser.addOption(false,"sampleCandidates", DataType.INTEGER, null, "sampleCandidates", "The number of sandidates to get one sample in second phase");
+		parser.addOption(false,"SECOND_PHASE_RUNTYPE", DataType.STRING, null, "secondRuntype", "Second phase run type {\"random\", \"distance\"}");
+		parser.addOption(false,"MAX_ITERATION", DataType.INTEGER, null, "iterMax", "The iteration number to finish second phase");
+		parser.addOption(false,"UPDATE_ITERATION", DataType.INTEGER, null, "iterUpdate", "The iteration number to update logsitic regression model");
+		parser.addOption(false,"BORDER_PROBABILITY", DataType.DOUBLE, null, "borderProb", "Border Probability for second phase");
+		parser.addOption(false,"SAMPLE_CANDIDATES", DataType.INTEGER, null, "sampleCandidates", "The number of sandidates to get one sample in second phase");
 		
-		parser.addOption(false,"formulaPath", DataType.STRING, null, "formulaPath", "formula file path to use in second phase");
-		parser.addOption(false,"sampleData", DataType.STRING, null, "sampleData", "select sampledata file");
-		parser.addOption(false,"bestRun", DataType.INTEGER, null, "bestRun", "select best run in first phase");
-		parser.addOption(false,"workPath", DataType.STRING, null, "workPath", "the path for saving workdata in second phase");
-		parser.addOption(false,"LRinitSize", DataType.INTEGER, null, "LRinitSize", "the number of initial training data size for the second phase");
+		parser.addOption(false,"LR_FORMULA_PATH", DataType.STRING, null, "formulaPath", "formula file path to use in second phase");
+		parser.addOption(false,"BEST_RUN", DataType.INTEGER, null, "bestRun", "select best run in first phase");
+		parser.addOption(false,"LR_WORKPATH", DataType.STRING, null, "workPath", "the path for saving workdata in second phase");
+		parser.addOption(false,"LR_INITIAL_SIZE", DataType.INTEGER, null, "LRinitSize", "the number of initial training data size for the second phase");
 		
-		parser.addOption(false,"testData", DataType.STRING, null, "testData", "test data file");
-		parser.addOption(false,"testSamples", DataType.INTEGER, null, "testSamples", "number of samples for testing of each model");
-		parser.addOption(false,"testGroups", DataType.INTEGER, null, "testGroups", "the number of test data set");
-		parser.addOption(false,"testProbRange", DataType.DOUBLE, null, "testProbRange", "range of probability selecting test data");
+		parser.addOption(false,"TEST_DATA", DataType.STRING, null, "testData", "test data file");
+		parser.addOption(false,"TEST_NSAMPLES", DataType.INTEGER, null, "testSamples", "number of samples for testing of each model");
+		parser.addOption(false,"TEST_NGROUP", DataType.INTEGER, null, "testGroups", "the number of test data set");
 		
-		parser.addOption(false,"stopProbAccept", DataType.DOUBLE, null, "stopProbAccept", "acceptance probability of second phase model");
-		parser.addOption(false,"stopDataType", DataType.STRING, null, "stopDataType", "test data type: training, new, initial, pool");
-		parser.addOption(false,"stopFuncName", DataType.STRING, null, "stopFuncName", "function name for testing to decide when we stop");
-		parser.addOption(false,"stopCondition", DataType.BOOLEAN, "x", null, "Stop with stopping condition when this parameter set", false);
+		parser.addOption(false,"STOP_ACCEPT_RATE", DataType.DOUBLE, null, "stopProbAccept", "acceptance probability of second phase model");
+		parser.addOption(false,"STOP_DATA_TYPE", DataType.STRING, null, "stopDataType", "test data type: training, new, initial, pool");
+		parser.addOption(false,"STOP_FUNCTION_NAME", DataType.STRING, null, "stopFuncName", "function name for testing to decide when we stop");
+		parser.addOption(false,"STOP_CONDITION", DataType.BOOLEAN, "x", null, "Stop with stopping condition when this parameter set", false);
 		
 		// parsing args;
 		try{
@@ -145,61 +138,8 @@ public class Settings {
 		
 		// Load settings from file
 		String filename = (String)parser.getParam("SettingFile");
-		Settings.updateSettings(filename);
-		
-		
-		// update settings from command parameters
-		if (parser.containsParam("InputFile"))      INPUT_FILE = (String) parser.getParam("InputFile");
-		if (parser.containsParam("BasePath"))       BASE_PATH = (String) parser.getParam("BasePath");
-		if (parser.containsParam("ExportPath"))     EXPORT_PATH = (String) parser.getParam("ExportPath");
-		
-		//scheduler
-		if (parser.containsParam("Scheduler"))      SCHEDULER = (String) parser.getParam("Scheduler");
-		if (parser.containsParam("targets"))        TARGET_TASKLIST = (String) parser.getParam("targets");
-		if (parser.containsParam("TimeQuanta"))     TIME_QUANTA = (Double) parser.getParam("TimeQuanta");
-		if (parser.containsParam("TimeMax"))        TIME_MAX = (Integer) parser.getParam("TimeMax");
-		if (parser.containsParam("extendScheduler"))EXTEND_SCHEDULER = (Boolean) parser.getParam("extendScheduler");
-		
-		// GA
-		if (parser.containsParam("RunMax"))         GA_RUN_MAX = (Integer) parser.getParam("RunMax");
-		if (parser.containsParam("Run"))            GA_RUN = (Integer) parser.getParam("Run");
-		if (parser.containsParam("Populations"))    GA_POPULATION = (Integer) parser.getParam("Populations");
-		if (parser.containsParam("Iterations"))     GA_MAX_ITERATION = (Integer) parser.getParam("Iterations");
-		if (parser.containsParam("CrossoverRate"))  GA_CROSSOVER_PROB = (Double) parser.getParam("CrossoverRate");
-		if (parser.containsParam("MutationRate"))   GA_MUTATION_PROB = (Double) parser.getParam("MutationRate");
-		// fitness sampling
-		if (parser.containsParam("simpleSearch"))   SIMPLE_SEARCH = (Boolean) parser.getParam("simpleSearch");
-		if (parser.containsParam("TaskFitness"))    TASK_FITNESS = (Integer) parser.getParam("TaskFitness");
-		if (parser.containsParam("nSampleWCET"))    N_SAMPLE_WCET = (Integer) parser.getParam("nSampleWCET");
-		if (parser.containsParam("printResults"))   PRINT_RESULTS = (Boolean) parser.getParam("printResults");
-		if (parser.containsParam("printSamples"))   PRINT_SAMPLES = (Boolean) parser.getParam("printSamples");
-		
-		if (parser.containsParam("A12Threshold"))   A12_THRESHOLD = (Double) parser.getParam("A12Threshold");
-		if (parser.containsParam("uniformSample"))  UNIFORM_SAMPLE = (Boolean) parser.getParam("uniformSample");
-		
-		//Second phase
-		if (parser.containsParam("secondRuntype"))  SECOND_PHASE_RUNTYPE = (String) parser.getParam("secondRuntype");
-		if (parser.containsParam("iterMax"))        MAX_ITERATION = (Integer) parser.getParam("iterMax");
-		if (parser.containsParam("iterUpdate"))     UPDATE_ITERATION = (Integer) parser.getParam("iterUpdate");
-		if (parser.containsParam("borderProb"))     BORDER_PROBABILITY = (Double) parser.getParam("borderProb");
-		if (parser.containsParam("sampleCandidates"))SAMPLE_CANDIDATES = (Integer) parser.getParam("sampleCandidates");
-		
-		if (parser.containsParam("formulaPath"))    LR_FORMULA_PATH = (String) parser.getParam("formulaPath");
-		if (parser.containsParam("bestRun"))        BEST_RUN = (Integer) parser.getParam("bestRun");
-		if (parser.containsParam("workPath"))       LR_WORKPATH = (String) parser.getParam("workPath");
-		if (parser.containsParam("sampleData"))     LR_SAMPLEDATA_CODE = (String) parser.getParam("sampleData");
-		if (parser.containsParam("LRinitSize"))     LR_INITIAL_SIZE = (Integer) parser.getParam("LRinitSize");
-		
-		if (parser.containsParam("stopProbAccept")) STOP_ACCEPT_RATE = (Double) parser.getParam("stopProbAccept");
-		if (parser.containsParam("stopDataType"))   STOP_DATA_TYPE = (String) parser.getParam("stopDataType");
-		if (parser.containsParam("stopFuncName"))   STOP_FUNCTION_NAME = (String) parser.getParam("stopFuncName");
-		if (parser.containsParam("stopCondition"))  STOP_CONDITION = (Boolean) parser.getParam("stopCondition");
-		
-		if (parser.containsParam("testProbRange"))  TEST_RANGE_PROB = (Double) parser.getParam("testProbRange");
-		if (parser.containsParam("testData"))       TEST_DATA = (String) parser.getParam("testData");
-		if (parser.containsParam("testSamples"))    TEST_NSAMPLES = (Integer) parser.getParam("testSamples");
-		if (parser.containsParam("testGroups"))     TEST_NGROUP = (Integer) parser.getParam("testGroups");
-		
+		Settings.updateSettings(filename);      //Update settings from the settings.json file.
+		updateFromParser(parser);               //Update settings from the command parameters
 		
 		Settings.TARGET_TASKS = convertToIntArray(Settings.TARGET_TASKLIST);
 		Arrays.sort(Settings.TARGET_TASKS);
@@ -252,6 +192,36 @@ public class Settings {
 		}
 	}
 	
+	public static void updateFromParser(ArgumentParser _parser) throws Exception {
+		Field[] fields = Settings.class.getDeclaredFields();
+		for (Field field:fields){
+			String fieldName = field.getName();
+			Object param = _parser.getParam(fieldName);
+			if (param == null) continue;
+			if (fieldName.compareTo("TARGET_TASKS")==0) continue;
+			
+			try {
+				field.setAccessible(true);
+				
+				if (_parser.getDataType(fieldName)==DataType.STRING)
+					field.set(null, (String)param);
+				else if (_parser.getDataType(fieldName)==DataType.INTEGER)
+					field.setInt(null, (Integer)_parser.getParam(fieldName));
+				else if (_parser.getDataType(fieldName)==DataType.BOOLEAN)
+					field.setBoolean(null, (Boolean)_parser.getParam(fieldName));
+				else if (_parser.getDataType(fieldName)==DataType.DOUBLE)
+					field.setDouble(null, (Double)_parser.getParam(fieldName));
+				else {
+					throw new Exception("Undefined data type for " + fieldName);
+				}
+				
+				field.setAccessible(false);
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	public static int getCommentIdx(String s) {
 		int idx = -1;
 		
@@ -259,8 +229,8 @@ public class Settings {
 		
 		boolean string = false;
 		for(int x=0; x<s.length(); x++) {
-			if (string == false && s.charAt(x) == '\"'){string = true;	continue;}      // string start
-			if (string == true)
+			if (!string && s.charAt(x) == '\"'){string = true;	continue;}      // string start
+			if (string)
 			{
 				if (s.charAt(x) == '\\') {x++; continue;}                 // escape
 				if (s.charAt(x) == '\"') {string = false;	continue;}      // string end
@@ -287,12 +257,8 @@ public class Settings {
 			if (line == null) break;
 			
 			// remove comment
-			//int idx = 0;
 			int idx = getCommentIdx(line);
 			if (idx >= 0){
-//			int idx = line.lastIndexOf("//");
-//			int idx2 = line.lastIndexOf("\"");
-//			if (idx>=0 && idx2<idx){
 				line = line.substring(0, idx);
 			}
 			
