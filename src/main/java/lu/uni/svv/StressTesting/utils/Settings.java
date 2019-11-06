@@ -33,6 +33,7 @@ public class Settings {
 	public static double  GA_CROSSOVER_PROB   = 0.9;
 	public static double  GA_MUTATION_PROB    = 0.5;
 	public static boolean SIMPLE_SEARCH       = false;
+	public static String  GA_REPR_FITNESS     = "average";
 	public static int     N_SAMPLE_WCET       = 0;
 	public static boolean UNIFORM_SAMPLE      = false;
 	public static double  A12_THRESHOLD       = 0.5;
@@ -90,6 +91,7 @@ public class Settings {
 		parser.addOption(false,"GA_CROSSOVER_PROB", DataType.DOUBLE, "c", null, "Crossover rate for GA");
 		parser.addOption(false,"GA_MUTATION_PROB", DataType.DOUBLE, "m", null, "Mutation rate for GA");
 		parser.addOption(false,"SIMPLE_SEARCH", DataType.BOOLEAN, null, "simpleSearch", "Simple search mode, not using crossover and mutation just produce children randomly", false);
+		parser.addOption(false,"GA_REPR_FITNESS", DataType.STRING, null, "reprFitness", "one type of fitness among average, maximum or minimum");
 		
 		parser.addOption(false,"PRINT_SAMPLES", DataType.BOOLEAN, null, "printSamples", "If you set this parameter, The program will produce sampling detail information", false);
 		parser.addOption(false,"PRINT_RESULTS", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
