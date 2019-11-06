@@ -1,8 +1,6 @@
 package lu.uni.svv.StressTesting.search;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.ConsoleHandler;
@@ -10,7 +8,6 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
-import lu.uni.svv.StressTesting.datatype.FitnessList;
 import lu.uni.svv.StressTesting.search.model.*;
 import org.apache.commons.io.FileUtils;
 import org.uma.jmetal.operator.CrossoverOperator;
@@ -19,7 +16,6 @@ import org.uma.jmetal.operator.SelectionOperator;
 import org.uma.jmetal.operator.impl.selection.BinaryTournamentSelection;
 import org.uma.jmetal.util.AlgorithmRunner;
 import org.uma.jmetal.util.JMetalLogger;
-import lu.uni.svv.StressTesting.datatype.SummaryItem;
 import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 
@@ -54,8 +50,6 @@ public class SteadyStateGeneticAlgorithmRunner {
 		
 		// problem load
 		TestingProblem problem = new TestingProblem(Settings.INPUT_FILE, Settings.TIME_QUANTA, Settings.TIME_MAX, Settings.SCHEDULER);
-		//String changed = problem.increaseWCET(Settings.INC_TASK_TYPE, Settings.INC_RATE);
-		//printInput(changed, problem.getInputs());
 		printInput(null, problem.getInputs());
 		JMetalLogger.logger.info("Loaded problem");
 		
@@ -70,10 +64,6 @@ public class SteadyStateGeneticAlgorithmRunner {
 						Settings.GA_CROSSOVER_PROB,
 						Settings.GA_MUTATION_PROB);
 		}
-		
-		// move final result to another location.
-		if (Settings.EXPORT_PATH.compareTo("")!=0)
-			moveResults();
 	}
 	
 	public static void printInput(String changed, String inputs){
@@ -178,7 +168,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 	}
 
 	public static void init() {
-		if (Settings.GA_RUN == 0){
+		if (Settings.GA_RUN == 0) {
 			// Only apply to multi run mode
 			File dir = new File(Settings.BASE_PATH);
 			if (dir.exists() == true) {
@@ -188,31 +178,6 @@ public class SteadyStateGeneticAlgorithmRunner {
 					System.out.println("Failed to delete results");
 					e.printStackTrace();
 				}
-			}
-		}
-	}
-	
-	public static void moveResults(){
-		File srcDir = new File(Settings.BASE_PATH);
-		createParentsDirs(Settings.EXPORT_PATH);
-		File destDir = new File(Settings.EXPORT_PATH);
-		
-		try {
-			FileUtils.copyDirectory(srcDir, destDir);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public static void createParentsDirs(String path){
-		String pathstr = "";
-		String[] paths = path.substring(0, path.lastIndexOf("/")).split("/");
-		if (paths.length > 1) {
-			for(int t=0; t<paths.length-1; t++) {
-				pathstr += paths[t]+"/";
-				File dir = new File(pathstr);
-				if( !(dir.exists()) )
-					dir.mkdir();
 			}
 		}
 	}
