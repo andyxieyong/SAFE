@@ -109,7 +109,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 						 											selectionOperator);
 		
 		AlgorithmRunner algorithmRunner = new AlgorithmRunner.Executor(algorithm).execute();
-
+		
 		// Get result
 		long computingTime = algorithmRunner.getComputingTime() ;
 		TimeListSolution solution = algorithm.getResult();
@@ -131,7 +131,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 	
 	public static void printDetails(TimeListSolution solution, int run)
 	{
-		GAWriter writer = new GAWriter(String.format("solutions/solutions_run%02d.json", run), Level.FINE, null, Settings.BASE_PATH);
+		GAWriter writer = new GAWriter(String.format("_solutions/solutions_run%02d.json", run), Level.FINE, null, Settings.BASE_PATH);
 		writer.info(solution.getVariableValueString());
 		writer.close();
 	}
@@ -145,7 +145,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 		for(TimeListSolution solution: solutions) {
 			idx += 1;
 			
-			writer = new GAWriter(String.format("solutions/solutions_run%02d_%d.json", run, idx), Level.FINE, null, Settings.BASE_PATH);
+			writer = new GAWriter(String.format("_solutions/solutions_run%02d_%d.json", run, idx), Level.FINE, null, Settings.BASE_PATH);
 			writer.info(solution.getVariableValueString());
 			writer.close();
 			

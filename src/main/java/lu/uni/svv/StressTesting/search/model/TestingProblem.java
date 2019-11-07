@@ -149,7 +149,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		// Sample
 		List<Integer> uncertainTasks = this.getUncertainTasks();
 		String uncertainHeader = this.getUncertainTasksString("result", uncertainTasks);
-		String filename = (this.RUN_ID >0)? String.format("samples/sampledata_run%02d.csv", this.RUN_ID):"samples/sampledata.csv";
+		String filename = (this.RUN_ID >0)? String.format("_samples/sampledata_run%02d.csv", this.RUN_ID):"samples/sampledata.csv";
 		GAWriter sampledata = new GAWriter(filename, Level.INFO, uncertainHeader, Settings.BASE_PATH,true);
 		
 		// generate sample

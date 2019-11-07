@@ -8,8 +8,8 @@ import javax.script.ScriptException;
 
 public class ModelUpdateTermNew extends ModelUpdate {
 	
-	public ModelUpdateTermNew(int[] _targetTasks) throws Exception{
-		super(_targetTasks);
+	public ModelUpdateTermNew() throws Exception{
+		super();
 	}
 	
 	public boolean prepareTerminationData() throws ScriptException, EvalException {

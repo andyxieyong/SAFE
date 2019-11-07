@@ -9,8 +9,8 @@ import javax.script.ScriptException;
 
 public class ModelUpdateTermPool extends ModelUpdate {
 	
-	public ModelUpdateTermPool(int[] _targetTasks) throws Exception{
-		super(_targetTasks);
+	public ModelUpdateTermPool() throws Exception{
+		super();
 	}
 	
 	public boolean prepareTerminationData()  throws ScriptException, EvalException{

@@ -33,7 +33,8 @@ public class SecondPhase {
 	public static void displaySettings(){
 		JMetalLogger.logger.info("INPUT_FILE         : "+ Settings.INPUT_FILE);
 		JMetalLogger.logger.info("BASE_PATH          : "+ Settings.BASE_PATH);
-		JMetalLogger.logger.info("EXPORT_PATH        : "+ Settings.EXPORT_PATH);
+		JMetalLogger.logger.info("EXTEND_PATH        : "+ Settings.EXTEND_PATH);
+		JMetalLogger.logger.info("WORKNAME           : "+ Settings.WORKNAME);
 		JMetalLogger.logger.info("RUN_NUM            : "+ Settings.RUN_NUM);
 		JMetalLogger.logger.info("");
 		// Scheduler variables
@@ -49,7 +50,6 @@ public class SecondPhase {
 		JMetalLogger.logger.info("");
 		JMetalLogger.logger.info("N_MODEL_UPDATES    : "+ Settings.N_MODEL_UPDATES);
 		JMetalLogger.logger.info("N_EXAMPLE_POINTS   : "+ Settings.N_EXAMPLE_POINTS);
-		JMetalLogger.logger.info("LR_WORKPATH        : "+ Settings.LR_WORKPATH);
 		JMetalLogger.logger.info("");
 		JMetalLogger.logger.info("TEST_DATA          : "+ Settings.TEST_DATA);
 		JMetalLogger.logger.info("TEST_NSAMPLES      : "+ Settings.TEST_NSAMPLES);
@@ -79,7 +79,7 @@ public class SecondPhase {
 		// Settings update
 		if(Settings.N_SAMPLE_WCET==0) Settings.N_SAMPLE_WCET=1;   // Scheduling option:
 		
-		File inputFile = new File(Settings.BASE_PATH + String.format("/input_reduced_run%02d.csv", Settings.RUN_NUM));
+		File inputFile = new File(Settings.BASE_PATH + String.format("/inputs/reduced_run%02d.csv", Settings.RUN_NUM));
 		if (inputFile.exists()){
 			Settings.INPUT_FILE = inputFile.getPath();
 		}
@@ -94,22 +94,22 @@ public class SecondPhase {
 		ModelUpdate object = null;
 		//if (Settings.STOP_CONDITION) {
 		if (Settings.TEST_DATA.compareTo("kfold")==0){
-			object = new ModelUpdateKFold(Settings.TARGET_TASKS);
+			object = new ModelUpdateKFold();
 		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("refine")==0){
-			object = new ModelUpdateRefine(Settings.TARGET_TASKS);
+			object = new ModelUpdateRefine();
 		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("initial") == 0) {
-			object = new ModelUpdateTermInitial(Settings.TARGET_TASKS);
+			object = new ModelUpdateTermInitial();
 		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("training") == 0) {
-			object = new ModelUpdateTermTraining(Settings.TARGET_TASKS);
+			object = new ModelUpdateTermTraining();
 		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("pool") == 0) {
-			object = new ModelUpdateTermPool(Settings.TARGET_TASKS);
+			object = new ModelUpdateTermPool();
 		}
 		else if (Settings.STOP_DATA_TYPE.compareTo("new") == 0) {
-			object = new ModelUpdateTermNew(Settings.TARGET_TASKS);
+			object = new ModelUpdateTermNew();
 		}
 		else{
 			JMetalLogger.logger.fine("Error:: Unknown Stop data type");

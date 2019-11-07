@@ -1,33 +1,15 @@
 package lu.uni.svv.StressTesting.search.update;
 
-import lu.uni.svv.StressTesting.scheduler.RMScheduler;
-import lu.uni.svv.StressTesting.search.model.TestingProblem;
-import lu.uni.svv.StressTesting.search.model.TimeListSolution;
-import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
-import org.renjin.script.RenjinScriptEngineFactory;
-import org.renjin.sexp.StringVector;
-import org.renjin.sexp.Vector;
 import org.uma.jmetal.util.JMetalLogger;
-
-import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.logging.Level;
 
 
 public class ModelUpdateKFold extends ModelUpdate {
 	
-	public ModelUpdateKFold(int[] _targetTasks) throws Exception{
-		super(_targetTasks);
+	public ModelUpdateKFold() throws Exception{
+		super();
 	}
 	
 	////////////////////////////////////////////////////////////////////////
@@ -59,7 +41,7 @@ public class ModelUpdateKFold extends ModelUpdate {
 		}
 		
 		engine.eval("test.results <- data.frame()");
-		engine.eval(String.format("testdata_filename <- \"%s/%s/%s_test_data.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+		engine.eval(String.format("testdata_filename <- \"%s/%s/%s_test_data.csv\"", Settings.EXTEND_PATH, Settings.WORKNAME, filename));
 		return true;
 	}
 	

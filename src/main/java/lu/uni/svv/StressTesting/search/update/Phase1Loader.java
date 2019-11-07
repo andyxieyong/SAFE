@@ -14,6 +14,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +35,7 @@ public class Phase1Loader {
 	 * @return
 	 */
 	public List<TimeListSolution> loadSolutions(String _path, int _runID) {
-		String path = _path + "/solutions/";
+		String path = _path + "/_solutions/";
 		ArrayList<TimeListSolution> solutions = new ArrayList<TimeListSolution>();
 		
 		File f = new File(path);
@@ -60,14 +61,14 @@ public class Phase1Loader {
 	
 	public boolean makeInitialPoints(String _inputPath, String _outputPath, int _bestRun, String _workfile)	{
 		
-		Path targetFile = Paths.get(String.format("%s/%s", _outputPath, _workfile));
+		Path targetFile = Paths.get(String.format("%s/%s",_outputPath, _workfile));
 		File file = targetFile.toFile();
 		if (!file.getParentFile().exists())
 			file.getParentFile().mkdirs();
 		
-		Path sourceFile = Paths.get(String.format("%s/samples/sampledata_run%02d.csv", _inputPath, _bestRun));
+		Path sourceFile = Paths.get(String.format("%s/_samples/sampledata_run%02d.csv", _inputPath, _bestRun));
 		try {
-			Files.copy(sourceFile, targetFile);
+			Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;

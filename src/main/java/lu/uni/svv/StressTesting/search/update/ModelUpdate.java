@@ -26,23 +26,18 @@ import java.util.logging.Level;
 
 public class ModelUpdate {
 	
-	String basePath;
 	TestingProblem problem;
 	List<TimeListSolution> solutions= null;
 	
-	//	RMScheduler scheduler = null;
+	// Objects
 	Constructor constructor = null;
 	ScriptEngine engine = null;
-	int[] targetTasks = null;
-	String filename = "";
-	
-	//Objects
 	Phase1Loader phase1 = null;
 	
-	public ModelUpdate(int[] _targetTasks) throws Exception{
-		basePath = Settings.BASE_PATH;
-		targetTasks = _targetTasks;
-		
+	//Variables
+	String filename = "";
+	
+	public ModelUpdate() throws Exception{
 		//load Testing Problem
 		problem = new TestingProblem(Settings.INPUT_FILE, Settings.TIME_QUANTA, Settings.TIME_MAX, Settings.SCHEDULER);
 		JMetalLogger.logger.info("Loaded problem");
@@ -76,14 +71,14 @@ public class ModelUpdate {
 	 */
 	public void run() throws IOException, ScriptException, EvalException, Exception {
 		
-		//JMetalLogger.logger.info("Loading solutions from phase 1...");
-		solutions = phase1.loadSolutions(this.basePath, Settings.RUN_NUM);
+		// Loading solutions
+		solutions = phase1.loadSolutions(Settings.BASE_PATH, Settings.RUN_NUM);
 		if (solutions == null) {
-			JMetalLogger.logger.info("There are no solutions in the path:" + this.basePath);
+			JMetalLogger.logger.info("There are no solutions in the path:" + Settings.BASE_PATH);
 			return;
 		}
 		
-		//JMetalLogger.logger.info("Loading formula for phase 2...");
+		// Loading formula
 		String formula = loadFormula(Settings.LR_FORMULA_PATH);
 		if (formula == null) {
 			JMetalLogger.logger.info("Failed to load formula in " + Settings.LR_FORMULA_PATH);
@@ -127,7 +122,7 @@ public class ModelUpdate {
 		//}
 
 		JMetalLogger.logger.info("Learning initial model ...");
-		if(Settings.INPUT_FILE.endsWith("reduced.csv")){
+		if(!Settings.INPUT_FILE.endsWith("input.csv")){
 			JMetalLogger.logger.info("Adjusting training data in a balanced way...");
 			if (!this.adjustingBalance(workfile)) {
 				JMetalLogger.logger.info("Error to adjust data balancing");
@@ -166,21 +161,19 @@ public class ModelUpdate {
 		// Sampling new data point and evaluation
 		int count = 0;
 		int solID = 0;
+		int nUpdates = 0;
 		double borderProbability = Settings.BORDER_PROBABILITY;
 		
-		int nUpdates = 0;
-		int totalCount = Settings.N_MODEL_UPDATES * Settings.N_EXAMPLE_POINTS;
-		while (nUpdates <= totalCount) {
+		while (nUpdates < Settings.N_MODEL_UPDATES) {
 			// Learning model again with more data
-			if ((nUpdates != 0) && (count == Settings.N_EXAMPLE_POINTS)) {
-				
+			if (count == Settings.N_EXAMPLE_POINTS) {
+				nUpdates += 1;
 				JMetalLogger.logger.info("update logistic regression " + nUpdates + "/" + Settings.N_MODEL_UPDATES);
 				borderProbability = this.updateModel(borderProbability);
 				if (Settings.TEST_DATA.length() != 0 && !evaluateModel(nUpdates)){
 					JMetalLogger.logger.info("Failed to evaluate model with test data in "+ nUpdates + "/" + Settings.N_MODEL_UPDATES);
 					return false;
 				}
-				nUpdates += 1;
 				count = 0;
 				if (Settings.STOP_CONDITION && this.checkStopCondition()) break;
 			}
@@ -226,11 +219,7 @@ public class ModelUpdate {
 		String appendix = "";
 		if (Settings.TEST_NSAMPLES != 0)
 			appendix = String.format("_T%d", Settings.TEST_NSAMPLES);
-		
-		if (Settings.RUN_NUM != 0)
-			appendix = String.format("_P2run%d", Settings.RUN_NUM);
-		
-		
+
 		// Setting initial points to use for learning
 		String formulaCode = "";
 		if (Settings.LR_FORMULA_PATH.length()!=0){
@@ -238,6 +227,7 @@ public class ModelUpdate {
 		}
 		
 		filename = String.format("workdata_%s_%d_%d_%.2f%s_run%02d%s",
+				
 				Settings.SECOND_PHASE_RUNTYPE,
 				Settings.N_MODEL_UPDATES,
 				Settings.N_EXAMPLE_POINTS,
@@ -245,9 +235,9 @@ public class ModelUpdate {
 				formulaCode,
 				Settings.RUN_NUM,
 				appendix);
-		String workfile = String.format("%s/%s.csv", Settings.LR_WORKPATH, filename);
+		String workfile = String.format("%s/%s.csv", Settings.WORKNAME, filename);
 		
-		if (!phase1.makeInitialPoints(this.basePath, Settings.EXPORT_PATH, Settings.RUN_NUM, workfile)) {
+		if (!phase1.makeInitialPoints(Settings.BASE_PATH, Settings.EXTEND_PATH, Settings.RUN_NUM, workfile)) {
 			return null;
 		}
 		return workfile;
@@ -257,8 +247,7 @@ public class ModelUpdate {
 		String formula = "";
 		try {
 			if (formulaPath.length() == 0) {
-				int lastTask = targetTasks[targetTasks.length-1];
-				formulaPath = String.format("%s/formula/T%s_S%d_run%02d", Settings.BASE_PATH, lastTask,Settings.N_SAMPLE_WCET, Settings.RUN_NUM);
+				formulaPath = String.format("%s/formula/formula_run%02d", Settings.BASE_PATH, Settings.RUN_NUM);
 			}
 			formula = new String(Files.readAllBytes(Paths.get(formulaPath)), StandardCharsets.UTF_8).trim();
 			JMetalLogger.logger.info("Loaded formula from " + formulaPath);
@@ -313,7 +302,7 @@ public class ModelUpdate {
 	 */
 	public boolean loadTrainingData(String inputpath, int initialTrainingSize) throws ScriptException, EvalException{
 		// load data
-		engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXPORT_PATH, inputpath));
+		engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXTEND_PATH, inputpath));
 		engine.eval("training <- read.csv(datafile, header=TRUE)");
 		
 		if (initialTrainingSize != 0) {
@@ -381,7 +370,7 @@ public class ModelUpdate {
 		engine.eval("training <- prunning(training, balanceSide, intercepts, uncertainIDs)");
 		
 		// load data
-		engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXPORT_PATH, inputpath));
+		engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXTEND_PATH, inputpath));
 		
 		// save training data
 		engine.eval("write.table(training, datafile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
@@ -479,7 +468,7 @@ public class ModelUpdate {
 	}
 	
 	public boolean saveTerminationResults() throws ScriptException, EvalException{
-		engine.eval(String.format("resultfile <- \"%s/%s/%s_termination_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+		engine.eval(String.format("resultfile <- \"%s/%s/%s_termination_result.csv\"", Settings.EXTEND_PATH, Settings.WORKNAME, filename));
 		engine.eval("write.table(termination.results, resultfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
 		
 		return true;
@@ -514,7 +503,7 @@ public class ModelUpdate {
 		
 		engine.eval("test.results <- data.frame()");
 		
-		String cmd = String.format("test_data <-read.csv(sprintf(\"%s/testdata/%s\"), header=TRUE)", basePath, Settings.TEST_DATA);
+		String cmd = String.format("test_data <-read.csv(sprintf(\"%s/testdata/%s\"), header=TRUE)", Settings.BASE_PATH, Settings.TEST_DATA);
 		engine.eval(cmd);
 		engine.eval("positive <-test_data[test_data$result==0,]");
 		engine.eval("negative <-test_data[test_data$result==1,]");
@@ -537,7 +526,7 @@ public class ModelUpdate {
 		JMetalLogger.logger.info("Test Data (positive): " + nPositives[0]);
 		JMetalLogger.logger.info("Test Data (negative): " + nNegatives[0]);
 		
-		engine.eval(String.format("testfile <- \"%s/%s/%s_test_data.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+		engine.eval(String.format("testfile <- \"%s/%s/%s_test_data.csv\"", Settings.EXTEND_PATH, Settings.WORKNAME, filename));
 		engine.eval("test.sample <- data.frame(TestSet=rep(1, nrow(test.samples[[1]])), test.samples[[1]])");
 		engine.eval("write.table(test.sample, testfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
 		for(int x=1; x<Settings.TEST_NGROUP; x++) {
@@ -561,14 +550,14 @@ public class ModelUpdate {
 	}
 	
 	public boolean saveTestResults()throws ScriptException, EvalException{
-		engine.eval(String.format("resultfile <- \"%s/%s/%s_test_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+		engine.eval(String.format("resultfile <- \"%s/%s/%s_test_result.csv\"", Settings.EXTEND_PATH, Settings.WORKNAME, filename));
 		engine.eval("write.table(test.results, resultfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
 
 		return true;
 	}
 	
 	public boolean saveModelResults()throws ScriptException, EvalException{
-		engine.eval(String.format("modelfile <- \"%s/%s/%s_model_result.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+		engine.eval(String.format("modelfile <- \"%s/%s/%s_model_result.csv\"", Settings.EXTEND_PATH, Settings.WORKNAME, filename));
 		engine.eval("write.table(coef.results, modelfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
 		engine.eval("print(coef.results)");
 		engine.eval("print(format(coef.results, digits=16,scientific=T))");
@@ -636,7 +625,7 @@ public class ModelUpdate {
 	 * @param _datatext
 	 */
 	public void appendNewDataset(String _filename, String _datatext){
-		GAWriter writer = new GAWriter(_filename, Level.INFO, null, Settings.EXPORT_PATH, true);
+		GAWriter writer = new GAWriter(_filename, Level.INFO, null, Settings.EXTEND_PATH, true);
 		writer.info(_datatext);
 		writer.close();
 	}

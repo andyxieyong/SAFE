@@ -15,7 +15,8 @@ import java.util.Arrays;
 public class Settings {
 	public static String  INPUT_FILE          = "";
 	public static String  BASE_PATH           = "logs";
-	public static String  EXPORT_PATH         = "";
+	public static String  EXTEND_PATH         = "";
+	public static String  WORKNAME            = "";
 	public static int     RUN_NUM             = 1;
 	public static int     RUN_MAX             = 1;
 	public static int     RUN_PARTITION       = 0;
@@ -50,7 +51,6 @@ public class Settings {
 	public static int     SAMPLE_CANDIDATES   = 20;
 	
 	public static String  LR_FORMULA_PATH     = "";
-	public static String  LR_WORKPATH         = "seconds";
 	public static int     LR_INITIAL_SIZE     = 0;
 	
 	public static boolean STOP_CONDITION      = false;
@@ -74,7 +74,8 @@ public class Settings {
 		parser.addOption(false,"SettingFile", DataType.STRING, "f", null, "Base setting file.", "settings.json");
 		parser.addOption(false,"INPUT_FILE", DataType.STRING, null, "data", "input data that including job information");
 		parser.addOption(false,"BASE_PATH", DataType.STRING, "b", null, "Base path to save the result of experiments");
-		parser.addOption(false,"EXPORT_PATH", DataType.STRING, "e", null, "Exported path to move the result of experiments");
+		parser.addOption(false,"EXTEND_PATH", DataType.STRING, "e", null, "Exported path to move the result of experiments");
+		parser.addOption(false,"WORKNAME", DataType.STRING, "w", "workName", "the path for saving workdata in second phase");
 		parser.addOption(false,"RUN_NUM", DataType.INTEGER, null, "runID", "Specific run ID when you execute run separately");
 		parser.addOption(false,"RUN_MAX", DataType.INTEGER, "r", null, "Maximum run times for GA");
 		parser.addOption(false,"RUN_PARTITION", DataType.INTEGER, null, "part", "partition for Test Generation");
@@ -109,7 +110,6 @@ public class Settings {
 		parser.addOption(false,"SAMPLE_CANDIDATES", DataType.INTEGER, null, "sampleCandidates", "The number of sandidates to get one sample in second phase");
 		
 		parser.addOption(false,"LR_FORMULA_PATH", DataType.STRING, null, "formulaPath", "formula file path to use in second phase");
-		parser.addOption(false,"LR_WORKPATH", DataType.STRING, null, "workPath", "the path for saving workdata in second phase");
 		parser.addOption(false,"LR_INITIAL_SIZE", DataType.INTEGER, null, "LRinitSize", "the number of initial training data size for the second phase");
 		
 		parser.addOption(false,"TEST_DATA", DataType.STRING, null, "testData", "test data file");
@@ -146,8 +146,8 @@ public class Settings {
 		Settings.TARGET_TASKS = convertToIntArray(Settings.TARGET_TASKLIST);
 		Arrays.sort(Settings.TARGET_TASKS);
 		
-		if (Settings.EXPORT_PATH.length()==0)
-			Settings.EXPORT_PATH = Settings.BASE_PATH + "/updates";
+		if (Settings.EXTEND_PATH.length()==0)
+			Settings.EXTEND_PATH = Settings.BASE_PATH + "/updates";
 			
 		
 	}

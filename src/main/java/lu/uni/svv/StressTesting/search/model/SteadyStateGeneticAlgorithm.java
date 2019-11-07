@@ -52,7 +52,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 		else
 			comparator = new SolutionListComparatorAvg<S>(0, Ordering.DESCENDING);
 		
-		byproduct = new GAWriter(String.format("minimums/minimumMissed_%s.csv", name), Level.FINE, null, basepath);
+		byproduct = new GAWriter(String.format("_minimums/minimumMissed_%s.csv", name), Level.FINE, null, basepath);
 		printSummaryInit(name, basepath);
 	}
 
@@ -291,7 +291,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	}
 	
 	public void printSummaryInit(String run, String basepath){
-		fitness_writer = new GAWriter(String.format("results/result_run%s.csv", run), Level.INFO, null, basepath);
+		fitness_writer = new GAWriter(String.format("_results/result_run%s.csv", run), Level.INFO, null, basepath);
 		// Title
 		StringBuilder sb = new StringBuilder();
 		if (Settings.N_SAMPLE_WCET==0)

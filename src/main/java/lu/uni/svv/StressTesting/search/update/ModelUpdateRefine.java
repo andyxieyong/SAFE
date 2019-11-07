@@ -8,8 +8,8 @@ import javax.script.ScriptException;
 
 public class ModelUpdateRefine extends ModelUpdate {
 	
-	public ModelUpdateRefine(int[] _targetTasks) throws Exception{
-		super(_targetTasks);
+	public ModelUpdateRefine() throws Exception{
+		super();
 		
 	}
 	

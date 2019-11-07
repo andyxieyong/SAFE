@@ -11,8 +11,8 @@ import javax.script.ScriptException;
  */
 public class ModelUpdateRandom extends ModelUpdate {
 	
-	public ModelUpdateRandom(int[] _targetTasks) throws Exception{
-		super(_targetTasks);
+	public ModelUpdateRandom() throws Exception{
+		super();
 	}
 	
 	public long[] samplingNewPoints(int nSample, int nCandidate, double P)  throws ScriptException, EvalException{
