@@ -4,15 +4,15 @@ import java.io.PrintStream;
 import java.util.*;
 
 import lu.uni.svv.StressTesting.datatype.Task;
+import lu.uni.svv.StressTesting.datatype.TaskSeverity;
+import lu.uni.svv.StressTesting.datatype.TaskType;
 import lu.uni.svv.StressTesting.datatype.TimeList;
 import lu.uni.svv.StressTesting.search.model.TaskDescriptor;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
-import lu.uni.svv.StressTesting.search.model.TaskDescriptor.TaskType;
 import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.utils.RandomGenerator;
 import lu.uni.svv.StressTesting.utils.Settings;
-import weka.core.pmml.jaxbbindings.True;
 
 
 /**
@@ -151,7 +151,7 @@ public class RMScheduler {
 			// Add Tasks
 			TaskDescriptor task = problem.Tasks[taskIDX];
 			long WCET = getSampleWCET(task);
-			Task t = new Task(task.ID, indexTable[taskIDX], WCET, _time, task.Deadline, task.Priority);
+			Task t = new Task(task.ID, indexTable[taskIDX], WCET, _time, task.Deadline, task.Priority, task.Severity);
 			t.ArrivedTime = timeLapsed;
 			readyQueue.add(t);
 			indexTable[taskIDX]++;
@@ -321,11 +321,28 @@ public class RMScheduler {
 		// For Debugging
 		if (RMScheduler.DETAIL) executedTasks.add(_T);
 		
-		if ( missed > 0 && isTargetTask(_T.ID) ){
+		if ( isMissedDeadline(missed, _T) && isTargetTask(_T.ID) ){
 			missedDeadlines.add(_T);
 			return 1;
 		}
 		return 0;
+	}
+	
+	protected boolean isMissedDeadline(int _missed, Task _T){
+		if (_T.Severity == TaskSeverity.SOFT){
+			if (Settings.DM_TOLERANCE_RATE > 0){
+				int checkvalue = (int)(_T.Deadline * (1+Settings.DM_TOLERANCE_RATE));
+				if (_missed > checkvalue) return true;
+			}
+			else {
+				if (_missed > Settings.DM_TOLERANCE_SIZE)
+					return true;
+			}
+		}
+		else{
+			if(_missed>0) return true;
+		}
+		return false;
 	}
 	
 	protected boolean isTargetTask(int _id){

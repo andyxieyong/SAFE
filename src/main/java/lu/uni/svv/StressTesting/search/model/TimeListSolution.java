@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Formatter;
 
+import lu.uni.svv.StressTesting.datatype.TaskType;
 import org.json.JSONArray;
 import org.json.JSONTokener;
 import org.uma.jmetal.solution.Solution;
@@ -12,7 +13,6 @@ import org.uma.jmetal.util.pseudorandom.JMetalRandom;
 
 import lu.uni.svv.StressTesting.datatype.FitnessList;
 import lu.uni.svv.StressTesting.datatype.TimeList;
-import lu.uni.svv.StressTesting.search.model.TaskDescriptor.TaskType;
 
 
 

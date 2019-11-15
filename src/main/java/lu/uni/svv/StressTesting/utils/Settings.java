@@ -28,6 +28,8 @@ public class Settings {
 	public static double  TIME_QUANTA         = 0.1;
 	public static int     TIME_MAX            = 3600000;
 	public static boolean EXTEND_SCHEDULER    = true;
+	public static int     DM_TOLERANCE_SIZE   = 0;
+	public static double  DM_TOLERANCE_RATE   = 0.0;
 
 	// GA
 	public static int     GA_POPULATION       = 10;
@@ -86,6 +88,9 @@ public class Settings {
 		parser.addOption(false,"TIME_QUANTA", DataType.DOUBLE, null, "quanta", "Scheduler time quanta");
 		parser.addOption(false,"TIME_MAX", DataType.INTEGER, null, "max", "scheduler time max");
 		parser.addOption(false,"EXTEND_SCHEDULER", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", true);
+		parser.addOption(false,"DM_TOLERANCE_SIZE", DataType.INTEGER, null, "tolSize", "Tolerance rate for the soft deadline tasks");
+		parser.addOption(false,"DM_TOLERANCE_RATE", DataType.DOUBLE, null, "tolRate", "Tolerance rate for the soft deadline tasks");
+		
 		
 		// GA
 		parser.addOption(false,"GA_POPULATION", DataType.INTEGER, "p", null, "Population for GA");

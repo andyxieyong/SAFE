@@ -1,10 +1,10 @@
 package lu.uni.svv.StressTesting.search.model;
 
+import lu.uni.svv.StressTesting.datatype.TaskType;
 import org.uma.jmetal.operator.MutationOperator;
 import org.uma.jmetal.util.JMetalException;
 
 import lu.uni.svv.StressTesting.datatype.TimeList;
-import lu.uni.svv.StressTesting.search.model.TaskDescriptor.TaskType;
 import lu.uni.svv.StressTesting.utils.RandomGenerator;
 
 @SuppressWarnings("serial")

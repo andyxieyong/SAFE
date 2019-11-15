@@ -8,15 +8,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 
-import com.sun.xml.internal.ws.api.config.management.policy.ManagementAssertion;
 import lu.uni.svv.StressTesting.datatype.FitnessList;
+import lu.uni.svv.StressTesting.datatype.TaskSeverity;
+import lu.uni.svv.StressTesting.datatype.TaskType;
 import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.RandomGenerator;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.uma.jmetal.problem.impl.AbstractGenericProblem;
 
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
-import lu.uni.svv.StressTesting.search.model.TaskDescriptor.TaskType;
 import org.uma.jmetal.util.JMetalLogger;
 
 
@@ -324,7 +324,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			aJob.MinIA 		= getTimeFromString(cols[6].trim(), 0);
 			aJob.MaxIA		= getTimeFromString(cols[7].trim(), this.QUANTA_LENGTH);
 			aJob.Deadline 	= getTimeFromString(cols[8].trim(), this.QUANTA_LENGTH);
-			aJob.Severity 	= cols[9].trim();	// Severity type
+			aJob.Severity 	= getSeverityFromString(cols[9].trim());	// Severity type
 			
 			listJobs.add(aJob);
 		}
@@ -390,13 +390,25 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	
 	public TaskType getTypeFromString(String _text) {
 		
-		if (_text.compareTo("Sporadic")==0)					
+		if (_text.toLowerCase().compareTo("Sporadic")==0)
 			return TaskType.Sporadic;
-		else if (_text.compareTo("Aperiodic")==0)
+		else if (_text.toLowerCase().compareTo("Aperiodic")==0)
 			return TaskType.Aperiodic;
 		else
 			return TaskType.Periodic;
 	}
+	
+	
+	
+	
+	public TaskSeverity getSeverityFromString(String _text) {
+		
+		if (_text.toLowerCase().compareTo("soft")==0)
+			return TaskSeverity.SOFT;
+		else
+			return TaskSeverity.HARD;
+	}
+	
 	
 	public long getValueFromString(String _text, long _default) {
 		
