@@ -121,28 +121,20 @@ public class ModelUpdate {
 		}
 		//}
 
-		JMetalLogger.logger.info("Learning initial model ...");
-		if(!Settings.INPUT_FILE.endsWith("input.csv")){
+		// if the data is not imbalanced...
+		if(!Settings.INPUT_FILE.endsWith("input.csv")) {
 			JMetalLogger.logger.info("Adjusting training data in a balanced way...");
-			if (!this.adjustingBalance(workfile)) {
+			if (!this.adjustingBalance(workfile, formula)) {
 				JMetalLogger.logger.info("Error to adjust data balancing");
 				return;
 			}
+		}
 		
-			JMetalLogger.logger.info("Learning initial model with balance data...");
-			if (!this.initializeModel(formula)) {
-				JMetalLogger.logger.info("Error to initialze model");
-				return;
-			}
+		JMetalLogger.logger.info("Learning initial model...");
+		if (!this.initializeModel(formula)) {
+			JMetalLogger.logger.info("Error to initialze model");
+			return;
 		}
-		else{
-			
-			if (!this.initializeModel(formula)) {
-				JMetalLogger.logger.info("Error to initialze model");
-				return;
-			}
-		}
-
 		
 		
 		if (Settings.TEST_DATA.length() != 0 && !evaluateModel(0)){
@@ -262,6 +254,7 @@ public class ModelUpdate {
 		JMetalLogger.logger.info("Load input tasks info from " + Settings.INPUT_FILE);
 		engine.eval("library('org.renjin.cran:MASS')");
 		engine.eval("library('org.renjin.cran:MLmetrics')");
+		engine.eval("library('org.renjin.cran:pracma')");
 		engine.eval("UNIT<- 1");
 		engine.eval(String.format("TIME_QUANTA<- %.2f", Settings.TIME_QUANTA));
 		engine.eval(String.format("RESOURCE_FILE<- \"%s\"", Settings.INPUT_FILE));
@@ -277,12 +270,14 @@ public class ModelUpdate {
 						"TASK_INFO$INTER.MAX = as.integer(round(TASK_INFO$INTER.MAX/TIME_QUANTA))\n" +
 						"TASK_INFO$DEADLINE = as.integer(round(TASK_INFO$DEADLINE/TIME_QUANTA))";
 		engine.eval(update_time_str);
-		engine.eval("source(\"R/libs/lib_quadratic.R\")");
-		engine.eval("source(\"R/libs/lib_RQ3.R\")");
-		engine.eval("source(\"R/libs/lib_task.R\")");
-		engine.eval("source(\"R/libs/lib_pruning.R\")");
-		engine.eval("source(\"R/libs/lib_metrics.R\")");
-		engine.eval("source(\"R/libs/lib_math.R\")");
+		engine.eval("source(\"R/libs/lib_data.R\")");           // dependency for lib_evaluate
+		engine.eval("source(\"R/libs/lib_metrics.R\")");        // dependency for lib_evaluate
+		engine.eval("source(\"R/libs/lib_evaluate.R\")");           // find_noFPR, integrateMC, calculate_metrics
+		
+		engine.eval("source(\"R/libs/lib_pruning.R\")");        // pruning functions
+		engine.eval("source(\"R/libs/lib_formula.R\")");        // formula functions (get_raw_names, get_base_names)
+		engine.eval("source(\"R/libs/lib_model.R\")");          // dependency for sampling (generate_model_line)
+		engine.eval("source(\"R/libs/lib_sampling.R\")");       // sampling functions
 		engine.eval("get_uncertain_tasks<-function(){\n" +
 				"    diffWCET <- TASK_INFO$WCET.MAX - TASK_INFO$WCET.MIN\n" +
 				"    tasks <- c()\n" +
@@ -313,24 +308,6 @@ public class ModelUpdate {
 		return true;
 	}
 	
-	public double checkingBalance() throws ScriptException, EvalException{
-		// Check imbalance way
-		// Minimum rate : 20%
-		engine.eval("positive <- nrow(training[training$result==0,])");
-		engine.eval("negative <- nrow(training[training$result==1,])");
-		engine.eval("if (positive > negative){\n"+
-				"    balanceRate <- negative/positive\n"+
-				"    balanceSide <- \"positive\"\n"+
-				"}else{\n"+
-				"    balanceRate <- positive/negative\n"+
-				"    balanceSide <- \"negative\"\n"+
-				"}");
-		
-		// get the rate information
-		Vector dataVector = (Vector) engine.eval("balanceRate");
-		return dataVector.getElementAsDouble(0);
-	}
-
 	/**
 	 *
 	 * @param formula
@@ -358,21 +335,28 @@ public class ModelUpdate {
 	}
 	
 	
-	public boolean adjustingBalance(String inputpath) throws ScriptException, EvalException {
-		//TODO:: Where should I get uncertainIDs
-		engine.eval("uncertainIDs <- c(30, 33)");
-		engine.eval("intercepts<-data.frame(T30=TASK_INFO$WCET.MAX[[30]], T33=TASK_INFO$WCET.MAX[[33]])");
-		engine.eval("df<-list()");
-		engine.eval("for(tID in uncertainIDs){df[sprintf(\"T%d\",tID)] <- TASK_INFO$WCET.MAX[[tID]]}");
-		engine.eval("intercepts<-as.data.frame(df)");
-		checkingBalance();
+	public boolean adjustingBalance(String inputpath, String formula) throws ScriptException, EvalException {
+		// set formula
+		engine.eval(String.format("formula_str<- \"%s\"",formula));
 		
-		engine.eval("training <- prunning(training, balanceSide, intercepts, uncertainIDs)");
+		// get uncertainIDs from formula
+		engine.eval(".removedLabel <- strsplit(formula_str, \"~\")[[1]][2]");
+		engine.eval(".terms <- strsplit(.removedLabel, \"\\\\+\")[[1]]");
+		engine.eval(".terms <- trimws(.terms)");
+		engine.eval("uncertainIDs <- get_base_names(.terms, isNum=TRUE)");
 		
-		// load data
-		engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXTEND_PATH, inputpath));
+		// make intercept information from the TASK_INFO
+		engine.eval("intercepts<-data.frame(t(TASK_INFO$WCET.MAX[uncertainIDs]))");
+		engine.eval("colnames(intercepts) <- sprintf(\"T%d\", uncertainIDs)");
+		
+		// create blanceSide and
+		engine.eval("positive <- nrow(training[training$result==0,])");
+		engine.eval("negative <- nrow(training[training$result==1,])");
+		engine.eval("balanceSide <- ifelse(positive > negative, \"positive\", \"negative\")");
+		engine.eval("training <- pruning(training, balanceSide, intercepts, uncertainIDs)");
 		
 		// save training data
+		engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXTEND_PATH, inputpath));
 		engine.eval("write.table(training, datafile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
 		return true;
 	}
@@ -389,7 +373,7 @@ public class ModelUpdate {
 		// sampled_data <- get_random_sampling(training, nSample=1)
 		long[] samples = null;
 		engine.eval("tnames <- get_task_names(training)");
-		String codeText = String.format("sampled_data <- get_distance_sampling(tnames, base_model, nSample=%d, nCandidate=%d, P=%.2f)", nSample, nCandidate, P);
+		String codeText = String.format("sampled_data <- sample_based_euclid_distance(tnames, base_model, nSample=%d, nCandidate=%d, P=%.6f)", nSample, nCandidate, P);
 		engine.eval(codeText);
 		
 		StringVector nameVector = (StringVector)engine.eval("colnames(sampled_data)");
@@ -405,7 +389,7 @@ public class ModelUpdate {
 		long[] samples = null;
 		
 		engine.eval("tnames <- get_task_names(training)");
-		String codeText = String.format("sampled_data <- get_random_sampling(tnames, nSample=%d)", nSample);
+		String codeText = String.format("sampled_data <- sample_by_random(tnames, nSample=%d)", nSample);
 		engine.eval(codeText);
 		
 		StringVector nameVector = (StringVector)engine.eval("colnames(sampled_data)");

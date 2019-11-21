@@ -87,6 +87,11 @@
             <artifactId>MLmetrics</artifactId>
             <version>RELEASE</version>
         </dependency>
+        <dependency>
+            <groupId>org.renjin.cran</groupId>
+            <artifactId>pracma</artifactId>
+            <version>1.8.8-b11</version>
+        </dependency>
     </dependencies>
     <repositories>
         <repository>

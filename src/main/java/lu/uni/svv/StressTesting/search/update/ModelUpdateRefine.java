@@ -51,7 +51,7 @@ public class ModelUpdateRefine extends ModelUpdate {
 		engine.eval("cntUpdate <- cntUpdate + 1");
 		
 		// update borderProbability and area
-		engine.eval("borderProbability<-find_noFPR(base_model, training, precise=0.0001)");
+		engine.eval("borderProbability <- find_noFPR(base_model, training, precise=0.0001)");
 		engine.eval("areaMC <- integrateMC(10000, base_model, IDs=uncertainIDs, prob=borderProbability, UNIT.WCET=UNIT)");
 		
 		engine.eval("coef <- t(data.frame(base_model$coefficients))");
