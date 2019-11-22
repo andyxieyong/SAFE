@@ -15,18 +15,23 @@ public class SimpleTLCrossover implements CrossoverOperator<TimeListSolution>
 {
 	private double crossoverProbability;
 	private RandomGenerator randomGenerator;
+	private TestingProblem problem=null;
+	private List<Integer> PossibleTasks = null;
 
 	/** Constructor */
-	public SimpleTLCrossover(double crossoverProbability) {
+	public SimpleTLCrossover(TestingProblem _problem, double crossoverProbability) {
 		if (crossoverProbability < 0) {
 			throw new JMetalException("Crossover probability is negative: " + crossoverProbability) ;
 		}
+		problem = _problem;
 		RandomGenerator rand = new RandomGenerator();
 		rand.nextInt();
 		rand.nextDouble();
 		
 		this.crossoverProbability = crossoverProbability;
 		this.randomGenerator = new RandomGenerator();
+		
+		PossibleTasks = problem.getVaryingTasks();
 	}
 	
 	/* Getter and Setter */
@@ -69,21 +74,22 @@ public class SimpleTLCrossover implements CrossoverOperator<TimeListSolution>
 		offspring.add((TimeListSolution) parent2.copy()) ;
 
 		if (randomGenerator.nextDouble() < probability) {
-			  // 1. Get the total number of bits
-			  int totalNumberOfVariables = parent1.getNumberOfVariables();
+			// 1. Get the total number of bits
+			int totalNumberOfVariables = parent1.getNumberOfVariables();
 			  
-			  // 2. Get crossover point
-			  int crossoverPoint = randomGenerator.nextInt(0, totalNumberOfVariables - 1);
-			  
-			  // 3. Exchange values
-			  TimeList[] offspring1, offspring2;
-			  offspring1 = (TimeList[]) parent1.getVariables();
-			  offspring2 = (TimeList[]) parent2.getVariables();
+			// 2. Get crossover point
+			int crossoverPoint = randomGenerator.nextInt(1, PossibleTasks.size() - 1);
+			crossoverPoint = PossibleTasks.get(crossoverPoint);
+			
+			// 3. Exchange values
+			TimeList[] offspring1, offspring2;
+			offspring1 = (TimeList[]) parent1.getVariables();
+			offspring2 = (TimeList[]) parent2.getVariables();
 			  			  
-			  for (int x = crossoverPoint; x < totalNumberOfVariables; x++) {
-				  offspring.get(0).setVariableValue(x, (TimeList)offspring2[x].clone());
-				  offspring.get(1).setVariableValue(x, (TimeList)offspring1[x].clone());
-			  }
+			for (int x = crossoverPoint; x < totalNumberOfVariables; x++) {
+				offspring.get(0).setVariableValue(x, (TimeList)offspring2[x].clone());
+				offspring.get(1).setVariableValue(x, (TimeList)offspring1[x].clone());
+			}
 		}
 		
 		return offspring;

@@ -35,7 +35,7 @@ public class SimpleTLMutation4 implements MutationOperator<TimeListSolution>
 		this.mutationProbability = probability ;
 		this.randomGenerator = new RandomGenerator() ;
 		
-		this.createPossibleTasks(problem);
+		PossibleTasks = problem.getVaryingTasks();
 	}
 	  
 
@@ -45,16 +45,6 @@ public class SimpleTLMutation4 implements MutationOperator<TimeListSolution>
 	}
 	public void setMutationProbability(double mutationProbability) {
 		this.mutationProbability = mutationProbability;
-	}
-	
-	private void createPossibleTasks(TestingProblem _problem)
-	{
-		PossibleTasks = new ArrayList<Integer>();
-		for (int x=0; x<_problem.Tasks.length; x++) {
-			if (_problem.Tasks[x].Type == TaskType.Periodic) continue;
-			if (_problem.Tasks[x].MinIA == _problem.Tasks[x].MaxIA) continue;
-			PossibleTasks.add(x);
-		}
 	}
 
 	/** Execute() method */

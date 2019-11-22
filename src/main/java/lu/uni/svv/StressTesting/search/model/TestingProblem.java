@@ -239,6 +239,16 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		return list;
 	}
 	
+	public List<Integer> getVaryingTasks(){
+		List<Integer> list = new ArrayList<Integer>();
+		
+		for(TaskDescriptor task : Tasks){
+			if (task.Type != TaskType.Periodic && task.MinIA != task.MaxIA)
+				list.add(task.ID);
+		}
+		return list;
+	}
+	
 	private HashMap<Integer, Long> getSampling(List<Integer> _uncertainTasks){
 		HashMap<Integer, Long> sampling = new HashMap<Integer, Long>();
 	
@@ -390,9 +400,9 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	
 	public TaskType getTypeFromString(String _text) {
 		
-		if (_text.toLowerCase().compareTo("Sporadic")==0)
+		if (_text.toLowerCase().compareTo("sporadic")==0)
 			return TaskType.Sporadic;
-		else if (_text.toLowerCase().compareTo("Aperiodic")==0)
+		else if (_text.toLowerCase().compareTo("aperiodic")==0)
 			return TaskType.Aperiodic;
 		else
 			return TaskType.Periodic;

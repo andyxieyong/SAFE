@@ -34,7 +34,7 @@ public class TestCrossover  extends TestCase{
 			System.out.println("P1: " + parents.get(0).getVariableValueString());
 			System.out.println("P2: " + parents.get(1).getVariableValueString());	
 			
-			SimpleTLCrossover crossover = new SimpleTLCrossover(0.8);
+			SimpleTLCrossover crossover = new SimpleTLCrossover(problem,0.8);
 			
 			List<TimeListSolution> children = crossover.execute(parents);
 			

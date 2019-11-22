@@ -91,7 +91,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 	{	 		 
 		// Configuration of GA algorithm
 		TimeListSolution.initUUID();
-		CrossoverOperator<TimeListSolution> crossoverOperator = new SimpleTLCrossover(crossoverProbability);
+		CrossoverOperator<TimeListSolution> crossoverOperator = new SimpleTLCrossover(problem, crossoverProbability);
 		MutationOperator<TimeListSolution> mutationOperator = new SimpleTLMutation4(problem, mutationProbability);
 		SelectionOperator<List<TimeListSolution>, TimeListSolution> selectionOperator = new BinaryTournamentSelection<TimeListSolution>();
 
