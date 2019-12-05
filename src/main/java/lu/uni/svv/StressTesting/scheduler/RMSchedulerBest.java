@@ -2,11 +2,9 @@ package lu.uni.svv.StressTesting.scheduler;
 
 import lu.uni.svv.StressTesting.datatype.Task;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
-import lu.uni.svv.StressTesting.utils.Settings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -22,13 +20,13 @@ import java.util.List;
  * @author jaekwon.lee
  *
  */
-public class RMSchedulerRange extends RMScheduler{
+public class RMSchedulerBest extends RMScheduler{
 	
 	public ArrayList[] selectedMisses;
 	public int[] maximumMissed;
 	public List<Task> bestExecutions;
 	
-	public RMSchedulerRange(TestingProblem _problem, int[] _targetTasks) {
+	public RMSchedulerBest(TestingProblem _problem, int[] _targetTasks) {
 		super(_problem, _targetTasks);
 		
 		initialize();

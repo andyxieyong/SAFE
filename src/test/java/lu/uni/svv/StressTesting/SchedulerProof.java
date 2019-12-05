@@ -14,7 +14,7 @@ import lu.uni.svv.StressTesting.datatype.Task;
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
 import lu.uni.svv.StressTesting.scheduler.RMSchedulerEx;
 import lu.uni.svv.StressTesting.scheduler.RMSchedulerNorm;
-import lu.uni.svv.StressTesting.scheduler.RMSchedulerRange;
+import lu.uni.svv.StressTesting.scheduler.RMSchedulerBest;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
 import lu.uni.svv.StressTesting.utils.GAWriter;
@@ -99,7 +99,7 @@ public class SchedulerProof extends TestCase
 //		RMScheduler scheduler = new RMScheduler(this);
 //		RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TARGET_TASKS);
 //		RMScheduler scheduler = new RMSchedulerNorm(problem, Settings.TARGET_TASKS);
-		RMScheduler scheduler = new RMSchedulerRange(problem, Settings.TARGET_TASKS);
+		RMScheduler scheduler = new RMSchedulerBest(problem, Settings.TARGET_TASKS);
 
 		try {
 			PrintStream printer = new PrintStream(new File(BASE_PATH+"/cpulog.log"));
@@ -161,7 +161,7 @@ public class SchedulerProof extends TestCase
 		
 		for(int testID=0; testID < 100; testID++){
 			System.out.println(String.format("Testing %d ...", testID));
-			RMScheduler scheduler = new RMSchedulerRange(problem, Settings.TARGET_TASKS);
+			RMScheduler scheduler = new RMSchedulerBest(problem, Settings.TARGET_TASKS);
 			TimeListSolution solution = problem.createSolution();
 			try {
 				PrintStream printer = new PrintStream(new File(String.format("%s/cpulog_%d.log", workingPath, testID)));

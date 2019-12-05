@@ -33,7 +33,7 @@ public class ModelUpdateKFold extends ModelUpdate {
 	// Related test model
 	////////////////////////////////////////////////////////////////////////
 	public boolean includeTestData()throws ScriptException, EvalException, Exception{
-		if (Settings.TEST_NGROUP<=0)
+		if (Settings.TEST_DATA.length()==0)
 		{
 			JMetalLogger.logger.severe("You need to set TEST_NGROUP to get test values");
 			JMetalLogger.logger.severe("This means that k value for the k-fold cross validation");
@@ -71,7 +71,7 @@ public class ModelUpdateKFold extends ModelUpdate {
 			engine.eval("test_model <- glm(formula = formula_str, family = \"binomial\", data = train_fold)");
 			
 			// evaluate the model
-			String cmd = String.format("result.item <- calculate_metrics(test_model, test_fold, %.2f, cntUpdate)", Settings.BORDER_PROBABILITY);
+			String cmd = String.format("result.item <- calculate_metrics(test_model, test_fold, %.2f, cntUpdate)", 0.5);
 			engine.eval(cmd);
 			engine.eval(String.format("result.item <- data.frame(TestSet=%d, result.item)", x));
 			engine.eval("test.result.group <- rbind(test.result.group, result.item)");

@@ -38,11 +38,11 @@ public class SecondPhase {
 		JMetalLogger.logger.info("RUN_NUM            : "+ Settings.RUN_NUM);
 		JMetalLogger.logger.info("");
 		// Scheduler variables
-		JMetalLogger.logger.info("SCHEDULER          :"+  Settings.SCHEDULER);
-		JMetalLogger.logger.info("TARGET_TASKS       :"+  Settings.TARGET_TASKLIST);
-		JMetalLogger.logger.info("TIME_QUANTA        :"+  Settings.TIME_QUANTA);;
-		JMetalLogger.logger.info("TIME_MAX           :"+  Settings.TIME_MAX);
-		JMetalLogger.logger.info("EXTEND_SCHEDULER   :"+  Settings.SCHEDULER);
+		JMetalLogger.logger.info("SCHEDULER          : "+  Settings.SCHEDULER);
+		JMetalLogger.logger.info("TARGET_TASKS       : "+  Settings.TARGET_TASKLIST);
+		JMetalLogger.logger.info("TIME_QUANTA        : "+  Settings.TIME_QUANTA);;
+		JMetalLogger.logger.info("TIME_MAX           : "+  Settings.TIME_MAX);
+		JMetalLogger.logger.info("EXTEND_SCHEDULER   : "+  Settings.EXTEND_SCHEDULER);
 		JMetalLogger.logger.info("");
 		JMetalLogger.logger.info("GA_POPULATION      : "+ Settings.GA_POPULATION);
 		JMetalLogger.logger.info("GA_ITERATION       : "+ Settings.GA_ITERATION);
@@ -52,11 +52,7 @@ public class SecondPhase {
 		JMetalLogger.logger.info("N_EXAMPLE_POINTS   : "+ Settings.N_EXAMPLE_POINTS);
 		JMetalLogger.logger.info("");
 		JMetalLogger.logger.info("TEST_DATA          : "+ Settings.TEST_DATA);
-		JMetalLogger.logger.info("TEST_NSAMPLES      : "+ Settings.TEST_NSAMPLES);
-		JMetalLogger.logger.info("TEST_NGROUP        : "+ Settings.TEST_NGROUP);
-		JMetalLogger.logger.info("");
-		JMetalLogger.logger.info("STOP_DATA_TYPE     : "+ Settings.STOP_DATA_TYPE);
-		JMetalLogger.logger.info("STOP_FUNC_NAME     : "+ Settings.STOP_FUNCTION_NAME);
+		JMetalLogger.logger.info("UPDATE_TYPE        : "+ Settings.UPDATE_TYPE);
 		JMetalLogger.logger.info("STOP_CONDITION     : "+ Settings.STOP_CONDITION);
 		JMetalLogger.logger.info("STOP_ACCEPT_RATE   : " + Settings.STOP_ACCEPT_RATE);
 		JMetalLogger.logger.info("");
@@ -92,33 +88,13 @@ public class SecondPhase {
 		
 		//Run phase 2
 		ModelUpdate object = null;
-		//if (Settings.STOP_CONDITION) {
-		if (Settings.TEST_DATA.compareTo("kfold")==0){
-			object = new ModelUpdateKFold();
-		}
-		else if (Settings.STOP_DATA_TYPE.compareTo("refine")==0){
-			object = new ModelUpdateRefine();
-		}
-		else if (Settings.STOP_DATA_TYPE.compareTo("initial") == 0) {
-			object = new ModelUpdateTermInitial();
-		}
-		else if (Settings.STOP_DATA_TYPE.compareTo("training") == 0) {
-			object = new ModelUpdateTermTraining();
-		}
-		else if (Settings.STOP_DATA_TYPE.compareTo("pool") == 0) {
-			object = new ModelUpdateTermPool();
-		}
-		else if (Settings.STOP_DATA_TYPE.compareTo("new") == 0) {
-			object = new ModelUpdateTermNew();
+		if (Settings.UPDATE_TYPE.compareTo("threshold")==0) {
+			object = new ModelUpdateThreshold();
 		}
 		else{
-			JMetalLogger.logger.fine("Error:: Unknown Stop data type");
-			return ;
+			object = new ModelUpdate();
 		}
-//		}
-//		else{
-//			object = new ModelUpdate(targetTasks);
-//		}
+		
 		try {
 			long initTime = System.currentTimeMillis();
 			object.run();

@@ -6,9 +6,9 @@ import org.uma.jmetal.util.JMetalLogger;
 import javax.script.ScriptException;
 
 
-public class ModelUpdateRefine extends ModelUpdate {
+public class ModelUpdateThreshold extends ModelUpdate {
 	
-	public ModelUpdateRefine() throws Exception{
+	public ModelUpdateThreshold() throws Exception{
 		super();
 		
 	}

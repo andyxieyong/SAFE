@@ -4,7 +4,6 @@ import java.io.PrintStream;
 import java.util.*;
 
 import lu.uni.svv.StressTesting.datatype.Task;
-import lu.uni.svv.StressTesting.datatype.TaskSeverity;
 import lu.uni.svv.StressTesting.datatype.TaskType;
 import lu.uni.svv.StressTesting.datatype.TimeList;
 import lu.uni.svv.StressTesting.search.model.TaskDescriptor;
@@ -175,38 +174,9 @@ public class RMScheduler {
 		
 		// make a random WCET
 		long sampleWCET = 0;
-		if (Settings.UNIFORM_SAMPLE==false) {
-			if (randomGenerator.nextDouble() < 0.75)
-				sampleWCET = randomGenerator.nextLong(1, task.MinWCET);
-			else
-				sampleWCET = randomGenerator.nextLong(task.MinWCET + 1, task.MaxWCET);
-		}
-		else {
-			long min = (task.MinWCET == 0) ? task.MinWCET + 1 : task.MinWCET;
-			sampleWCET = randomGenerator.nextLong(min, task.MaxWCET);
-		}
+		long min = (task.MinWCET == 0) ? 1 : task.MinWCET;
+		sampleWCET = randomGenerator.nextLong(min, task.MaxWCET);
 		return sampleWCET;
-	}
-	
-	public String getSampledWCET(){
-		StringBuilder sb = new StringBuilder();
-		sb.append("TaskID,ExecutionID,SampledWCET,Arrival,Started,Finished\n");
-		
-		for(Task item :sampledWCET){
-			sb.append(item.ID);
-			sb.append(",");
-			sb.append(item.ExecutionID);
-			sb.append(",");
-			sb.append(item.ExecutionTime);
-			sb.append(",");
-			sb.append(item.ArrivedTime);
-			sb.append(",");
-			sb.append(item.StartedTime);
-			sb.append(",");
-			sb.append(item.FinishedTime);
-			sb.append("\n");
-		}
-		return sb.toString();
 	}
 	
 	/**
@@ -646,6 +616,9 @@ public class RMScheduler {
 		return sb.toString();
 	}
 	
+	/////////////////////////////////////////////////////////////////
+	//  Information functions
+	/////////////////////////////////////////////////////////////////
 	/**
 	 * get Deadline Missed items
 	 * @return

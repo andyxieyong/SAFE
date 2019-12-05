@@ -99,7 +99,7 @@ public class ModelUpdate {
 		}
 		
 		JMetalLogger.logger.info("Loading training data ...");
-		if (!loadTrainingData(workfile, Settings.LR_INITIAL_SIZE)){
+		if (!loadTrainingData(workfile)){
 			JMetalLogger.logger.info("Error to load training data");
 			return;
 		}
@@ -150,7 +150,7 @@ public class ModelUpdate {
 		int count = 0;
 		int solID = 0;
 		int nUpdates = 0;
-		double borderProbability = Settings.BORDER_PROBABILITY;
+		double borderProbability = 0.5;     // Set middle point
 		
 		while (nUpdates < Settings.N_MODEL_UPDATES) {
 			// Learning model again with more data
@@ -203,26 +203,8 @@ public class ModelUpdate {
 	
 	public String generateInitialTrainingData(){
 		
-		// create file name
-		String appendix = "";
-		if (Settings.TEST_NSAMPLES != 0)
-			appendix = String.format("_T%d", Settings.TEST_NSAMPLES);
-
 		// Setting initial points to use for learning
-		String formulaCode = "";
-		if (Settings.LR_FORMULA_PATH.length()!=0){
-			formulaCode = Settings.LR_FORMULA_PATH.replace("/", "_");
-		}
-		
-		filename = String.format("workdata_%s_%d_%d_%.2f%s_run%02d%s",
-				
-				Settings.SECOND_PHASE_RUNTYPE,
-				Settings.N_MODEL_UPDATES,
-				Settings.N_EXAMPLE_POINTS,
-				Settings.BORDER_PROBABILITY,
-				formulaCode,
-				Settings.RUN_NUM,
-				appendix);
+		filename = String.format("workdata_%s_run%02d", Settings.SECOND_PHASE_RUNTYPE, Settings.RUN_NUM);
 		String workfile = String.format("%s/%s.csv", Settings.WORKNAME, filename);
 		
 		if (!phase1.makeInitialPoints(Settings.BASE_PATH, Settings.EXTEND_PATH, Settings.RUN_NUM, workfile)) {
@@ -289,18 +271,12 @@ public class ModelUpdate {
 	/**
 	 *
 	 * @param inputpath   'results/20190722_P2_S20_GASearch/RQ2_N20000/workdata*.csv
-	 * @param initialTrainingSize
 	 */
-	public boolean loadTrainingData(String inputpath, int initialTrainingSize) throws ScriptException, EvalException{
+	public boolean loadTrainingData(String inputpath) throws ScriptException, EvalException{
 		// load data
 		engine.eval(String.format("datafile<- \"%s/%s\"", Settings.EXTEND_PATH, inputpath));
 		engine.eval("training <- read.csv(datafile, header=TRUE)");
 		
-		if (initialTrainingSize != 0) {
-			// sampling and save the result to the datafile
-			engine.eval(String.format("training <- training[sample(nrow(training), %d), ]", initialTrainingSize));  //
-			engine.eval("write.table(training, datafile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
-		}
 		return true;
 	}
 	
@@ -454,20 +430,15 @@ public class ModelUpdate {
 	}
 	
 	public boolean checkStopCondition() throws ScriptException, EvalException, Exception {
-		boolean result=false;
-		String code = "";
-		code = String.format("terminate.value <- test.%s(prev_model, base_model, testData=termination_data, predictionLevel=%.2f)",
-				Settings.STOP_FUNCTION_NAME, Settings.BORDER_PROBABILITY);
-		engine.eval(code);
-		engine.eval("termination.results <- rbind(termination.results,  data.frame(nUpdate=cntUpdate, Value=terminate.value))");
 		
-		Vector dataVector = (Vector)engine.eval("terminate.value");
-		double test_result = dataVector.getElementAsDouble(0);
-		JMetalLogger.logger.info("TEST_FUNC_RESULT: " + test_result);
-		if (test_result <= Settings.STOP_ACCEPT_RATE)
-			result = true;
+		engine.eval("termination.results <- rbind(termination.results,  data.frame(nUpdate=cntUpdate, Value=borderProbability))");
 		
-		return result;
+		Vector dataVector = (Vector)engine.eval("borderProbability");
+		double probability = dataVector.getElementAsDouble(0);
+		
+		if (probability <= Settings.STOP_ACCEPT_RATE)
+			return true;
+		return false;
 	}
 	
 	////////////////////////////////////////////////////////////////////////
@@ -481,58 +452,31 @@ public class ModelUpdate {
 		}
 		
 		engine.eval("test.results <- data.frame()");
-		
-		String cmd = String.format("test_data <-read.csv(sprintf(\"%s/testdata/%s\"), header=TRUE)", Settings.BASE_PATH, Settings.TEST_DATA);
+		String cmd = String.format("test.samples <-read.csv(sprintf(\"%s/testdata/%s\"), header=TRUE)", Settings.BASE_PATH, Settings.TEST_DATA);
 		engine.eval(cmd);
-		if (Settings.TEST_NGROUP!=1) {
-			engine.eval("positive <-test_data[test_data$result==0,]");
-			engine.eval("negative <-test_data[test_data$result==1,]");
-			engine.eval("test.samples <- list()");
-			
-			int[] nPositives = new int[Settings.TEST_NGROUP];
-			int[] nNegatives = new int[Settings.TEST_NGROUP];
+
+		engine.eval("positive <-test.samples[test.samples$result==0,]");
+		engine.eval("negative <-test.samples[test.samples$result==1,]");
 		
-			for (int i = 0; i < Settings.TEST_NGROUP; i++) {
-				engine.eval(String.format("sub.positive <-positive[sample(nrow(positive), %d),]", Settings.TEST_NSAMPLES / 2));
-				engine.eval(String.format("sub.negative <-negative[sample(nrow(negative), %d),]", Settings.TEST_NSAMPLES / 2));
-				engine.eval(String.format("test.samples[[%d]] <-rbind(sub.positive, sub.negative)", i + 1));
-				
-				Vector dataVector = (Vector) engine.eval("nrow(sub.positive)");
-				nPositives[i] = dataVector.getElementAsInt(0);
-				dataVector = (Vector) engine.eval("nrow(sub.negative)");
-				nNegatives[i] = dataVector.getElementAsInt(0);
-			}
-			JMetalLogger.logger.info("Test Group Count    : " + Settings.TEST_NGROUP);
-			JMetalLogger.logger.info("Test Data (positive): " + nPositives[0]);
-			JMetalLogger.logger.info("Test Data (negative): " + nNegatives[0]);
-		}
-		else{
-			engine.eval("test.samples <- list()");
-			engine.eval("test.samples[[1]] <- test_data");
-		}
-	
+		Vector dataVector = (Vector) engine.eval("nrow(positive)");
+		int nPositives = dataVector.getElementAsInt(0);
+		dataVector = (Vector) engine.eval("nrow(negative)");
+		int nNegatives = dataVector.getElementAsInt(0);
+		JMetalLogger.logger.info("Test Data (positive): " + nPositives);
+		JMetalLogger.logger.info("Test Data (negative): " + nNegatives);
 		
-		engine.eval(String.format("testfile <- \"%s/%s/%s_test_data.csv\"", Settings.EXTEND_PATH, Settings.WORKNAME, filename));
-		engine.eval("test.sample <- data.frame(TestSet=rep(1, nrow(test.samples[[1]])), test.samples[[1]])");
-		engine.eval("write.table(test.sample, testfile, append = FALSE, sep = \",\", dec = \".\",row.names = FALSE, col.names = TRUE)");
-		for(int x=1; x<Settings.TEST_NGROUP; x++) {
-			engine.eval(String.format("test.sample <- data.frame(TestSet=rep(%d, nrow(test.samples[[%d]])), test.samples[[%d]])",x+1,x+1,x+1));
-			engine.eval("write.table(test.sample, testfile, append = TRUE, sep = \",\", dec = \".\",row.names = FALSE, col.names = FALSE)");
-		}
 		return true;
 	}
 	
 	public boolean evaluateModel(int _cntUpdate, double _prob)throws ScriptException, EvalException{
 		System.out.println(_prob);
-		engine.eval("test.result.group <- data.frame()");
-		for(int x=0; x<Settings.TEST_NGROUP; x++) {
-			String cmd = String.format("result.item <- calculate_metrics(base_model, test.samples[[%d]], %.6f, cntUpdate)", x+1, _prob);
-			engine.eval(cmd);
-			engine.eval(String.format("result.item <- data.frame(TestSet=%d, Probability=%f, result.item)", x+1, _prob));
-			engine.eval("test.result.group <- rbind(test.result.group, result.item)");
-		}
-		engine.eval("print(test.result.group)");
-		engine.eval("test.results <- rbind(test.results, test.result.group)");
+		
+		String cmd = String.format("result.item <- calculate_metrics(base_model, test.samples, %.6f, %d)", _prob, _cntUpdate);
+		engine.eval(cmd);
+		engine.eval(String.format("result.item <- data.frame(Probability=%f, result.item)", _prob));
+		
+		engine.eval("print(result.item)");
+		engine.eval("test.results <- rbind(test.results, result.item)");
 		return true;
 	}
 	

@@ -28,8 +28,6 @@ public class Settings {
 	public static double  TIME_QUANTA         = 0.1;
 	public static int     TIME_MAX            = 3600000;
 	public static boolean EXTEND_SCHEDULER    = true;
-	public static double  DM_TOLERANCE_SIZE   = 0;
-	public static double  DM_TOLERANCE_RATE   = 0.0;
 
 	// GA
 	public static int     GA_POPULATION       = 10;
@@ -40,8 +38,7 @@ public class Settings {
 	public static boolean SIMPLE_SEARCH       = false;
 	public static String  GA_REPR_FITNESS     = "average";
 	public static int     N_SAMPLE_WCET       = 0;
-	public static boolean UNIFORM_SAMPLE      = false;
-	public static double  A12_THRESHOLD       = 0.5;
+
 	//printing
 	public static boolean PRINT_SAMPLES       = false;
 	public static boolean PRINT_RESULTS       = false;
@@ -50,21 +47,13 @@ public class Settings {
 	public static String  SECOND_PHASE_RUNTYPE= "distance";
 	public static int     N_MODEL_UPDATES     = 20;
 	public static int     N_EXAMPLE_POINTS    = 100;
-	public static double  BORDER_PROBABILITY  = 0.5;
 	public static int     SAMPLE_CANDIDATES   = 20;
-	
 	public static String  LR_FORMULA_PATH     = "";
-	public static int     LR_INITIAL_SIZE     = 0;
 	
 	public static boolean STOP_CONDITION      = false;
-	public static String  STOP_DATA_TYPE      = "training";
-	public static String  STOP_FUNCTION_NAME  = "fpr";
+	public static String  UPDATE_TYPE         = "refine";
 	public static double  STOP_ACCEPT_RATE    = 0.01;
-	
 	public static String  TEST_DATA           = "testdata";
-	public static int     TEST_NSAMPLES       = 100;
-	public static int     TEST_NGROUP         = 10;
-
 	
 	public Settings()
 	{
@@ -89,9 +78,6 @@ public class Settings {
 		parser.addOption(false,"TIME_QUANTA", DataType.DOUBLE, null, "quanta", "Scheduler time quanta");
 		parser.addOption(false,"TIME_MAX", DataType.INTEGER, null, "max", "scheduler time max");
 		parser.addOption(false,"EXTEND_SCHEDULER", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", true);
-		parser.addOption(false,"DM_TOLERANCE_SIZE", DataType.DOUBLE, null, "tolSize", "Tolerance size for the soft deadline tasks");
-		parser.addOption(false,"DM_TOLERANCE_RATE", DataType.DOUBLE, null, "tolRate", "Tolerance rate for the soft deadline tasks");
-		
 		
 		// GA
 		parser.addOption(false,"GA_POPULATION", DataType.INTEGER, "p", null, "Population for GA");
@@ -104,28 +90,18 @@ public class Settings {
 		
 		parser.addOption(false,"PRINT_SAMPLES", DataType.BOOLEAN, null, "printSamples", "If you set this parameter, The program will produce sampling detail information", false);
 		parser.addOption(false,"PRINT_RESULTS", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
-
 		parser.addOption(false,"N_SAMPLE_WCET", DataType.INTEGER, null, "nSamples", "The number of samples that will extracted between minWCET and maxWCET");
-		parser.addOption(false,"UNIFORM_SAMPLE", DataType.BOOLEAN, null, "uniform", "uniform sample when we are sampling from a range of WCET", false);
-		parser.addOption(false,"A12_THRESHOLD", DataType.DOUBLE, null, "A12Threshold", "Threshold for A12");
 		
 		//Second phase
 		parser.addOption(false,"SECOND_PHASE_RUNTYPE", DataType.STRING, null, "secondRuntype", "Second phase run type {\"random\", \"distance\"}");
 		parser.addOption(false,"N_MODEL_UPDATES", DataType.INTEGER, null, "modelUpdates", "The iteration number to finish second phase");
 		parser.addOption(false,"N_EXAMPLE_POINTS", DataType.INTEGER, null, "exPoints", "The iteration number to update logsitic regression model");
-		parser.addOption(false,"BORDER_PROBABILITY", DataType.DOUBLE, null, "borderProb", "Border Probability for second phase");
 		parser.addOption(false,"SAMPLE_CANDIDATES", DataType.INTEGER, null, "sampleCandidates", "The number of sandidates to get one sample in second phase");
-		
 		parser.addOption(false,"LR_FORMULA_PATH", DataType.STRING, null, "formulaPath", "formula file path to use in second phase");
-		parser.addOption(false,"LR_INITIAL_SIZE", DataType.INTEGER, null, "LRinitSize", "the number of initial training data size for the second phase");
 		
 		parser.addOption(false,"TEST_DATA", DataType.STRING, null, "testData", "test data file");
-		parser.addOption(false,"TEST_NSAMPLES", DataType.INTEGER, null, "testSamples", "number of samples for testing of each model");
-		parser.addOption(false,"TEST_NGROUP", DataType.INTEGER, null, "testGroups", "the number of test data set");
-		
+		parser.addOption(false,"UPDATE_TYPE", DataType.STRING, null, "updateType", "test data type: training, new, initial, pool");
 		parser.addOption(false,"STOP_ACCEPT_RATE", DataType.DOUBLE, null, "stopProbAccept", "acceptance probability of second phase model");
-		parser.addOption(false,"STOP_DATA_TYPE", DataType.STRING, null, "stopDataType", "test data type: training, new, initial, pool");
-		parser.addOption(false,"STOP_FUNCTION_NAME", DataType.STRING, null, "stopFuncName", "function name for testing to decide when we stop");
 		parser.addOption(false,"STOP_CONDITION", DataType.BOOLEAN, "x", null, "Stop with stopping condition when this parameter set", false);
 		
 		// parsing args;
@@ -155,8 +131,6 @@ public class Settings {
 		
 		if (Settings.EXTEND_PATH.length()==0)
 			Settings.EXTEND_PATH = Settings.BASE_PATH + "/updates";
-		
-		Settings.DM_TOLERANCE_SIZE = Settings.DM_TOLERANCE_SIZE * Settings.TIME_QUANTA;
 	}
 	
 	public static int[] convertToIntArray(String commaSeparatedStr) {
