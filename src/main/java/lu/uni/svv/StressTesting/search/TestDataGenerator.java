@@ -133,8 +133,10 @@ public class TestDataGenerator {
 	
 	public boolean setting_environment() {
 		try {
+			JMetalLogger.logger.info("Load input tasks info from " + Settings.INPUT_FILE);
 			engine.eval("library('org.renjin.cran:MASS')");
 			engine.eval("library('org.renjin.cran:MLmetrics')");
+			engine.eval("library('org.renjin.cran:pracma')");
 			engine.eval("UNIT<- 1");
 			engine.eval(String.format("TIME_QUANTA<- %.2f", Settings.TIME_QUANTA));
 			engine.eval(String.format("RESOURCE_FILE<- \"%s\"", Settings.INPUT_FILE));
@@ -159,7 +161,9 @@ public class TestDataGenerator {
 					"    return(tasks)\n" +
 					"}\n";
 			engine.eval(func);
-			engine.eval("source(\"R/libs/lib_quadratic.R\")");
+			engine.eval("source(\"R/libs/lib_data.R\")");
+			engine.eval("source(\"R/libs/lib_model.R\")");
+			engine.eval("source(\"R/libs/lib_sampling.R\")");
 			
 			engine.eval("test_set <- data.frame()");
 		}
@@ -195,18 +199,17 @@ public class TestDataGenerator {
 		Vector dataVector = (Vector)engine.eval(varName);
 		items = new long[dataVector.length()];
 		for(int x=0; x<dataVector.length(); x++){
-			items[x] = (long)dataVector.getElementAsInt(x); //dataVector.getElementAsInt(x);
+			items[x] = (long)dataVector.getElementAsInt(x);
 		}
 		return items;
 	}
 	
 	public List<long[]> sampling_byRandom(int nSample){
 		
-		// sampled_data <- get_random_sampling(training, nSample=1)
 		List<long[]> samples = new ArrayList<long[]>();
 		try {
 			engine.eval("tnames <- get_uncertain_tasks()");
-			engine.eval(String.format("sampled_data <- get_random_sampling(tnames, nSample=%d)", nSample));
+			engine.eval(String.format("sampled_data <- sample_by_random(tnames, nSample=%d)", nSample));
 			for(int x=1; x<=nSample; x++){
 				samples.add(get_row_longlist(String.format("sampled_data[%d,]",x)));
 			}
