@@ -28,13 +28,14 @@ public class Settings {
 	public static double  TIME_QUANTA         = 0.1;
 	public static int     TIME_MAX            = 3600000;
 	public static boolean EXTEND_SCHEDULER    = true;
-	public static int     DM_TOLERANCE_SIZE   = 0;
+	public static double  DM_TOLERANCE_SIZE   = 0;
 	public static double  DM_TOLERANCE_RATE   = 0.0;
 
 	// GA
 	public static int     GA_POPULATION       = 10;
 	public static int     GA_ITERATION        = 1000;
 	public static double  GA_CROSSOVER_PROB   = 0.9;
+	public static String  GA_CROSSOVER_TYPE   = "one";
 	public static double  GA_MUTATION_PROB    = 0.5;
 	public static boolean SIMPLE_SEARCH       = false;
 	public static String  GA_REPR_FITNESS     = "average";
@@ -88,7 +89,7 @@ public class Settings {
 		parser.addOption(false,"TIME_QUANTA", DataType.DOUBLE, null, "quanta", "Scheduler time quanta");
 		parser.addOption(false,"TIME_MAX", DataType.INTEGER, null, "max", "scheduler time max");
 		parser.addOption(false,"EXTEND_SCHEDULER", DataType.BOOLEAN, null, "extendScheduler", "Scheduler extend when they finished simulation time, but the queue remains", true);
-		parser.addOption(false,"DM_TOLERANCE_SIZE", DataType.INTEGER, null, "tolSize", "Tolerance rate for the soft deadline tasks");
+		parser.addOption(false,"DM_TOLERANCE_SIZE", DataType.DOUBLE, null, "tolSize", "Tolerance size for the soft deadline tasks");
 		parser.addOption(false,"DM_TOLERANCE_RATE", DataType.DOUBLE, null, "tolRate", "Tolerance rate for the soft deadline tasks");
 		
 		
@@ -96,6 +97,7 @@ public class Settings {
 		parser.addOption(false,"GA_POPULATION", DataType.INTEGER, "p", null, "Population for GA");
 		parser.addOption(false,"GA_ITERATION", DataType.INTEGER, "i", null, "Maximum iterations for GA");
 		parser.addOption(false,"GA_CROSSOVER_PROB", DataType.DOUBLE, "c", null, "Crossover rate for GA");
+		parser.addOption(false,"GA_CROSSOVER_TYPE", DataType.STRING, null, "cType", "Crossover type for GA");
 		parser.addOption(false,"GA_MUTATION_PROB", DataType.DOUBLE, "m", null, "Mutation rate for GA");
 		parser.addOption(false,"SIMPLE_SEARCH", DataType.BOOLEAN, null, "simpleSearch", "Simple search mode, not using crossover and mutation just produce children randomly", false);
 		parser.addOption(false,"GA_REPR_FITNESS", DataType.STRING, null, "reprFitness", "one type of fitness among average, maximum or minimum");
@@ -153,8 +155,8 @@ public class Settings {
 		
 		if (Settings.EXTEND_PATH.length()==0)
 			Settings.EXTEND_PATH = Settings.BASE_PATH + "/updates";
-			
 		
+		Settings.DM_TOLERANCE_SIZE = Settings.DM_TOLERANCE_SIZE * Settings.TIME_QUANTA;
 	}
 	
 	public static int[] convertToIntArray(String commaSeparatedStr) {
@@ -163,10 +165,16 @@ public class Settings {
 		if (commaSeparatedStr.endsWith("]"))
 			commaSeparatedStr = commaSeparatedStr.substring(0,commaSeparatedStr.length()-1);
 		
-		String[] commaSeparatedArr = commaSeparatedStr.split("\\s*,\\s*");
-		int[] result = new int[commaSeparatedArr.length];
-		for(int x=0; x<commaSeparatedArr.length; x++){
-			result[x] = Integer.parseInt(commaSeparatedArr[x]);
+		int[] result = null;
+		if (commaSeparatedStr.trim().length()==0){
+			result = new int[0];
+		}
+		else {
+			String[] commaSeparatedArr = commaSeparatedStr.split("\\s*,\\s*");
+			result = new int[commaSeparatedArr.length];
+			for (int x = 0; x < commaSeparatedArr.length; x++) {
+				result[x] = Integer.parseInt(commaSeparatedArr[x]);
+			}
 		}
 		return result;
 	}
