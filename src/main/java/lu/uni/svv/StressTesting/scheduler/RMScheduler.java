@@ -329,19 +329,7 @@ public class RMScheduler {
 	}
 	
 	protected boolean isMissedDeadline(int _missed, Task _T){
-		if (_T.Severity == TaskSeverity.SOFT){
-			if (Settings.DM_TOLERANCE_RATE > 0){
-				int checkvalue = (int)(_T.Deadline * (1+Settings.DM_TOLERANCE_RATE));
-				if (_missed > checkvalue) return true;
-			}
-			else {
-				if (_missed > Settings.DM_TOLERANCE_SIZE)
-					return true;
-			}
-		}
-		else{
-			if(_missed>0) return true;
-		}
+		if(_missed>0) return true;
 		return false;
 	}
 	

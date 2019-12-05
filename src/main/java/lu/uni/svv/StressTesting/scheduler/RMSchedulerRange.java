@@ -63,11 +63,11 @@ public class RMSchedulerRange extends RMScheduler{
 	
 	@Override
 	public double getEvaluatedValue() {
-		double fitness = 0.0;
+		double fitness = -1*problem.QUANTA_LENGTH;
 		
 		if (this.targetTasks.length==0){
-			for (int id=0; id<maximumMissed.length; id++){
-				if (fitness<maximumMissed[id]) fitness = maximumMissed[id];
+			for (int idx=0; idx<maximumMissed.length; idx++){
+				if (fitness<maximumMissed[idx]) fitness = maximumMissed[idx];
 			}
 		}
 		else{
