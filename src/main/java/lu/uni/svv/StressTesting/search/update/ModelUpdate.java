@@ -131,13 +131,9 @@ public class ModelUpdate {
 		}
 		
 		JMetalLogger.logger.info("Learning initial model...");
-		if (!this.initializeModel(formula)) {
-			JMetalLogger.logger.info("Error to initialze model");
-			return;
-		}
+		double prob = this.initializeModel(formula);
 		
-		
-		if (Settings.TEST_DATA.length() != 0 && !evaluateModel(0)){
+		if (Settings.TEST_DATA.length() != 0 && !evaluateModel(0, prob)){
 			JMetalLogger.logger.info("Failed to evaluate model with test data");
 			return;
 		}
@@ -162,7 +158,7 @@ public class ModelUpdate {
 				nUpdates += 1;
 				JMetalLogger.logger.info("update logistic regression " + nUpdates + "/" + Settings.N_MODEL_UPDATES);
 				borderProbability = this.updateModel(borderProbability);
-				if (Settings.TEST_DATA.length() != 0 && !evaluateModel(nUpdates)){
+				if (Settings.TEST_DATA.length() != 0 && !evaluateModel(nUpdates, borderProbability)){
 					JMetalLogger.logger.info("Failed to evaluate model with test data in "+ nUpdates + "/" + Settings.N_MODEL_UPDATES);
 					return false;
 				}
@@ -271,8 +267,8 @@ public class ModelUpdate {
 						"TASK_INFO$DEADLINE = as.integer(round(TASK_INFO$DEADLINE/TIME_QUANTA))";
 		engine.eval(update_time_str);
 		engine.eval("source(\"R/libs/lib_data.R\")");           // dependency for lib_evaluate
-		engine.eval("source(\"R/libs/lib_metrics.R\")");        // dependency for lib_evaluate
-		engine.eval("source(\"R/libs/lib_evaluate.R\")");           // find_noFPR, integrateMC, calculate_metrics
+		engine.eval("source(\"R/libs/lib_metrics.R\")");        // dependency for lib_evaluate (noFPR)
+		engine.eval("source(\"R/libs/lib_evaluate.R\")");       // find_noFPR, integrateMC, calculate_metrics
 		
 		engine.eval("source(\"R/libs/lib_pruning.R\")");        // pruning functions
 		engine.eval("source(\"R/libs/lib_formula.R\")");        // formula functions (get_raw_names, get_base_names)
@@ -313,7 +309,7 @@ public class ModelUpdate {
 	 * @param formula
 	 * @return
 	 */
-	public boolean initializeModel(String formula) throws ScriptException, EvalException{
+	public double initializeModel(String formula) throws ScriptException, EvalException{
 		// set formula
 		engine.eval(String.format("formula_str<- \"%s\"",formula));
 		
@@ -331,7 +327,7 @@ public class ModelUpdate {
 		
 		JMetalLogger.logger.info("Initialized model: " + getModelText("base_model"));
 
-		return true;
+		return 1;
 	}
 	
 	
@@ -370,7 +366,6 @@ public class ModelUpdate {
 	 */
 	public long[] samplingNewPoints(int nSample, int nCandidate, double P) throws ScriptException, EvalException{
 		
-		// sampled_data <- get_random_sampling(training, nSample=1)
 		long[] samples = null;
 		engine.eval("tnames <- get_task_names(training)");
 		String codeText = String.format("sampled_data <- sample_based_euclid_distance(tnames, base_model, nSample=%d, nCandidate=%d, P=%.6f)", nSample, nCandidate, P);
@@ -479,7 +474,7 @@ public class ModelUpdate {
 	// Related test model
 	////////////////////////////////////////////////////////////////////////
 	public boolean includeTestData()throws ScriptException, EvalException, Exception{
-		if (Settings.TEST_NSAMPLES<=0)
+		if (Settings.TEST_DATA.length()==0)
 		{
 			JMetalLogger.logger.severe("You need to set TEST_NSAMPLES to get test values");
 			throw new Exception("Setting Error for TEST_NSAMPLES");
@@ -489,26 +484,33 @@ public class ModelUpdate {
 		
 		String cmd = String.format("test_data <-read.csv(sprintf(\"%s/testdata/%s\"), header=TRUE)", Settings.BASE_PATH, Settings.TEST_DATA);
 		engine.eval(cmd);
-		engine.eval("positive <-test_data[test_data$result==0,]");
-		engine.eval("negative <-test_data[test_data$result==1,]");
-		engine.eval("test.samples <- list()");
-		
-		int[] nPositives = new int[Settings.TEST_NGROUP];
-		int[] nNegatives = new int[Settings.TEST_NGROUP];
-		for(int i=0; i<Settings.TEST_NGROUP; i++) {
-			engine.eval(String.format("sub.positive <-positive[sample(nrow(positive), %d),]", Settings.TEST_NSAMPLES / 2));
-			engine.eval(String.format("sub.negative <-negative[sample(nrow(negative), %d),]", Settings.TEST_NSAMPLES / 2));
-			engine.eval(String.format("test.samples[[%d]] <-rbind(sub.positive, sub.negative)", i+1));
+		if (Settings.TEST_NGROUP!=1) {
+			engine.eval("positive <-test_data[test_data$result==0,]");
+			engine.eval("negative <-test_data[test_data$result==1,]");
+			engine.eval("test.samples <- list()");
 			
-			Vector dataVector = (Vector) engine.eval("nrow(sub.positive)");
-			nPositives[i] = dataVector.getElementAsInt(0);
-			dataVector = (Vector) engine.eval("nrow(sub.negative)");
-			nNegatives[i] = dataVector.getElementAsInt(0);
-		}
+			int[] nPositives = new int[Settings.TEST_NGROUP];
+			int[] nNegatives = new int[Settings.TEST_NGROUP];
 		
-		JMetalLogger.logger.info("Test Group Count    : " + Settings.TEST_NGROUP);
-		JMetalLogger.logger.info("Test Data (positive): " + nPositives[0]);
-		JMetalLogger.logger.info("Test Data (negative): " + nNegatives[0]);
+			for (int i = 0; i < Settings.TEST_NGROUP; i++) {
+				engine.eval(String.format("sub.positive <-positive[sample(nrow(positive), %d),]", Settings.TEST_NSAMPLES / 2));
+				engine.eval(String.format("sub.negative <-negative[sample(nrow(negative), %d),]", Settings.TEST_NSAMPLES / 2));
+				engine.eval(String.format("test.samples[[%d]] <-rbind(sub.positive, sub.negative)", i + 1));
+				
+				Vector dataVector = (Vector) engine.eval("nrow(sub.positive)");
+				nPositives[i] = dataVector.getElementAsInt(0);
+				dataVector = (Vector) engine.eval("nrow(sub.negative)");
+				nNegatives[i] = dataVector.getElementAsInt(0);
+			}
+			JMetalLogger.logger.info("Test Group Count    : " + Settings.TEST_NGROUP);
+			JMetalLogger.logger.info("Test Data (positive): " + nPositives[0]);
+			JMetalLogger.logger.info("Test Data (negative): " + nNegatives[0]);
+		}
+		else{
+			engine.eval("test.samples <- list()");
+			engine.eval("test.samples[[1]] <- test_data");
+		}
+	
 		
 		engine.eval(String.format("testfile <- \"%s/%s/%s_test_data.csv\"", Settings.EXTEND_PATH, Settings.WORKNAME, filename));
 		engine.eval("test.sample <- data.frame(TestSet=rep(1, nrow(test.samples[[1]])), test.samples[[1]])");
@@ -520,12 +522,13 @@ public class ModelUpdate {
 		return true;
 	}
 	
-	public boolean evaluateModel(int _cntUpdate)throws ScriptException, EvalException{
+	public boolean evaluateModel(int _cntUpdate, double _prob)throws ScriptException, EvalException{
+		System.out.println(_prob);
 		engine.eval("test.result.group <- data.frame()");
 		for(int x=0; x<Settings.TEST_NGROUP; x++) {
-			String cmd = String.format("result.item <- calculate_metrics(base_model, test.samples[[%d]], %.2f, cntUpdate)", x+1, Settings.BORDER_PROBABILITY);
+			String cmd = String.format("result.item <- calculate_metrics(base_model, test.samples[[%d]], %.6f, cntUpdate)", x+1, _prob);
 			engine.eval(cmd);
-			engine.eval(String.format("result.item <- data.frame(TestSet=%d, result.item)", x+1));
+			engine.eval(String.format("result.item <- data.frame(TestSet=%d, Probability=%f, result.item)", x+1, _prob));
 			engine.eval("test.result.group <- rbind(test.result.group, result.item)");
 		}
 		engine.eval("print(test.result.group)");
