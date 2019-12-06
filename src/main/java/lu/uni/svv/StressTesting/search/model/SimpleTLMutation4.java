@@ -17,6 +17,7 @@ public class SimpleTLMutation4 implements MutationOperator<TimeListSolution>
 	private double mutationProbability;
 	List<Integer> PossibleTasks = null;
 	RandomGenerator randomGenerator = null;
+	TestingProblem problem;
 
 	public long newValue = 0;
 	public int taskID = 0;
@@ -34,7 +35,7 @@ public class SimpleTLMutation4 implements MutationOperator<TimeListSolution>
 
 		this.mutationProbability = probability ;
 		this.randomGenerator = new RandomGenerator() ;
-		
+		this.problem = problem;
 		PossibleTasks = problem.getVaryingTasks();
 	}
 	  
@@ -62,9 +63,10 @@ public class SimpleTLMutation4 implements MutationOperator<TimeListSolution>
 		for (int t:PossibleTasks)
 		{
 			TimeList variable = solution.getVariableValue(t);
+			TimeList variable = solution.getVariableValue(t-1);
 			for (int a=0; a<variable.size(); a++) {
 				if (randomGenerator.nextDouble() >= mutationProbability) continue;
-				doMutation(solution, t, a);
+				doMutation(variable, t-1, a);
 			}
 		}
 
@@ -72,16 +74,17 @@ public class SimpleTLMutation4 implements MutationOperator<TimeListSolution>
 	}
 	
 	/** Implements the mutation operation */
-	private void doMutation(TimeListSolution solution, int _tIDX, int _position)
+	private void doMutation(TimeList timeList, int _taskIdx, int _position)
 	{
-		TimeList variable = solution.getVariableValue(_tIDX);
+//		TimeList variable = solution.getVariableValue(_tIDX);
+//		printTimeList(timeList);
 		
 		// execute mutation
-		long curValue = variable.get(_position);
+		long curValue = timeList.get(_position);
 		long lastValue = 0;
-		if ( _position>=1 ) lastValue = variable.get(_position-1);
+		if ( _position>=1 ) lastValue = timeList.get(_position-1);
 		
-		TaskDescriptor T = solution.problem.Tasks[_tIDX];
+		TaskDescriptor T = problem.Tasks[_taskIdx];
 		
 		// make a new value
 		// only non-periodic tasks changes because we filtered in early stage
@@ -90,30 +93,30 @@ public class SimpleTLMutation4 implements MutationOperator<TimeListSolution>
 		// propagate changed values
 		long delta = newValue - curValue;
 		curValue += delta;
-		variable.set(_position, curValue);
+		timeList.set(_position, curValue);
 		
 		// modify nextValues following range constraint			
-		for (int x=_position+1; x< variable.size(); x++) {
-			long nextValue = variable.get(x);
+		for (int x=_position+1; x< timeList.size(); x++) {
+			long nextValue = timeList.get(x);
 			if ( (nextValue >= T.MinIA + curValue) && (nextValue <= T.MaxIA + curValue) )	break;
-			variable.set(x, nextValue+delta);
+			timeList.set(x, nextValue+delta);
 			curValue = nextValue+delta;
 		}
 		
 		// Maximum Constraint
 		// if the current value is over Maximum time quanta, remove the value
 		// otherwise, save the result at the same place
-		for (int x=variable.size()-1; x>=0; x--) {
-			if (variable.get(x) <= solution.problem.QUANTA_LENGTH) 
-				break; 
-			variable.remove(x);
+		for (int x=timeList.size()-1; x>=0; x--) {
+			if (timeList.get(x) <= problem.QUANTA_LENGTH)
+				break;
+			timeList.remove(x);
 		}
 		
 		// Maximum Constraint
-		lastValue = variable.get(variable.size()-1);
-		if (lastValue + T.MaxIA < solution.problem.QUANTA_LENGTH)
+		lastValue = timeList.get(timeList.size()-1);
+		if (lastValue + T.MaxIA < problem.QUANTA_LENGTH)
 		{
-			variable.add(lastValue + randomGenerator.nextLong(T.MinIA, T.MaxIA));
+			timeList.add(lastValue + randomGenerator.nextLong(T.MinIA, T.MaxIA));
 		}
 		
 		return;

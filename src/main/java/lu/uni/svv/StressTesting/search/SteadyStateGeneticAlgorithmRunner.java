@@ -67,10 +67,10 @@ public class SteadyStateGeneticAlgorithmRunner {
 	}
 	
 	public static void printInput(String changed, String inputs){
+		String settingStr = Settings.getString();
+		System.out.print(settingStr);
 		if (Settings.RUN_NUM<=1) {
 			// multi run mode and single run mode with runID 1)
-			String settingStr = Settings.getString();
-			System.out.print(settingStr);
 			GAWriter writer = new GAWriter("settings.txt", Level.FINE, null, Settings.BASE_PATH);
 			writer.info(settingStr);
 			writer.close();
