@@ -142,9 +142,15 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	@Override
 	protected List<S> selection(List<S> population) {
 		List<S> matingPopulation = new ArrayList<S>(2);
-		for (int i = 0; i < 2; i++) {
+		int i=0;
+		long prev_id = -1;
+		while (i<2){
 			S solution = selectionOperator.execute(population);
+			long id = ((TimeListSolution)solution).ID;
+			if (prev_id==id) continue;
+			prev_id = id;
 			matingPopulation.add(solution);
+			i += 1;
 		}
 		
 		return matingPopulation;
