@@ -25,7 +25,6 @@ public class ModelUpdateThreshold extends ModelUpdate {
 		// learning logistic regression with simple formula
 		engine.eval("base_model <- glm(formula = formula_str, family = \"binomial\", data = training)");
 		engine.eval("cntUpdate <- 0");
-		engine.eval("cntUpdate <- 0");
 		
 		// update borderProbability and area
 		engine.eval("uncertainIDs <- get_base_names(names(base_model$coefficients), isNum=TRUE)"); //c(30, 33)

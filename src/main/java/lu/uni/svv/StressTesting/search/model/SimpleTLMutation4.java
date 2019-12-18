@@ -62,7 +62,6 @@ public class SimpleTLMutation4 implements MutationOperator<TimeListSolution>
 		
 		for (int t:PossibleTasks)
 		{
-			TimeList variable = solution.getVariableValue(t);
 			TimeList variable = solution.getVariableValue(t-1);
 			for (int a=0; a<variable.size(); a++) {
 				if (randomGenerator.nextDouble() >= mutationProbability) continue;
@@ -76,9 +75,6 @@ public class SimpleTLMutation4 implements MutationOperator<TimeListSolution>
 	/** Implements the mutation operation */
 	private void doMutation(TimeList timeList, int _taskIdx, int _position)
 	{
-//		TimeList variable = solution.getVariableValue(_tIDX);
-//		printTimeList(timeList);
-		
 		// execute mutation
 		long curValue = timeList.get(_position);
 		long lastValue = 0;

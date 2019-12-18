@@ -139,23 +139,28 @@ public class ModelUpdate {
 		}
 		
 		JMetalLogger.logger.info("Update model process ...");
-		if (!this.update(workfile)) {
+		if (!this.update(workfile, prob)) {
 			JMetalLogger.logger.info("Failed to update model process");
 			return;
 		}
 	}
 	
-	public boolean update(String workfile) throws ScriptException, EvalException, Exception{
+	public boolean update(String workfile, double _initialProbability) throws ScriptException, EvalException, Exception{
 		// Sampling new data point and evaluation
 		int count = 0;
 		int solID = 0;
 		int nUpdates = 0;
-		double borderProbability = 0.5;     // Set middle point
+		double borderProbability = _initialProbability;     // Set middle point
 		
-		while (nUpdates < Settings.N_MODEL_UPDATES) {
+		while (nUpdates <= Settings.N_MODEL_UPDATES) {
 			// Learning model again with more data
 			if (count == Settings.N_EXAMPLE_POINTS) {
+				//check stop condition
+				boolean condition = this.checkStopCondition(nUpdates);
+				if (Settings.STOP_CONDITION && condition) break;
+				
 				nUpdates += 1;
+				
 				JMetalLogger.logger.info("update logistic regression " + nUpdates + "/" + Settings.N_MODEL_UPDATES);
 				borderProbability = this.updateModel(borderProbability);
 				if (Settings.TEST_DATA.length() != 0 && !evaluateModel(nUpdates, borderProbability)){
@@ -163,7 +168,10 @@ public class ModelUpdate {
 					return false;
 				}
 				count = 0;
-				if (Settings.STOP_CONDITION && this.checkStopCondition()) break;
+				
+				// this line should be up there before changing uUpdate value
+				// The reason why I put here is for check model evaluation with test data at the end of the Phase 2.
+				if(nUpdates > Settings.N_MODEL_UPDATES) break;
 			}
 			
 			//Sampling
@@ -194,7 +202,7 @@ public class ModelUpdate {
 		if (Settings.TEST_DATA.length()!=0 && !this.saveTestResults()) {
 			JMetalLogger.logger.fine("Failed to save test results");
 		}
-		if (Settings.STOP_CONDITION && !this.saveTerminationResults()) {
+		if (this.saveTerminationResults()) {
 			JMetalLogger.logger.fine("Failed to save termination results");
 		}
 		JMetalLogger.logger.info("Finished to run Phase 2");
@@ -250,7 +258,7 @@ public class ModelUpdate {
 		engine.eval(update_time_str);
 		engine.eval("source(\"R/libs/lib_data.R\")");           // dependency for lib_evaluate
 		engine.eval("source(\"R/libs/lib_metrics.R\")");        // dependency for lib_evaluate (noFPR)
-		engine.eval("source(\"R/libs/lib_evaluate.R\")");       // find_noFPR, integrateMC, calculate_metrics
+		engine.eval("source(\"R/libs/lib_evaluate.R\")");       // find_noFPR, integrateMC, calculate_metrics, kfoldCV
 		
 		engine.eval("source(\"R/libs/lib_pruning.R\")");        // pruning functions
 		engine.eval("source(\"R/libs/lib_formula.R\")");        // formula functions (get_raw_names, get_base_names)
@@ -303,7 +311,7 @@ public class ModelUpdate {
 		
 		JMetalLogger.logger.info("Initialized model: " + getModelText("base_model"));
 
-		return 1;
+		return 0.5;
 	}
 	
 	
@@ -429,11 +437,12 @@ public class ModelUpdate {
 		return true;
 	}
 	
-	public boolean checkStopCondition() throws ScriptException, EvalException, Exception {
+	public boolean checkStopCondition(int _cntUpdate) throws ScriptException, EvalException, Exception {
+		engine.eval("cv_error <- kfoldCV(base_model, training, 10)");
+		engine.eval(String.format("termination.item <- data.frame(Iter=%d, cv_error)", _cntUpdate));
+		engine.eval("termination.results <- rbind(termination.results,  termination.item)");
 		
-		engine.eval("termination.results <- rbind(termination.results,  data.frame(nUpdate=cntUpdate, Value=borderProbability))");
-		
-		Vector dataVector = (Vector)engine.eval("borderProbability");
+		Vector dataVector = (Vector)engine.eval("1 - cv_error$CV.Precision.Sum");
 		double probability = dataVector.getElementAsDouble(0);
 		
 		if (probability <= Settings.STOP_ACCEPT_RATE)
@@ -471,10 +480,8 @@ public class ModelUpdate {
 	public boolean evaluateModel(int _cntUpdate, double _prob)throws ScriptException, EvalException{
 		System.out.println(_prob);
 		
-		String cmd = String.format("result.item <- calculate_metrics(base_model, test.samples, %.6f, %d)", _prob, _cntUpdate);
-		engine.eval(cmd);
+		engine.eval(String.format("result.item <- calculate_metrics(base_model, test.samples, %.6f, %d)", _prob, _cntUpdate));
 		engine.eval(String.format("result.item <- data.frame(Probability=%f, result.item)", _prob));
-		
 		engine.eval("print(result.item)");
 		engine.eval("test.results <- rbind(test.results, result.item)");
 		return true;
