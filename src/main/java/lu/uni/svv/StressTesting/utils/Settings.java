@@ -49,6 +49,7 @@ public class Settings {
 	public static int     N_EXAMPLE_POINTS    = 100;
 	public static int     SAMPLE_CANDIDATES   = 20;
 	public static String  LR_FORMULA_PATH     = "";
+	public static double  MODEL_PROB_PRECISION= 0.0001;
 	
 	public static boolean STOP_CONDITION      = false;
 	public static String  UPDATE_TYPE         = "refine";
@@ -98,6 +99,8 @@ public class Settings {
 		parser.addOption(false,"N_EXAMPLE_POINTS", DataType.INTEGER, null, "exPoints", "The iteration number to update logsitic regression model");
 		parser.addOption(false,"SAMPLE_CANDIDATES", DataType.INTEGER, null, "sampleCandidates", "The number of sandidates to get one sample in second phase");
 		parser.addOption(false,"LR_FORMULA_PATH", DataType.STRING, null, "formulaPath", "formula file path to use in second phase");
+		parser.addOption(false,"MODEL_PROB_PRECISION", DataType.DOUBLE, null, "modelPrecision", "precision for the model line");
+		
 		
 		parser.addOption(false,"TEST_DATA", DataType.STRING, null, "testData", "test data file");
 		parser.addOption(false,"UPDATE_TYPE", DataType.STRING, null, "updateType", "test data type: training, new, initial, pool");
@@ -130,7 +133,7 @@ public class Settings {
 		Arrays.sort(Settings.TARGET_TASKS);
 		
 		if (Settings.EXTEND_PATH.length()==0)
-			Settings.EXTEND_PATH = Settings.BASE_PATH + "/updates";
+			Settings.EXTEND_PATH = Settings.BASE_PATH + "/refinements";
 	}
 	
 	public static int[] convertToIntArray(String commaSeparatedStr) {

@@ -1,5 +1,6 @@
 package lu.uni.svv.StressTesting.search.update;
 
+import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
 import org.renjin.sexp.Vector;
 import org.uma.jmetal.util.JMetalLogger;
@@ -28,7 +29,9 @@ public class ModelUpdateThreshold extends ModelUpdate {
 		
 		// update borderProbability and area
 		engine.eval("uncertainIDs <- get_base_names(names(base_model$coefficients), isNum=TRUE)"); //c(30, 33)
-		engine.eval("borderProbability<-find_noFPR(base_model, training, precise=0.0001)");
+		engine.eval(String.format("borderProbability<-find_noFPR(base_model, training, precise=%.6f)", Settings.MODEL_PROB_PRECISION));
+		engine.eval(String.format("borderProbability<-ifelse(borderProbability==0, %.6f, borderProbability)", Settings.MODEL_PROB_PRECISION));
+		engine.eval("print(sprintf(\"The result of find_noFPR: %.6f\", borderProbability))");
 		engine.eval("areaMC <- integrateMC(10000, base_model, IDs=uncertainIDs, prob=borderProbability, UNIT.WCET=UNIT)");
 		engine.eval("bestPoint <- get_bestsize_point(base_model, borderProbability, targetIDs=uncertainIDs, isGeneral=TRUE)");
 		
@@ -42,7 +45,9 @@ public class ModelUpdateThreshold extends ModelUpdate {
 		JMetalLogger.logger.info("Initialized model: " + getModelText("base_model"));
 		
 		Vector dataVector = (Vector)engine.eval("borderProbability");
-		return dataVector.getElementAsDouble(0);
+		double prob = dataVector.getElementAsDouble(0);
+		JMetalLogger.logger.info(String.format("probability: %.6f", prob));
+		return prob;
 	}
 	
 	public double updateModel(double _prob) throws ScriptException, EvalException{
@@ -52,7 +57,9 @@ public class ModelUpdateThreshold extends ModelUpdate {
 		engine.eval("cntUpdate <- cntUpdate + 1");
 		
 		// update borderProbability and area
-		engine.eval("borderProbability <- find_noFPR(base_model, training, precise=0.0001)");
+		engine.eval(String.format("borderProbability <- find_noFPR(base_model, training, precise=%.6f)", Settings.MODEL_PROB_PRECISION));
+		engine.eval(String.format("borderProbability<-ifelse(borderProbability==0, %.6f, borderProbability)", Settings.MODEL_PROB_PRECISION));
+		engine.eval("print(sprintf(\"The result of find_noFPR: %.6f\", borderProbability))");
 		engine.eval("areaMC <- integrateMC(10000, base_model, IDs=uncertainIDs, prob=borderProbability, UNIT.WCET=UNIT)");
 		engine.eval("bestPoint <- get_bestsize_point(base_model, borderProbability, targetIDs=uncertainIDs, isGeneral=TRUE)");
 		
@@ -65,6 +72,7 @@ public class ModelUpdateThreshold extends ModelUpdate {
 		Vector dataVector = (Vector)engine.eval("borderProbability");
 		double newProb = dataVector.getElementAsDouble(0);
 		JMetalLogger.logger.info("Updated model: " + getModelText("base_model"));
+		JMetalLogger.logger.info(String.format("probability: %.6f", newProb));
 		
 		updateTerminationData();
 		return newProb;

@@ -74,12 +74,16 @@ public class SimpleTLCrossover implements CrossoverOperator<TimeListSolution>
 		offspring.add((TimeListSolution) parent2.copy()) ;
 
 		if (randomGenerator.nextDouble() < probability) {
+			//System.out.println("[Debug] Executed crossover");
+			
 			// 1. Get the total number of bits
 			int totalNumberOfVariables = parent1.getNumberOfVariables();
 			  
 			// 2. Get crossover point
 			int crossoverPoint = randomGenerator.nextInt(1, PossibleTasks.size() - 1);
 			crossoverPoint = PossibleTasks.get(crossoverPoint);
+			
+			//System.out.println(String.format("Crossover Point: Task %d", crossoverPoint));
 			
 			// 3. Exchange values
 			TimeList[] offspring1, offspring2;

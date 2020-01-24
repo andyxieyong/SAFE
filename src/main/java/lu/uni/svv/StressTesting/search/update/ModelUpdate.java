@@ -349,7 +349,6 @@ public class ModelUpdate {
 	 * @return
 	 */
 	public long[] samplingNewPoints(int nSample, int nCandidate, double P) throws ScriptException, EvalException{
-		
 		long[] samples = null;
 		engine.eval("tnames <- get_task_names(training)");
 		String codeText = String.format("sampled_data <- sample_based_euclid_distance(tnames, base_model, nSample=%d, nCandidate=%d, P=%.6f)", nSample, nCandidate, P);
@@ -461,7 +460,7 @@ public class ModelUpdate {
 		}
 		
 		engine.eval("test.results <- data.frame()");
-		String cmd = String.format("test.samples <-read.csv(sprintf(\"%s/testdata/%s\"), header=TRUE)", Settings.BASE_PATH, Settings.TEST_DATA);
+		String cmd = String.format("test.samples <-read.csv(sprintf(\"%s/%s\"), header=TRUE)", Settings.BASE_PATH, Settings.TEST_DATA);
 		engine.eval(cmd);
 
 		engine.eval("positive <-test.samples[test.samples$result==0,]");
@@ -478,8 +477,6 @@ public class ModelUpdate {
 	}
 	
 	public boolean evaluateModel(int _cntUpdate, double _prob)throws ScriptException, EvalException{
-		System.out.println(_prob);
-		
 		engine.eval(String.format("result.item <- calculate_metrics(base_model, test.samples, %.6f, %d)", _prob, _cntUpdate));
 		engine.eval(String.format("result.item <- data.frame(Probability=%f, result.item)", _prob));
 		engine.eval("print(result.item)");

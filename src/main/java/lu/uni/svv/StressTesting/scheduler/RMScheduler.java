@@ -112,11 +112,13 @@ public class RMScheduler {
 					printer.println("Here are extra execution because of ramaining tasks in queue");
 					printer.println("------------------------------------------");
 				}
-				
+//				System.out.println(String.format("Exetended, still we have %d executions", readyQueue.size()));
 				while(readyQueue.size() > 0) {
 					int output = executeOneUnit();
 					if (output == -1) return ;
+//					time +=1;
 				}
+//				System.out.println(String.format("Ended %.1fms", time*0.1));
 			}
 		} catch (Exception e) {
 			printer.println("Some error occurred. Program will now terminate: " + e);

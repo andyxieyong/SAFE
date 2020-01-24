@@ -31,30 +31,31 @@ public class SecondPhase {
 	
 	
 	public static void displaySettings(){
-		JMetalLogger.logger.info("INPUT_FILE         : "+ Settings.INPUT_FILE);
-		JMetalLogger.logger.info("BASE_PATH          : "+ Settings.BASE_PATH);
-		JMetalLogger.logger.info("EXTEND_PATH        : "+ Settings.EXTEND_PATH);
-		JMetalLogger.logger.info("WORKNAME           : "+ Settings.WORKNAME);
-		JMetalLogger.logger.info("RUN_NUM            : "+ Settings.RUN_NUM);
+		JMetalLogger.logger.info("INPUT_FILE          : "+ Settings.INPUT_FILE);
+		JMetalLogger.logger.info("BASE_PATH           : "+ Settings.BASE_PATH);
+		JMetalLogger.logger.info("EXTEND_PATH         : "+ Settings.EXTEND_PATH);
+		JMetalLogger.logger.info("WORKNAME            : "+ Settings.WORKNAME);
+		JMetalLogger.logger.info("RUN_NUM             : "+ Settings.RUN_NUM);
 		JMetalLogger.logger.info("");
 		// Scheduler variables
-		JMetalLogger.logger.info("SCHEDULER          : "+  Settings.SCHEDULER);
-		JMetalLogger.logger.info("TARGET_TASKS       : "+  Settings.TARGET_TASKLIST);
-		JMetalLogger.logger.info("TIME_QUANTA        : "+  Settings.TIME_QUANTA);;
-		JMetalLogger.logger.info("TIME_MAX           : "+  Settings.TIME_MAX);
-		JMetalLogger.logger.info("EXTEND_SCHEDULER   : "+  Settings.EXTEND_SCHEDULER);
+		JMetalLogger.logger.info("SCHEDULER           : "+  Settings.SCHEDULER);
+		JMetalLogger.logger.info("TARGET_TASKS        : "+  Settings.TARGET_TASKLIST);
+		JMetalLogger.logger.info("TIME_QUANTA         : "+  Settings.TIME_QUANTA);;
+		JMetalLogger.logger.info("TIME_MAX            : "+  Settings.TIME_MAX);
+		JMetalLogger.logger.info("EXTEND_SCHEDULER    : "+  Settings.EXTEND_SCHEDULER);
 		JMetalLogger.logger.info("");
-		JMetalLogger.logger.info("GA_POPULATION      : "+ Settings.GA_POPULATION);
-		JMetalLogger.logger.info("GA_ITERATION       : "+ Settings.GA_ITERATION);
-		JMetalLogger.logger.info("N_SAMPLE_WCET      : "+ Settings.N_SAMPLE_WCET);
+		JMetalLogger.logger.info("GA_POPULATION       : "+ Settings.GA_POPULATION);
+		JMetalLogger.logger.info("GA_ITERATION        : "+ Settings.GA_ITERATION);
+		JMetalLogger.logger.info("N_SAMPLE_WCET       : "+ Settings.N_SAMPLE_WCET);
 		JMetalLogger.logger.info("");
-		JMetalLogger.logger.info("N_MODEL_UPDATES    : "+ Settings.N_MODEL_UPDATES);
-		JMetalLogger.logger.info("N_EXAMPLE_POINTS   : "+ Settings.N_EXAMPLE_POINTS);
+		JMetalLogger.logger.info("N_MODEL_UPDATES     : "+ Settings.N_MODEL_UPDATES);
+		JMetalLogger.logger.info("N_EXAMPLE_POINTS    : "+ Settings.N_EXAMPLE_POINTS);
+		JMetalLogger.logger.info("MODEL_PROB_PRECISION: "+ Settings.MODEL_PROB_PRECISION);
 		JMetalLogger.logger.info("");
-		JMetalLogger.logger.info("TEST_DATA          : "+ Settings.TEST_DATA);
-		JMetalLogger.logger.info("UPDATE_TYPE        : "+ Settings.UPDATE_TYPE);
-		JMetalLogger.logger.info("STOP_CONDITION     : "+ Settings.STOP_CONDITION);
-		JMetalLogger.logger.info("STOP_ACCEPT_RATE   : " + Settings.STOP_ACCEPT_RATE);
+		JMetalLogger.logger.info("TEST_DATA           : "+ Settings.TEST_DATA);
+		JMetalLogger.logger.info("UPDATE_TYPE         : "+ Settings.UPDATE_TYPE);
+		JMetalLogger.logger.info("STOP_CONDITION      : "+ Settings.STOP_CONDITION);
+		JMetalLogger.logger.info("STOP_ACCEPT_RATE    : " + Settings.STOP_ACCEPT_RATE);
 		JMetalLogger.logger.info("");
 		
 		
