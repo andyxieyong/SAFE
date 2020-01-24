@@ -1,33 +1,15 @@
 package lu.uni.svv.StressTesting.search.update;
 
-import lu.uni.svv.StressTesting.scheduler.RMScheduler;
-import lu.uni.svv.StressTesting.search.model.TestingProblem;
-import lu.uni.svv.StressTesting.search.model.TimeListSolution;
-import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.renjin.eval.EvalException;
-import org.renjin.script.RenjinScriptEngineFactory;
-import org.renjin.sexp.StringVector;
-import org.renjin.sexp.Vector;
 import org.uma.jmetal.util.JMetalLogger;
-
-import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.logging.Level;
 
 
 public class ModelUpdateKFold extends ModelUpdate {
 	
-	public ModelUpdateKFold(int[] _targetTasks) throws Exception{
-		super(_targetTasks);
+	public ModelUpdateKFold() throws Exception{
+		super();
 	}
 	
 	////////////////////////////////////////////////////////////////////////
@@ -42,7 +24,7 @@ public class ModelUpdateKFold extends ModelUpdate {
 	public boolean updateTerminationData() throws ScriptException, EvalException{
 		// use newly added data in the training
 		engine.eval("tSize<-nrow(training)");
-		engine.eval(String.format("termination_data<-training[(tSize-%d):tSize,]", Settings.UPDATE_ITERATION));
+		engine.eval(String.format("termination_data<-training[(tSize-%d):tSize,]", Settings.N_EXAMPLE_POINTS));
 		
 		return true;
 		
@@ -51,7 +33,7 @@ public class ModelUpdateKFold extends ModelUpdate {
 	// Related test model
 	////////////////////////////////////////////////////////////////////////
 	public boolean includeTestData()throws ScriptException, EvalException, Exception{
-		if (Settings.TEST_NGROUP<=0)
+		if (Settings.TEST_DATA.length()==0)
 		{
 			JMetalLogger.logger.severe("You need to set TEST_NGROUP to get test values");
 			JMetalLogger.logger.severe("This means that k value for the k-fold cross validation");
@@ -59,7 +41,7 @@ public class ModelUpdateKFold extends ModelUpdate {
 		}
 		
 		engine.eval("test.results <- data.frame()");
-		engine.eval(String.format("testdata_filename <- \"%s/%s/%s_test_data.csv\"", Settings.EXPORT_PATH, Settings.LR_WORKPATH, filename));
+		engine.eval(String.format("testdata_filename <- \"%s/%s/%s_test_data.csv\"", Settings.EXTEND_PATH, Settings.WORKNAME, filename));
 		return true;
 	}
 	
@@ -89,7 +71,7 @@ public class ModelUpdateKFold extends ModelUpdate {
 			engine.eval("test_model <- glm(formula = formula_str, family = \"binomial\", data = train_fold)");
 			
 			// evaluate the model
-			String cmd = String.format("result.item <- calculate_metrics(test_model, test_fold, %.2f, cntUpdate)", Settings.BORDER_PROBABILITY);
+			String cmd = String.format("result.item <- calculate_metrics(test_model, test_fold, %.2f, cntUpdate)", 0.5);
 			engine.eval(cmd);
 			engine.eval(String.format("result.item <- data.frame(TestSet=%d, result.item)", x));
 			engine.eval("test.result.group <- rbind(test.result.group, result.item)");

@@ -9,13 +9,12 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.logging.Level;
 
-import javafx.scene.layout.Priority;
 import junit.framework.TestCase;
 import lu.uni.svv.StressTesting.datatype.Task;
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
 import lu.uni.svv.StressTesting.scheduler.RMSchedulerEx;
 import lu.uni.svv.StressTesting.scheduler.RMSchedulerNorm;
-import lu.uni.svv.StressTesting.scheduler.RMSchedulerRange;
+import lu.uni.svv.StressTesting.scheduler.RMSchedulerBest;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
 import lu.uni.svv.StressTesting.utils.GAWriter;
@@ -26,7 +25,7 @@ import lu.uni.svv.StressTesting.utils.Settings;
  */
 public class SchedulerProof extends TestCase
 {
-	public static String BASE_PATH = "../results/TimelineLX3";
+	public static String BASE_PATH = "../results/Timeline/TimelineLX1017_Avg";
 	
 	public SchedulerProof( String testName )
 	{
@@ -54,7 +53,7 @@ public class SchedulerProof extends TestCase
 		
 		for(int time=0; time<100; time++){
 			int tID = rand.nextInt(problem.Tasks.length) + 1;
-			Q.add(new Task(tID, indexTable[tID-1], 5, time,10, problem.Tasks[tID-1].Priority));
+			Q.add(new Task(tID, indexTable[tID-1], 5, time,10, problem.Tasks[tID-1].Priority, problem.Tasks[tID-1].Severity));
 			
 			indexTable[tID-1] += 1;
 		}
@@ -90,17 +89,17 @@ public class SchedulerProof extends TestCase
 //		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 3000, "RMScheduler"); // append last item
 //		TestingProblem problem = new TestingProblem("res/LS_data_1018_5.csv", 0.1, 100); // full data set
 //		TestingProblem problem = new TestingProblem("../res/samples/sample_mixed_1.csv", 0.1, 100, "RMSchedulerRange"); // append last item
+//		TestingProblem problem = new TestingProblem("../res/LS_data_20190905_fixed.csv", 0.1, 3000, "RMSchedulerRange"); // append last item
 		TestingProblem problem = new TestingProblem("../res/LS_data_20190905_fixed.csv", 0.1, 3000, "RMSchedulerRange"); // append last item
 		TimeListSolution solution = problem.createSolution();
 		
 		//testQueue(problem);
-		
 		RMScheduler.DETAIL = true;
 		RMScheduler.PROOF = true;
 //		RMScheduler scheduler = new RMScheduler(this);
-//		RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TASK_FITNESS);
-//		RMScheduler scheduler = new RMSchedulerNorm(problem, Settings.TASK_FITNESS);
-		RMScheduler scheduler = new RMSchedulerRange(problem, Settings.TASK_FITNESS);
+//		RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TARGET_TASKS);
+//		RMScheduler scheduler = new RMSchedulerNorm(problem, Settings.TARGET_TASKS);
+		RMScheduler scheduler = new RMSchedulerBest(problem, Settings.TARGET_TASKS);
 
 		try {
 			PrintStream printer = new PrintStream(new File(BASE_PATH+"/cpulog.log"));
@@ -115,7 +114,6 @@ public class SchedulerProof extends TestCase
 
 		solution.setObjective(0, value);
 		solution.setDeadlines(scheduler.getMissedDeadlineString());
-
 		
 		String details = scheduler.getExecutedTasksString();
 		GAWriter writer = new GAWriter("scheduler_test_executions.csv", Level.INFO,  null, BASE_PATH);
@@ -128,7 +126,7 @@ public class SchedulerProof extends TestCase
 
 		GAWriter result_writer = new GAWriter("scheduler_test_result.txt", Level.INFO,  null, BASE_PATH);
 		boolean result = scheduler.assertScheduler(result_writer);
-		if (result == true){
+		if (result){
 			System.out.println("Succeed");
 		}
 		result_writer.close();
@@ -140,23 +138,30 @@ public class SchedulerProof extends TestCase
 	 * No deadline misses
 	 */
 	public void testLuxSpace() throws Exception {
-		String workingPath = String.format("%s/testcases", BASE_PATH);
-		String schedulerPath = String.format("%s/scheduler", BASE_PATH);
+//		String testfile = "../res/LS_data_20190917_fixed3_Average.csv";
+		String testfile = "../res/LS_data_20191112_input_Average_SET1.csv";
+		BASE_PATH = "../results/Timeline/TimelineLX1112_Avg";
+		System.out.println(BASE_PATH);
+		System.out.println(testfile);
+		
+		String workingPath = String.format("%s/_testcases", BASE_PATH);
+		String schedulerPath = String.format("%s/_scheduler", BASE_PATH);
 		// open Directory
 		File dir = new File(workingPath);
-		if (dir.exists() == false) dir.mkdirs();
+		if (!dir.exists()) dir.mkdirs();
 		dir = new File(schedulerPath);
-		if (dir.exists() == false) dir.mkdirs();
+		if (!dir.exists()) dir.mkdirs();
 		
-		TestingProblem problem = new TestingProblem("../res/LS_data_20190905_fixed.csv", 0.1, 6000, "RMSchedulerRange"); // append last item
+		TestingProblem problem = new TestingProblem(testfile, 0.1, 6000, "RMSchedulerRange"); // append last item
 		RMScheduler.DETAIL = true;
 		RMScheduler.PROOF = true;
+		Settings.TARGET_TASKS = new int[0];
 		
 		PrintStream resultsStream = new PrintStream(new File(BASE_PATH + "/message.txt"));
 		
-		for(int testID=0; testID < 1000; testID++){
+		for(int testID=0; testID < 100; testID++){
 			System.out.println(String.format("Testing %d ...", testID));
-			RMScheduler scheduler = new RMSchedulerRange(problem, Settings.TASK_FITNESS);
+			RMScheduler scheduler = new RMSchedulerBest(problem, Settings.TARGET_TASKS);
 			TimeListSolution solution = problem.createSolution();
 			try {
 				PrintStream printer = new PrintStream(new File(String.format("%s/cpulog_%d.log", workingPath, testID)));

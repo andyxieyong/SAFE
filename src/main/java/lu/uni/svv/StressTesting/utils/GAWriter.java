@@ -23,11 +23,22 @@ public class GAWriter {
 
 		File fileDir = new File(_basepath+"/"+_filename);
 		File parent = fileDir.getParentFile();
-		if (parent.exists() == false){
-			if(!fileDir.getParentFile().mkdirs()) {
+		int count=0;
+		while (!parent.exists()){
+			if (!fileDir.getParentFile().mkdirs()) {
 				System.out.print("Creating error");
-				System.out.print(fileDir.getAbsolutePath());
-				System.exit(1);
+				System.out.println(fileDir.getAbsolutePath());
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+				if (count > 3){
+					System.out.println("Failed to create folder");
+					System.exit(1);
+				}
+				count += 1;
 			}
 		}
 		

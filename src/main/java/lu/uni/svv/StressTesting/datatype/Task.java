@@ -11,8 +11,9 @@ public class Task {
 	public long		RemainTime;		// remain time to execute
 	public long		Deadline;		// ArrivedTime + Deadline == deadline for this task
 	public long		Priority;		// Fixed Priority
+	public TaskSeverity	Severity;		    // Hard or Soft deadline
 	
-	public Task(int _id, int _exID, long _execTime, long _arrivalTime, long _deadline, long _priority) {
+	public Task(int _id, int _exID, long _execTime, long _arrivalTime, long _deadline, long _priority, TaskSeverity _severity) {
 		ID				= _id;
 		ExecutionID     = _exID;
 		ExecutionTime	= _execTime;		
@@ -22,6 +23,7 @@ public class Task {
 		RemainTime		= _execTime;
 		Deadline 		= _deadline;
 		Priority		= _priority;
+		Severity		= _severity;
 	}
 	
 	public String str(){

@@ -11,8 +11,8 @@ import javax.script.ScriptException;
  */
 public class ModelUpdateRandom extends ModelUpdate {
 	
-	public ModelUpdateRandom(int[] _targetTasks) throws Exception{
-		super(_targetTasks);
+	public ModelUpdateRandom() throws Exception{
+		super();
 	}
 	
 	public long[] samplingNewPoints(int nSample, int nCandidate, double P)  throws ScriptException, EvalException{
@@ -20,7 +20,7 @@ public class ModelUpdateRandom extends ModelUpdate {
 		long[] samples = null;
 		
 		engine.eval("tnames <- get_task_names(training)");
-		String codeText = String.format("sampled_data <- get_random_sampling(tnames, nSample=%d)", nSample);
+		String codeText = String.format("sampled_data <- sample_by_random(tnames, nSample=%d)", nSample);
 		engine.eval(codeText);
 		
 		StringVector nameVector = (StringVector)engine.eval("colnames(sampled_data)");

@@ -2,11 +2,9 @@ package lu.uni.svv.StressTesting.scheduler;
 
 import lu.uni.svv.StressTesting.datatype.Task;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
-import lu.uni.svv.StressTesting.utils.Settings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -22,14 +20,14 @@ import java.util.List;
  * @author jaekwon.lee
  *
  */
-public class RMSchedulerRange extends RMScheduler{
+public class RMSchedulerBest extends RMScheduler{
 	
 	public ArrayList[] selectedMisses;
 	public int[] maximumMissed;
 	public List<Task> bestExecutions;
 	
-	public RMSchedulerRange(TestingProblem _problem, int _taskFitness) {
-		super(_problem, _taskFitness);
+	public RMSchedulerBest(TestingProblem _problem, int[] _targetTasks) {
+		super(_problem, _targetTasks);
 		
 		initialize();
 	}
@@ -63,15 +61,18 @@ public class RMSchedulerRange extends RMScheduler{
 	
 	@Override
 	public double getEvaluatedValue() {
-		double fitness = 0.0;
+		double fitness = -1*problem.QUANTA_LENGTH;
 		
-		if (this.taskFitness==0){
-			for (int id=0; id<maximumMissed.length; id++){
-				fitness += maximumMissed[id];
+		if (this.targetTasks.length==0){
+			for (int idx=0; idx<maximumMissed.length; idx++){
+				if (fitness<maximumMissed[idx]) fitness = maximumMissed[idx];
 			}
 		}
 		else{
-			fitness = maximumMissed[this.taskFitness-1];
+			for (int id: this.targetTasks){
+				// ID in the targetTasks are started number 1
+				if (fitness<maximumMissed[id-1]) fitness = maximumMissed[id-1];
+			}
 		}
 		
 		return fitness;

@@ -2,7 +2,6 @@ package lu.uni.svv.StressTesting;
 
 import junit.framework.TestCase;
 import lu.uni.svv.StressTesting.datatype.FitnessList;
-import lu.uni.svv.StressTesting.search.model.SolutionListComparator2;
 import lu.uni.svv.StressTesting.search.model.StatisticalTest;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
 import lu.uni.svv.StressTesting.utils.ArgumentParser;

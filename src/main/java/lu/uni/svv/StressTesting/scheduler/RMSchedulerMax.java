@@ -23,8 +23,8 @@ public class RMSchedulerMax extends RMScheduler{
 	
 	protected int[] maximumMissed;
 	
-	public RMSchedulerMax(TestingProblem _problem, int _taskFitness) {
-		super(_problem, _taskFitness);
+	public RMSchedulerMax(TestingProblem _problem, int[] _targetTasks) {
+		super(_problem, _targetTasks);
 		
 		maximumMissed = new int[_problem.Tasks.length];
 		Arrays.fill(maximumMissed, (int)_problem.QUANTA_LENGTH * -1);
@@ -34,7 +34,7 @@ public class RMSchedulerMax extends RMScheduler{
 	protected double evaluateDeadlineMiss(Task _T, int _missed) {
 		if (_missed > maximumMissed[_T.ID-1]) maximumMissed[_T.ID-1] = _missed;
 		
-		if (!(this.taskFitness == 0 || _T.ID == this.taskFitness)) return 0.0;
+		if (!isTargetTask(_T.ID)) return 0.0;
 		return _missed;
 	}
 	
@@ -43,7 +43,7 @@ public class RMSchedulerMax extends RMScheduler{
 		double result = 0.0;
 		for (int x=0; x<maximumMissed.length; x ++) {
 			int ID = x + 1;
-			if (this.taskFitness == 0 || ID == this.taskFitness) {
+			if (isTargetTask(ID)) {
 				double a = (maximumMissed[x] > 0) ? 2: 0.5;
 				result = result + Math.pow(a, Math.abs(maximumMissed[x]));
 			}

@@ -19,13 +19,13 @@ import lu.uni.svv.StressTesting.utils.Settings;
  */
 public class RMSchedulerNorm extends RMScheduler{
 	
-	public RMSchedulerNorm(TestingProblem _problem, int _taskFitness) {
-		super(_problem, _taskFitness);
+	public RMSchedulerNorm(TestingProblem _problem, int[] _targetTasks) {
+		super(_problem, _targetTasks);
 	}
 	
 	@Override
 	protected double evaluateDeadlineMiss(Task _T, int _missed) {
-		if (!(this.taskFitness == 0 || _T.ID == this.taskFitness)) return 0.0;
+		if (!isTargetTask(_T.ID)) return 0.0;
 		
 		double normed;
 		

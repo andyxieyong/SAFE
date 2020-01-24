@@ -8,15 +8,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 
-import com.sun.xml.internal.ws.api.config.management.policy.ManagementAssertion;
 import lu.uni.svv.StressTesting.datatype.FitnessList;
+import lu.uni.svv.StressTesting.datatype.TaskSeverity;
+import lu.uni.svv.StressTesting.datatype.TaskType;
 import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.utils.RandomGenerator;
 import lu.uni.svv.StressTesting.utils.Settings;
 import org.uma.jmetal.problem.impl.AbstractGenericProblem;
 
 import lu.uni.svv.StressTesting.scheduler.RMScheduler;
-import lu.uni.svv.StressTesting.search.model.TaskDescriptor.TaskType;
 import org.uma.jmetal.util.JMetalLogger;
 
 
@@ -36,7 +36,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	public long     MAX_TIME;		// 1 hour (ms)
 	public long     MAX_PHASETIME;	// maximum phase time;
 	public long     QUANTA_LENGTH;	// MAX_TIME * (1/TIME_QUANTA) // to treat all time values as integer
-	public int      RUN_ID =0;
+	public int      RUN_ID;         // RUN_NUM, we set the name to distinguish with Settings property
 	
 	public TaskDescriptor[] Tasks = null;		// Task information
 	
@@ -112,7 +112,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		RMScheduler scheduler = null;
 		try {
 			Constructor constructor = schedulerClass.getConstructors()[0];
-			Object[] parameters = {this, Settings.TASK_FITNESS};
+			Object[] parameters = {this, Settings.TARGET_TASKS};
 			scheduler = (RMScheduler)constructor.newInstance(parameters);
 		} catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
 			e.printStackTrace();
@@ -149,7 +149,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		// Sample
 		List<Integer> uncertainTasks = this.getUncertainTasks();
 		String uncertainHeader = this.getUncertainTasksString("result", uncertainTasks);
-		String filename = (this.RUN_ID >0)? String.format("samples/sampledata_run%02d.csv", this.RUN_ID):"samples/sampledata.csv";
+		String filename = (this.RUN_ID >0)? String.format("_samples/sampledata_run%02d.csv", this.RUN_ID):"samples/sampledata.csv";
 		GAWriter sampledata = new GAWriter(filename, Level.INFO, uncertainHeader, Settings.BASE_PATH,true);
 		
 		// generate sample
@@ -161,7 +161,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			scheduler.setSamples(samples);
 			scheduler.run(solution);
 			
-			boolean titleFlag = ((sampleID==0)? true:false);
+			boolean titleFlag = (sampleID == 0);
 			String pretitle = "SampleID";
 			String prefix = String.format("%d", sampleID);
 			
@@ -177,17 +177,43 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			}
 			sampledata.info(sb.toString());
 		}
-		solution.setObjective(0, MinimumList(fitnessList));
+		if (Settings.GA_REPR_FITNESS.compareTo("average")==0){
+			solution.setObjective(0, AverageList(fitnessList));
+		} else if (Settings.GA_REPR_FITNESS.compareTo("maximum")==0){
+			solution.setObjective(0, MaximumList(fitnessList));
+		} else {
+			solution.setObjective(0, MinimumList(fitnessList));
+		}
+		
+		
 		solution.setObjectiveList(0, fitnessList);
 		solution.setByproduct(byproduct.toString());
 		
 		sampledata.close();
 	}
 	
+	public double AverageList(FitnessList list){
+		double avg = 0.0;
+		for (int x=0; x<list.size(); x++){
+			avg = avg + list.get(x);
+		}
+		avg = avg / list.size();
+		return avg;
+	}
+	
+	public double MaximumList(FitnessList list){
+		double max = list.get(0);
+		for (int x=1; x<list.size(); x++){
+			if (list.get(x)>max)
+				max = list.get(x);
+		}
+		return max;
+	}
+	
 	public double MinimumList(FitnessList list){
 		double min = list.get(0);
 		for (int x=1; x<list.size(); x++){
-			if (list.get(x)<=min)
+			if (list.get(x)<min)
 				min = list.get(x);
 		}
 		return min;
@@ -208,6 +234,16 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		
 		for(TaskDescriptor task : Tasks){
 			if (task.MinWCET != task.MaxWCET)
+				list.add(task.ID);
+		}
+		return list;
+	}
+	
+	public List<Integer> getVaryingTasks(){
+		List<Integer> list = new ArrayList<Integer>();
+		
+		for(TaskDescriptor task : Tasks){
+			if (task.Type != TaskType.Periodic && task.MinIA != task.MaxIA)
 				list.add(task.ID);
 		}
 		return list;
@@ -298,7 +334,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			aJob.MinIA 		= getTimeFromString(cols[6].trim(), 0);
 			aJob.MaxIA		= getTimeFromString(cols[7].trim(), this.QUANTA_LENGTH);
 			aJob.Deadline 	= getTimeFromString(cols[8].trim(), this.QUANTA_LENGTH);
-			aJob.Severity 	= cols[9].trim();	// Severity type
+			aJob.Severity 	= getSeverityFromString(cols[9].trim());	// Severity type
 			
 			listJobs.add(aJob);
 		}
@@ -364,13 +400,25 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	
 	public TaskType getTypeFromString(String _text) {
 		
-		if (_text.compareTo("Sporadic")==0)					
+		if (_text.toLowerCase().compareTo("sporadic")==0)
 			return TaskType.Sporadic;
-		else if (_text.compareTo("Aperiodic")==0)
+		else if (_text.toLowerCase().compareTo("aperiodic")==0)
 			return TaskType.Aperiodic;
 		else
 			return TaskType.Periodic;
 	}
+	
+	
+	
+	
+	public TaskSeverity getSeverityFromString(String _text) {
+		
+		if (_text.toLowerCase().compareTo("soft")==0)
+			return TaskSeverity.SOFT;
+		else
+			return TaskSeverity.HARD;
+	}
+	
 	
 	public long getValueFromString(String _text, long _default) {
 		

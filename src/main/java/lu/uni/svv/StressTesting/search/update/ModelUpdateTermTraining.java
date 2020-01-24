@@ -7,8 +7,8 @@ import javax.script.ScriptException;
 
 public class ModelUpdateTermTraining extends ModelUpdate {
 	
-	public ModelUpdateTermTraining(int[] _targetTasks) throws Exception{
-		super(_targetTasks);
+	public ModelUpdateTermTraining() throws Exception{
+		super();
 	}
 	
 	public boolean prepareTerminationData()  throws ScriptException, EvalException{

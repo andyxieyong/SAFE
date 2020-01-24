@@ -1,10 +1,11 @@
 package lu.uni.svv.StressTesting.search.model;
 
+import lu.uni.svv.StressTesting.datatype.TaskSeverity;
+import lu.uni.svv.StressTesting.datatype.TaskType;
 import java.util.Comparator;
 
 
 public class TaskDescriptor implements Comparable<TaskDescriptor>{
-	public enum TaskType {Periodic, Aperiodic, Sporadic}
 	
 	
 	public static int UNIQUE_ID = 1;
@@ -18,7 +19,7 @@ public class TaskDescriptor implements Comparable<TaskDescriptor>{
 	public long		MaxIA;		// Maximum inter-arrival time, This variable is for Aperiodic or Sporadic Task
 	public long		Deadline;	// Time period which a task should be finished
 	public long		Priority;	// Fixed Priority read from input data
-	public String	Severity;	// {Hard, Soft}
+	public TaskSeverity	Severity;	// {Hard, Soft}
 	
 	
 	public TaskDescriptor() {
@@ -32,10 +33,10 @@ public class TaskDescriptor implements Comparable<TaskDescriptor>{
 		MaxIA  		= 0;
 		Deadline 	= 0;
 		Priority 	= 0;
-		Severity    = "";
+		Severity    = TaskSeverity.HARD;
 	}
 	
-	public TaskDescriptor(String _name, TaskType _type, long _minWCET, long _maxWCET, long _period, long _minIA, long _maxIA, long _deadline, String _severity) {
+	public TaskDescriptor(String _name, TaskType _type, long _minWCET, long _maxWCET, long _period, long _minIA, long _maxIA, long _deadline, TaskSeverity _severity) {
 		ID 		    = TaskDescriptor.UNIQUE_ID++;
 		Name 		= _name;
 		Type 		= _type;

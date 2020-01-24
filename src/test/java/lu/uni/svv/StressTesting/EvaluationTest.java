@@ -24,7 +24,7 @@ public class EvaluationTest extends TestCase {
 		System.out.println("-----------periodic Test1----------------");
 		TestingProblem problem = new TestingProblem("res/sample_periodic_1.csv", 1, 60, "RMScheduler");
 		
-		RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TASK_FITNESS);
+		RMScheduler scheduler = new RMSchedulerEx(problem,  Settings.TARGET_TASKS);
 		OneExecution(problem, scheduler, 5);
 	}
 	
@@ -37,7 +37,7 @@ public class EvaluationTest extends TestCase {
 		System.out.println("-----------aperiodic Test4----------------");
 		TestingProblem problem = new TestingProblem("res/sample_aperiodic_4.csv", 1, 60, "RMScheduler");
 		
-		RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TASK_FITNESS);
+		RMScheduler scheduler = new RMSchedulerEx(problem, Settings.TARGET_TASKS);
 		OneExecution(problem, scheduler, 5);
 		
 	}

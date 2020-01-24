@@ -4,10 +4,10 @@ import java.io.PrintStream;
 import java.util.*;
 
 import lu.uni.svv.StressTesting.datatype.Task;
+import lu.uni.svv.StressTesting.datatype.TaskType;
 import lu.uni.svv.StressTesting.datatype.TimeList;
 import lu.uni.svv.StressTesting.search.model.TaskDescriptor;
 import lu.uni.svv.StressTesting.search.model.TimeListSolution;
-import lu.uni.svv.StressTesting.search.model.TaskDescriptor.TaskType;
 import lu.uni.svv.StressTesting.utils.GAWriter;
 import lu.uni.svv.StressTesting.search.model.TestingProblem;
 import lu.uni.svv.StressTesting.utils.RandomGenerator;
@@ -41,7 +41,7 @@ public class RMScheduler {
 	private List<Task>  missedDeadlines;
 	private double  evaluatedValue;
 	private long        CPUusages;
-	protected int       taskFitness;
+	protected int[]       targetTasks;
 	
 	
 	/* For Debugging */
@@ -56,9 +56,9 @@ public class RMScheduler {
 	HashMap<Integer, Long> WCETSamples = null;// for storing sampled WCET
 	
 	
-	public RMScheduler(TestingProblem _problem, int _taskFitness) {
+	public RMScheduler(TestingProblem _problem, int[] _targetTasks) {
 		problem = _problem;
-		taskFitness = _taskFitness;
+		targetTasks = _targetTasks;
 		
 		initialize();
 		
@@ -106,17 +106,19 @@ public class RMScheduler {
 			
 			//Check cycle complete or not  (It was before ExecuteOneUnit() originally)
 			if (Settings.EXTEND_SCHEDULER && readyQueue.size() > 0) {
-				if (RMScheduler.DETAIL == true)
+				if (RMScheduler.DETAIL)
 				{
 					printer.println("\nEnd of expected time quanta");
 					printer.println("Here are extra execution because of ramaining tasks in queue");
 					printer.println("------------------------------------------");
 				}
-				
+//				System.out.println(String.format("Exetended, still we have %d executions", readyQueue.size()));
 				while(readyQueue.size() > 0) {
 					int output = executeOneUnit();
 					if (output == -1) return ;
+//					time +=1;
 				}
+//				System.out.println(String.format("Ended %.1fms", time*0.1));
 			}
 		} catch (Exception e) {
 			printer.println("Some error occurred. Program will now terminate: " + e);
@@ -150,7 +152,7 @@ public class RMScheduler {
 			// Add Tasks
 			TaskDescriptor task = problem.Tasks[taskIDX];
 			long WCET = getSampleWCET(task);
-			Task t = new Task(task.ID, indexTable[taskIDX], WCET, _time, task.Deadline, task.Priority);
+			Task t = new Task(task.ID, indexTable[taskIDX], WCET, _time, task.Deadline, task.Priority, task.Severity);
 			t.ArrivedTime = timeLapsed;
 			readyQueue.add(t);
 			indexTable[taskIDX]++;
@@ -174,38 +176,9 @@ public class RMScheduler {
 		
 		// make a random WCET
 		long sampleWCET = 0;
-		if (Settings.UNIFORM_SAMPLE==false) {
-			if (randomGenerator.nextDouble() < 0.75)
-				sampleWCET = randomGenerator.nextLong(1, task.MinWCET);
-			else
-				sampleWCET = randomGenerator.nextLong(task.MinWCET + 1, task.MaxWCET);
-		}
-		else {
-			long min = (task.MinWCET == 0) ? task.MinWCET + 1 : task.MinWCET;
-			sampleWCET = randomGenerator.nextLong(min, task.MaxWCET);
-		}
+		long min = (task.MinWCET == 0) ? 1 : task.MinWCET;
+		sampleWCET = randomGenerator.nextLong(min, task.MaxWCET);
 		return sampleWCET;
-	}
-	
-	public String getSampledWCET(){
-		StringBuilder sb = new StringBuilder();
-		sb.append("TaskID,ExecutionID,SampledWCET,Arrival,Started,Finished\n");
-		
-		for(Task item :sampledWCET){
-			sb.append(item.ID);
-			sb.append(",");
-			sb.append(item.ExecutionID);
-			sb.append(",");
-			sb.append(item.ExecutionTime);
-			sb.append(",");
-			sb.append(item.ArrivedTime);
-			sb.append(",");
-			sb.append(item.StartedTime);
-			sb.append(",");
-			sb.append(item.FinishedTime);
-			sb.append("\n");
-		}
-		return sb.toString();
 	}
 	
 	/**
@@ -269,15 +242,15 @@ public class RMScheduler {
 		}
 		
 		// Represent working status ========================
-		if (RMScheduler.DETAIL == true) {
+		if (RMScheduler.DETAIL) {
 			String started = " ";
 			String terminated = " ";
 			
 			// Notification for a Task execution started.
 			if ((lastExecutedTask != null) &&
 					((lastExecutedTask.RemainTime + 1 == T.ExecutionTime) || (lastExecutedTask != previousTask))) {
-				if (preemption == true)	started = "*";
-				else					started = "+";
+				if (preemption)	started = "*";
+				else			started = "+";
 			}
 			
 			//showing deadline miss time
@@ -292,14 +265,14 @@ public class RMScheduler {
 					terminated = "!";	//finished after Deadline.
 			}
 			
-			if (RMScheduler.PROOF == true) {
+			if (RMScheduler.PROOF) {
 				if (((timeLapsed - 1) % LINEFEED) == 0)
 					printer.format("\nCPU[%010d]: ", (timeLapsed - 1));
 				
 				printer.format("%s%02d%s ", started, (T == null ? 0 : T.ID), terminated);
 			}
 			
-			if (T!=null && RMScheduler.PROOF == true) {
+			if (T!=null && RMScheduler.PROOF) {
 				int type = (terminated.compareTo(" ")!=0 && terminated.compareTo("x")!=0)? 4: (started.compareTo(" ")!=0)?2:3;
 				timelines.get(T.ID -1)[(int)timeLapsed-1] = type;
 			}
@@ -318,21 +291,31 @@ public class RMScheduler {
 		evaluatedValue = evaluatedValue + factor;
 		
 		// For Debugging
-		if (RMScheduler.DETAIL == true) executedTasks.add(_T);
+		if (RMScheduler.DETAIL) executedTasks.add(_T);
 		
-		if ( missed > 0 ){
-			if (this.taskFitness == 0 || _T.ID == this.taskFitness){
-				missedDeadlines.add(_T);
-				return 1;
-			}
+		if ( isMissedDeadline(missed, _T) && isTargetTask(_T.ID) ){
+			missedDeadlines.add(_T);
+			return 1;
 		}
 		return 0;
 	}
 	
-	protected double evaluateDeadlineMiss(Task _T, int _missed){
-		if (this.taskFitness == 0 || _T.ID == this.taskFitness){
-			return 0.0;
+	protected boolean isMissedDeadline(int _missed, Task _T){
+		if(_missed>0) return true;
+		return false;
+	}
+	
+	protected boolean isTargetTask(int _id){
+		if (this.targetTasks.length==0) return true;
+		
+		for (int ID :this.targetTasks){
+			if (_id==ID) return true;
 		}
+		return false;
+	}
+	
+	protected double evaluateDeadlineMiss(Task _T, int _missed){
+		if ( !isTargetTask(_T.ID) ) return 0.0;
 		return (_missed>0) ? 1 : 0;
 	}
 	
@@ -586,7 +569,7 @@ public class RMScheduler {
 	}
 	
 	public boolean assertScheduler(GAWriter writer) {
-		if (RMScheduler.DETAIL == false || RMScheduler.PROOF == false) return true;
+		if (!RMScheduler.DETAIL || !RMScheduler.PROOF) return true;
 		
 		for (Task task:executedTasks)
 		{
@@ -615,7 +598,7 @@ public class RMScheduler {
 	
 	public  String getTimelinesStr()
 	{
-		if (RMScheduler.DETAIL == false || RMScheduler.PROOF == false) return "";
+		if (!RMScheduler.DETAIL || !RMScheduler.PROOF) return "";
 		
 		StringBuilder sb = new StringBuilder();
 		for(int tID=0; tID<this.problem.Tasks.length; tID++)
@@ -635,6 +618,9 @@ public class RMScheduler {
 		return sb.toString();
 	}
 	
+	/////////////////////////////////////////////////////////////////
+	//  Information functions
+	/////////////////////////////////////////////////////////////////
 	/**
 	 * get Deadline Missed items
 	 * @return
