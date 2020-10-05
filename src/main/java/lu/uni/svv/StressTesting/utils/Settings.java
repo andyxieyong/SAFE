@@ -41,7 +41,7 @@ public class Settings {
 
 	//printing
 	public static boolean PRINT_SAMPLES       = false;
-	public static boolean PRINT_RESULTS       = false;
+	public static boolean PRINT_FITNESS       = false;
 	
 	//Second phase
 	public static String  SECOND_PHASE_RUNTYPE= "distance";
@@ -90,7 +90,7 @@ public class Settings {
 		parser.addOption(false,"GA_REPR_FITNESS", DataType.STRING, null, "reprFitness", "one type of fitness among average, maximum or minimum");
 		
 		parser.addOption(false,"PRINT_SAMPLES", DataType.BOOLEAN, null, "printSamples", "If you set this parameter, The program will produce sampling detail information", false);
-		parser.addOption(false,"PRINT_RESULTS", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
+		parser.addOption(false,"PRINT_FITNESS", DataType.BOOLEAN, null, "printResults", "If you set this parameter, The program will produce fitness detail information", false);
 		parser.addOption(false,"N_SAMPLE_WCET", DataType.INTEGER, null, "nSamples", "The number of samples that will extracted between minWCET and maxWCET");
 		
 		//Second phase

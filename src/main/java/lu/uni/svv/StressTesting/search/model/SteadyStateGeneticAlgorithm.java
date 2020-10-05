@@ -268,7 +268,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	public void initProgress() {
 		iterations = 0;
 		JMetalLogger.logger.info("initialized Progress");
-		if (Settings.PRINT_RESULTS) {
+		if (Settings.PRINT_FITNESS) {
 			printSummary();
 		}
 		initByproduct();
@@ -280,7 +280,7 @@ public class SteadyStateGeneticAlgorithm<S extends Solution<?>> extends Abstract
 	public void updateProgress() {
 		iterations++;
 		JMetalLogger.logger.info("move to next evaluation: " + iterations);
-		if (Settings.PRINT_RESULTS) {
+		if (Settings.PRINT_FITNESS) {
 			printSummary();
 		}
 		printByproduct();
