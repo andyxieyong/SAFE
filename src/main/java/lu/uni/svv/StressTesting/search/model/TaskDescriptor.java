@@ -1,5 +1,6 @@
 package lu.uni.svv.StressTesting.search.model;
 
+import com.sun.scenario.effect.Offset;
 import lu.uni.svv.StressTesting.datatype.TaskSeverity;
 import lu.uni.svv.StressTesting.datatype.TaskType;
 import java.util.Comparator;
@@ -19,6 +20,7 @@ public class TaskDescriptor implements Comparable<TaskDescriptor>{
 	public long		MaxIA;		// Maximum inter-arrival time, This variable is for Aperiodic or Sporadic Task
 	public long		Deadline;	// Time period which a task should be finished
 	public long		Priority;	// Fixed Priority read from input data
+	public long		Offset;	    // Fixed Priority read from input data
 	public TaskSeverity	Severity;	// {Hard, Soft}
 	
 	
@@ -33,6 +35,7 @@ public class TaskDescriptor implements Comparable<TaskDescriptor>{
 		MaxIA  		= 0;
 		Deadline 	= 0;
 		Priority 	= 0;
+		Offset      = 0;
 		Severity    = TaskSeverity.HARD;
 	}
 	

@@ -328,13 +328,14 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 			aJob.Name 		= cols[0].trim();	// Name
 			aJob.Type 		= getTypeFromString(cols[1].trim());
 			aJob.Priority 	= getValueFromString(cols[2].trim(), this.QUANTA_LENGTH);
-			aJob.MinWCET 	= getTimeFromString(cols[3].trim(), 0);
-			aJob.MaxWCET 	= getTimeFromString(cols[4].trim(), 0);
-			aJob.Period 	= getTimeFromString(cols[5].trim(), this.QUANTA_LENGTH);
-			aJob.MinIA 		= getTimeFromString(cols[6].trim(), 0);
-			aJob.MaxIA		= getTimeFromString(cols[7].trim(), this.QUANTA_LENGTH);
-			aJob.Deadline 	= getTimeFromString(cols[8].trim(), this.QUANTA_LENGTH);
-			aJob.Severity 	= getSeverityFromString(cols[9].trim());	// Severity type
+			aJob.Offset 	= getTimeFromString(cols[3].trim(), 0);
+			aJob.MinWCET 	= getTimeFromString(cols[4].trim(), 0);
+			aJob.MaxWCET 	= getTimeFromString(cols[5].trim(), 0);
+			aJob.Period 	= getTimeFromString(cols[6].trim(), this.QUANTA_LENGTH);
+			aJob.MinIA 		= getTimeFromString(cols[7].trim(), 0);
+			aJob.MaxIA		= getTimeFromString(cols[8].trim(), this.QUANTA_LENGTH);
+			aJob.Deadline 	= getTimeFromString(cols[9].trim(), this.QUANTA_LENGTH);
+			aJob.Severity 	= getSeverityFromString(cols[10].trim());	// Severity type
 			
 			listJobs.add(aJob);
 		}
@@ -386,11 +387,11 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 	public String getInputs(){
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append("Task Name,Task Type,Task Priority,WCET min,WCET max,Task Period (ms),Minimum interarrival-time (ms),Maximum Interarrival time,Task Deadline, Deadline Type\n");
+		sb.append("Task Name,Task Type,Task Priority,Offset,WCET min,WCET max,Task Period (ms),Minimum interarrival-time (ms),Maximum Interarrival time,Task Deadline, Deadline Type\n");
 		for(TaskDescriptor task:this.Tasks)
 		{
-			sb.append(String.format("%s,%s,%d,%.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%s\n",
-									task.Name, task.Type.toString(), task.Priority,
+			sb.append(String.format("%s,%s,%d,%.1f, %.1f,%.1f,%.1f,%.1f,%.1f,%.1f,%s\n",
+									task.Name, task.Type.toString(), task.Priority, task.Offset * TIME_QUANTA,
 									task.MinWCET * TIME_QUANTA, task.MaxWCET* TIME_QUANTA,
 									task.Period * TIME_QUANTA,
 									task.MinIA* TIME_QUANTA, task.MaxIA* TIME_QUANTA, task.Deadline* TIME_QUANTA, task.Severity));
