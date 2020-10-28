@@ -1,0 +1,46 @@
+{
+// Common variables
+  "INPUT_FILE"          : "res/task_descriptions.csv",    // The path of task descriptions
+  "BASE_PATH"           : "results/GASearch",             // The path will be stored all the experiment outputs in Phase 1, It will be used the input base path for the Phase 2.
+  "EXTEND_PATH"         : "",        // BASE_PATH for the Phase 2 to output results, if it is empty(""), automatically set as <BASE_PATH>/refinements
+  "WORKNAME"            : "",        // Output path for Phase 2 and TestGenerator, "<BASE_PATH>/<WORK_NAME>" for TestGenerator, "<EXTEND_PATH>/<WORK_NAME>" for Phase 2
+  "RUN_MAX"             : 10,        // Total number of experiments, if you set RUN_NUM != 0, thie option is ignored
+  "RUN_NUM"             : 0,         // Identity of the experiments
+  "RUN_PARTITION"       : 0,         // Option for test generator
+
+// Scheduler variables
+  "SCHEDULER"           : "RMSchedulerBest",
+  "TARGET_TASKLIST"     : "",        // Set the number of parameters seperated by comma(,)
+  "TARGET_TASKS"        : null,      // Not uesd, (internal option)
+  "TIME_QUANTA"         : 0.1,       // Scheduler time unit
+  "TIME_MAX"            : 1800000,   // Maximum simulation time of the scheduler
+  "EXTEND_SCHEDULER"    : true,      // Set true, if you want to execute scheduler after finished the simulation time for
+
+// Genetic algorithm variables
+  "GA_POPULATION"       : 10,         // Population size for GA
+  "GA_ITERATION"        : 1000,       // Number of iteration for GA
+  "GA_CROSSOVER_PROB"   : 0.7,        // Crossover rate, which is the probability of applying crossover operation to the chromosome
+  "GA_CROSSOVER_TYPE"   : "one",      // Type of crossover operation, "one": one-point crossover, "uniform": uniform crossover
+  "GA_MUTATION_PROB"    : 0.2,        // Mutataion rate, which is the probability of applying mutation operation to the chromosome
+  "SIMPLE_SEARCH"       : false,      // If this option is true, we do not apply genetic operators such as crossover, mutataion, and replacement
+  "GA_REPR_FITNESS"     : "average",  // The type of fitness function, {"average", "minimum", "maximum"}, This is the way of considering fitness for the multiple of simulation results
+  "N_SAMPLE_WCET"       : 20,         // The number of WCET examples to simulate with a chromosome
+
+  // Printing Setting
+  "PRINT_SAMPLES"       : false,      // Debugging option
+  "PRINT_RESULTS"       : false,      // Debugging option
+
+//Second phase
+  "SECOND_PHASE_RUNTYPE": "distance", // Sampling approach for the Phase 2, {"distance", "random"}
+  "N_MODEL_UPDATES"     : 100,        // The number of model refinements
+  "N_EXAMPLE_POINTS"    : 100,        // The number of example points for each model refinements (This number should be POPULATION_SIZE*) 
+  "SAMPLE_CANDIDATES"   : 20,         // The number of candidates for deciding one example for the distance-based sampling
+  "LR_FORMULA_PATH"     : "",         // The path to load formula for the logistic regression, if there is empty, it is apply
+  "MODEL_PROB_PRECISION": 0.0001,     // A precision of the classification threshold, 
+
+// Test for second phase
+  "TEST_DATA"           : "",         // We load the test data from "<BASE_PATH>/<TEST_DATA>", it is applied to evaluate learned model
+  "UPDATE_TYPE"         : "threshold",// the way of model refinement, we use only "threshold"
+  "STOP_ACCEPT_RATE"    : 0.01,       // Not used, stopping criterion
+  "STOP_CONDITION"      : false,      // Not used, Enable stopping creteria when the model refinements
+}
