@@ -50,7 +50,7 @@ public class SteadyStateGeneticAlgorithmRunner {
 		
 		// problem load
 		TestingProblem problem = new TestingProblem(Settings.INPUT_FILE, Settings.TIME_QUANTA, Settings.TIME_MAX, Settings.SCHEDULER);
-		printInput(null, problem.getInputs());
+		printInput(null, TaskDescriptor.toString(problem.Tasks,Settings.TIME_QUANTA));
 		JMetalLogger.logger.info("Loaded problem");
 		
 		// experiment
