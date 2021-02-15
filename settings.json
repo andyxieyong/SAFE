@@ -28,7 +28,7 @@
 
   // Printing Setting
   "PRINT_SAMPLES"       : false,      // Debugging option
-  "PRINT_RESULTS"       : false,      // Debugging option
+  "PRINT_FITNESS"       : false,      // Debugging option
 
 //Second phase
   "SECOND_PHASE_RUNTYPE": "distance", // Sampling approach for the Phase 2, {"distance", "random"}

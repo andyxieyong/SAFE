@@ -14,14 +14,14 @@ Rscript R/02_features.R results/EXP1_GASearch analysis/02_features 1
 Rscript R/03_prune_input.R results/EXP1_GASearch analysis/03_prune 1
 
 # Examples of generating test data
-# -w: WORKNAME in settings.json, the output forlder name which will be located in BASE_PATH
+# -w: WORKNAME in settings.json, the output folder name which will be located in BASE_PATH
 # -b: BASE_PATH in settings.json, Output path of the Phase 1
 # -runID: RUN_NUM in settings.json, Identity of the experiments of Phase 1
 # --exPoints: the number of points to generate for test
 java -Xms4G -Xmx10G -jar artifacts/TestDataGenerator.jar -w testdata -b results/EXP1_GASearch --runID 1 --exPoints 50000
 
 # Examples of Phase 2
-# -w: WORKNAME in settings.json, the output forlder name which will be located in EXTEND_PATH (=<BASE_PATH>/refinements)
+# -w: WORKNAME in settings.json, the output folder name which will be located in EXTEND_PATH (=<BASE_PATH>/refinements)
 # -b: BASE_PATH in settings.json, Output path of the Phase 1
 # -runID: RUN_NUM in settings.json, Identity of the experiments of Phase 1
 # --secondRuntype: the sampling method [distance, random]
