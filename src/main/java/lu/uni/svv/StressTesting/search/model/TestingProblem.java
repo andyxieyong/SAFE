@@ -70,7 +70,7 @@ public class TestingProblem extends AbstractGenericProblem<TimeListSolution> {
 		this.QUANTA_LENGTH = (int) (this.MAX_TIME * (1/this.TIME_QUANTA));
 		
 		// This function updates this.Tasks value.
-		this.Tasks = TaskDescriptor.loadFromCSV(_filename, this.QUANTA_LENGTH, this.TIME_QUANTA);
+		this.Tasks = TaskDescriptor.loadFromCSV(_filename, this.MAX_TIME, this.TIME_QUANTA);
 		
 		// Increase Quanta_length
 		long max_deadline = find_max_deadline();
