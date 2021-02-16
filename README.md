@@ -18,31 +18,31 @@ SAFE runs on the following operating systems:
 
 
 ### Folder description
-* src : Containing Java source code for phase1, phase2, and test case generator
-* R : Containing R scripts to execute SAFE and generate graphs
-* res: Containing the input task description
-* artifacts: Containing Java executable files
-* settings.json: Parameters for the Java executable files
-* run_*.sh: Shell scripts for conducting each experiments above 
+* *src* : Containing Java source code for phase1, phase2, and test case generator
+* *R* : Containing R scripts to execute SAFE and generate graphs
+* *res*: Containing the input task description
+* *artifacts*: Containing Java executable files
+* *settings.json*: Parameters for the Java executable files
+* *run_*.sh*: Shell scripts for conducting each experiments above 
 
 
 ### How to run SAFE?
-* Step 1: Run ${REPOSITORY}/run_safe.sh
-* Step 2: See output files in ${REPOSITORY}/results/SAFE_GASearch
+* Step 1: Run *run_safe.sh*
+* Step 2: See output files in *results/SAFE_GASearch*
 
 
 ### How to run experiments?
 Note: Due to randomness of SAFE, we repeat our experiments 50 times
 
 ##### =Sanity check=
-* Step 1: Run ${REPOSITORY}/run_sanity_check.sh
-* Step 2: See output files in ${REPOSITORY}/results/Sanity_GASearch and PATH/results/Sanity_RandomSearch
+* Step 1: Run *run_sanity_check.sh*
+* Step 2: See output files in *results/Sanity_GASearch and PATH/results/Sanity_RandomSearch*
 
 ##### =EXP1=
-* Step 1: Run ${REPOSITORY}/run_exp1.sh
-* Step 2: See output files in ${REPOSITORY}/results/EXP1_GASearch
+* Step 1: Run *run_exp1.sh*
+* Step 2: See output files in *results/EXP1_GASearch*
 
 ##### =EXP2=
-* Step 1: Run ${REPOSITORY}/run_exp2.sh
-* Step 2: See output files in ${REPOSITORY}/results/EXP2_GASearch
+* Step 1: Run *run_exp2.sh*
+* Step 2: See output files in *results/EXP2_GASearch*
 
