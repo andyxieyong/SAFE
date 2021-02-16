@@ -7,11 +7,11 @@
 ############################################################
 BASE_PATH <- getwd()
 args <- commandArgs()
-SOURCE_PATH <- sprintf("%s/%s", BASE_PATH, args[6]) #sprintf('%s/results/20191222_P1_1000_S20_GASearch', BASE_PATH)
-OUTPUT_PATH <- sprintf("%s/%s", BASE_PATH, args[7]) #sprintf("/analysis/02_stepwise", BASE_PATH)  #results/20190723_stepwise
-N_RUNS = as.integer(args[8])      # 50
+args <- args[-(1:5)]  # get sublist from arguments (remove unnecessary arguments)
+TARGET_PATH <- sprintf("%s/%s", BASE_PATH, args[1]) #sprintf('%s/results/20191222_P1_1000_S20_GASearch', BASE_PATH)
+OUTPUT_PATH <- sprintf("%s/%s", BASE_PATH, args[2]) #sprintf("/analysis/02_stepwise", BASE_PATH)  #results/20190723_stepwise
+
 if(dir.exists(OUTPUT_PATH)==FALSE) dir.create(OUTPUT_PATH, recursive=TRUE)
-RESOURCE_FILE <- sprintf("%s/input.csv", SOURCE_PATH)
 
 ############################################################
 # Load libraries
@@ -33,30 +33,32 @@ source("libs/lib_evaluate.R")     # find_noFPR
 ############################################################
 # SAFE Parameter parsing and setting 
 ############################################################
-filepath<- sprintf("%s/settings.txt", SOURCE_PATH)
+filepath<- sprintf("%s/settings.txt", TARGET_PATH)
 params<- parsingParameters(filepath)
 
 nSamples <- params[["N_SAMPLE_WCET"]]
 populationSize <- params[['GA_POPULATION']]
 iterations.P1 <- params[['GA_ITERATION']]
-nRuns.P1 <- c(1:N_RUNS)
+nRuns.P1 <- c(1:params[['RUN_MAX']])
+TIME_QUANTA <- params[['TIME_QUANTA']]
 
 for(runID.P1 in nRuns.P1){
     ################################################################################
     # Loading resource (it changed during the work)
-    TASK_INFO<-load_taskInfo(RESOURCE_FILE)
+    RESOURCE_FILE <- sprintf("%s/input.csv", TARGET_PATH)
+    TASK_INFO<-load_taskInfo(RESOURCE_FILE, TIME_QUANTA)
     
     # for saving information
-    NEW_RESOURCE_PATH <- sprintf("%s/inputs", SOURCE_PATH)
+    NEW_RESOURCE_PATH <- sprintf("%s/inputs", TARGET_PATH)
     if(dir.exists(NEW_RESOURCE_PATH)==FALSE) dir.create(NEW_RESOURCE_PATH, recursive=TRUE)
     RESOURCE2_FILE<- sprintf("%s/reduced_run%02d.csv", NEW_RESOURCE_PATH, runID.P1)
     
     ################################################################################
     # load data and train model
     print(sprintf("--Pruning for run %d in phase 1 ...", runID.P1))
-    FORMULA_PATH <- sprintf('%s/formula/formula_run%02d', SOURCE_PATH, runID.P1)
+    FORMULA_PATH <- sprintf('%s/formula/formula_run%02d', TARGET_PATH, runID.P1)
     formula.Text =  toString(read.delim(FORMULA_PATH, header=FALSE)[1,])
-    training <- read.csv(sprintf('%s/_samples/sampledata_run%02d.csv', SOURCE_PATH, runID.P1), header= TRUE)
+    training <- read.csv(sprintf('%s/_samples/sampledata_run%02d.csv', TARGET_PATH, runID.P1), header= TRUE)
     
     # reduce points
     nPoints <- (iterations.P1+populationSize) * nSamples # (iteration + population ) nSamples

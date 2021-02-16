@@ -1,4 +1,5 @@
-# All artifacts and R scripts should be executed in this folder.
+#!/bin/bash -l
+# All artifacts and R scripts should be executed in the project root folder.
 
 # Examples of Phase 1
 # -r: RUN_MAX in settings.json, the number of experiments
@@ -6,11 +7,15 @@
 # -b: BASE_PATH in settings.json, Output path of the Phase 1
 java -Xms4G -Xmx10G -jar artifacts/P1-StressTesting.jar -r 1 --runID 1 -b results/SAFE_GASearch
 
+
 # Feature reduction and treating imbalanced data
-# 02_features.R <BASE_PATH of P1> <Output path of this script> <Number of runs>
-Rscript R/02_features.R results/SAFE_GASearch analysis/02_features 1
-# 03_prune_input.R <BASE_PATH of P1> <Output path of this script> <Number of runs>
-Rscript R/03_prune_input.R results/SAFE_GASearch analysis/03_prune 1
+# 02_features.R <BASE_PATH of P1> <Output path of this script>
+Rscript R/02_features.R results/SAFE_GASearch analysis/02_features
+
+
+# 03_prune_input.R <BASE_PATH of P1> <Output path of this script>
+Rscript R/03_prune_input.R results/SAFE_GASearch analysis/03_prune
+
 
 # Examples of Phase 2
 # -w: WORKNAME in settings.json, the output folder name which will be located in EXTEND_PATH (=<BASE_PATH>/refinements)

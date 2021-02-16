@@ -7,8 +7,7 @@ library(effsize)
 library(plotROC)
 library(progress)
 
-BASE_PATH <- '~/projects/RTA_Expr'
-RESOURCE_FILE <- sprintf("%s/res/task_descriptions.csv", BASE_PATH)
+BASE_PATH <- '~/projects/RTA_SAFE'
 setwd(sprintf("%s/R", BASE_PATH))
 source("libs/conf.R")
 source("libs/lib_data.R")     # update_data
@@ -21,6 +20,13 @@ source("libs/lib_draw.R")       # generate_box_plot, get_WCETspace_plot
 #########################################################################################
 # Settings
 #########################################################################################
+# load TASK_INFO (it is used in the library functions)
+TARGET_PATH <- sprintf("%s/results/SAFE_GASearch",BASE_PATH)
+params<- parsingParameters(sprintf("%s/settings.txt", TARGET_PATH))
+TIME_QUANTA <- params[['TIME_QUANTA']]
+TASK_INFO<-load_taskInfo(sprintf("%s/input.csv", TARGET_PATH), TIME_QUANTA)
+
+# Run number
 nRuns.P1 <- c(2)
 # second phase parameter ########################################
 nModelUpdates = 100
@@ -34,19 +40,18 @@ colorPalette<-c(cbPalette[2], cbPalette[1])
 
 # Prepare paths
 {
-    SOURCE_PATH <- sprintf('%s/results/20191222_P1_1000_S20_GASearch', BASE_PATH)
     RQ2Folder <- sprintf(sprintf('Updates%d',nModelUpdates))
-    EXTEND_PATH = sprintf('%s/refinements/%s', SOURCE_PATH, RQ2Folder)
+    EXTEND_PATH = sprintf('%s/refinements/%s', TARGET_PATH, RQ2Folder)
     OUTPUT_PATH <- sprintf("%s/analysis/06_evaluate_detail", BASE_PATH)
     if(dir.exists(OUTPUT_PATH)==FALSE) dir.create(OUTPUT_PATH, recursive = TRUE)
 
     for(runID.P1 in nRuns.P1){ 
         cat(sprintf("Working with Run %02d...\n", runID.P1))
-        FORMULA_PATH <- sprintf("%s/formula/formula_run%02d", SOURCE_PATH, runID.P1)
+        FORMULA_PATH <- sprintf("%s/formula/formula_run%02d", TARGET_PATH, runID.P1)
         formula.Text =  toString(read.delim(FORMULA_PATH, header=FALSE)[1,])
     
         # update TASK_INFO
-        TASK_INFO<-load_taskInfo(sprintf("%s/inputs/reduced_run%02d.csv", SOURCE_PATH, runID.P1))
+        TASK_INFO<-load_taskInfo(sprintf("%s/inputs/reduced_run%02d.csv", TARGET_PATH, runID.P1), timeQuanta = 0.1)
         
         uncertainIDs <- get_base_names_formula(formula.Text, isNum=TRUE)
         conditions <- data.frame()

@@ -4,8 +4,7 @@
 # The box plot shows the distribution of fitness values over 10 runs of the experiments.
 # Each fitness value of 1 run is the average value of fitness values over N samples.
 #
-BASE_PATH <- '~/projects/RTA_Expr'
-RESOURCE_FILE <- sprintf("%s/res/task_descriptions.csv", BASE_PATH)
+BASE_PATH <- '~/projects/RTA_SAFE'
 setwd(sprintf("%s/R", BASE_PATH))
 source("libs/conf.R")
 source("libs/lib_fitness.R")
@@ -15,19 +14,17 @@ source("libs/lib_draw.R")
 # Settings
 ############################################################
 RESULT_PATH = "results"
-TARGET_NAME <- "20191222_P1_1000_S20"
 APPR <- c("GASearch", "RandomSearch") 
 APPRStand <- c("GA", "RS")
 SAMPLING = TRUE
 runMAX = 50
 iterMAX = 1000
-
 significance_level = 0.05
 
 ############################################################
 # Start to work
 ############################################################
-RESULT_PATH <- sprintf("%s/results",BASE_PATH, TARGET_NAME, APPR[[1]])
+TARGET_PATH <- sprintf("%s/results/SAFE",BASE_PATH)
 OUTPUT_PATH <- sprintf("%s/analysis/01_Compare_Fitness", BASE_PATH)
 if(dir.exists(OUTPUT_PATH)==FALSE) dir.create(OUTPUT_PATH, recursive=TRUE)
 
@@ -38,12 +35,11 @@ iterREPR<-iterMAX
 
 # for the each approach
 for (aid in 1:length(APPR)){
-    appr_name <- sprintf('%s_%s', TARGET_NAME, APPR[[aid]])
+    APPR_PATH <- sprintf("%s_%s",TARGET_PATH, APPR[[aid]])
     appr_stand <- APPRStand[[aid]]
-    path <- sprintf("%s/%s/_results/", RESULT_PATH, appr_name)
-    
+
     # Load one type data 
-    raw_data<- load_raw_files(path, sampling=SAMPLING, 0.0001)
+    raw_data<- load_raw_files(sprintf("%s/_results/", APPR_PATH), sampling=SAMPLING, 0.0001)
     
     #limit runs
     runs <- length(raw_data)

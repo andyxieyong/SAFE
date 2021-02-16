@@ -4,17 +4,24 @@
 # The box plot shows the distribution of fitness values over 10 runs of the experiments.
 # Each fitness value of 1 run is the average value of fitness values over N samples.
 #
-
+# install.packages("randomForest")
 ############################################################
 # R Parameter passing
 ############################################################
 BASE_PATH <- getwd()
 args <- commandArgs()
-TARGET_PATH <- sprintf("%s/%s", BASE_PATH, args[6]) #sprintf('%s/results/20191222_P1_1000_S20_GASearch', BASE_PATH)
-OUTPUT_PATH <- sprintf("%s/%s", BASE_PATH, args[7]) #sprintf("/analysis/02_stepwise", BASE_PATH)  #results/20190723_stepwise
-N_RUNS = as.integer(args[8])      # 50
+args <- args[-(1:5)]  # get sublist from arguments (remove unnecessary arguments)
+# BASE_PATH <- "~/projects/RTA_SAFE"
+# args <- c('results/TritonX', 'results/TritonX/02_features')
+
+TARGET_PATH <- sprintf("%s/%s", BASE_PATH, args[1]) #sprintf('%s/results/20191222_P1_1000_S20_GASearch', BASE_PATH)
+OUTPUT_PATH <- sprintf("%s/%s", BASE_PATH, args[2]) #sprintf("/analysis/02_stepwise", BASE_PATH)  #results/20190723_stepwise
+# TASK1 <- args[3]
+# TASK2 <- args[4]
+
 if(dir.exists(OUTPUT_PATH)==FALSE) dir.create(OUTPUT_PATH, recursive=TRUE)
-RESOURCE_FILE <- sprintf("%s/input.csv", TARGET_PATH)
+
+
 
 ############################################################
 # Load libraries
@@ -40,11 +47,14 @@ setwd(sprintf("%s/R", BASE_PATH))
 ############################################################
 filepath<- sprintf("%s/settings.txt", TARGET_PATH)
 params<- parsingParameters(filepath)
-
 nSamples <- params[["N_SAMPLE_WCET"]]
 populationSize <- params[['GA_POPULATION']]
 iterations.P1 <- params[['GA_ITERATION']]
-nRuns.P1 <- c(1:N_RUNS)
+nRuns.P1 <- c(1:params[['RUN_MAX']])
+TIME_QUANTA <- params[['TIME_QUANTA']]
+
+RESOURCE_FILE <- sprintf("%s/input.csv", TARGET_PATH)
+TASK_INFO<-load_taskInfo(RESOURCE_FILE, TIME_QUANTA)
 
 # nSamples <- 20
 # populationSize <- 10
@@ -61,6 +71,17 @@ for(runID.P1 in nRuns.P1){
     training <- read.csv(datafile, header=TRUE)
     nPoints <- (iterations.P1+populationSize) * nSamples # (iteration + population ) nSample
     training <- training[1:nPoints,]
+    
+    nMissed <- nrow(training[training$result==1,])
+    nPassed <- nrow(training[training$result==0,])
+    if (nMissed ==0){
+        print(sprintf("No data missed deadline"))
+        next
+    }
+    if (nPassed ==0){
+        print(sprintf("All data missed deadline"))
+        next
+    }
     
     # print working information
     cat(sprintf("Working S%d Run%02d--------------------\n", nSamples, runID.P1))
@@ -111,40 +132,35 @@ for(runID.P1 in nRuns.P1){
     ############################################################
     cat("Selecting features...\n")
     nTreeRange= c(100)#, 2000, 3000, 4000, 5000) #c(100, 142, 200, 300,400, 500)
-    depths<-c(floor(sqrt(ncol(training)-1)))#, floor((ncol(training)-1)/3))  #c(1, 3, 12, 15, 18, 20, 23, 26)
+    nDepth<-floor(sqrt(ncol(training)-1))#, floor((ncol(training)-1)/3))  #c(1, 3, 12, 15, 18, 20, 23, 26)
     features <- c()
     
-    if (depths > 1){
-        for(nDepth in depths){
-            lib.plots<-list()
-            my.plots <- list()
-            for(nTree in nTreeRange){
-                cat(sprintf("\tRamdomForest with parameters (nDepth=%d, nTree=%d)...\n", nDepth, nTree))
-                rf<-randomForest(result ~ ., data=training, mtry=nDepth, ntree=100, importance = TRUE)
-                # varImpPlot(rf)  #-- check importance by graph
-                # my.plots[[length(my.plots)+1]]<- l
-                
-                import_df<- get_relative_importance(rf, 2)  # Use only Column 2 (IncNodePurity)
-                mean_import<-mean(import_df$Importance)
-                features <- select_terms(import_df, mean_import)
-                
-                values<-data.frame(t(import_df$Importance))
-                colnames(values) <- import_df$Task
-                total.values <- rbind(total.values, data.frame(Run=runID.P1, Mean=mean(import_df$Importance), values))
-
-                # draw barchart
-                my.plots[[length(my.plots)+1]]<- make_bar_chart(import_df, nTree, nDepth)
-            }
+    {
+        lib.plots<-list()
+        my.plots <- list()
+        for(nTree in nTreeRange){
+            cat(sprintf("\tRamdomForest with parameters (nDepth=%d, nTree=%d)...\n", nDepth, nTree))
+            rf<-randomForest(result ~ ., data=training, mtry=nDepth, ntree=100, importance = TRUE)
+            # varImpPlot(rf)  #-- check importance by graph
+            # my.plots[[length(my.plots)+1]]<- l
             
-            pdf(sprintf("%s/RF_S%d_nDeepth%d_run%02d_mean%.4f.pdf", OUTPUT_PATH, nSamples, nDepth, runID.P1, mean_import), width=7, height=5)
-            for(plot.item in my.plots){
-                print(plot.item)
-            }
-            dev.off()
+            import_df<- get_relative_importance(rf, 2)  # Use only Column 2 (IncNodePurity)
+            mean_import<-mean(import_df$Importance)
+            features <- select_terms(import_df, mean_import)
+            
+            values<-data.frame(t(import_df$Importance))
+            colnames(values) <- import_df$Task
+            total.values <- rbind(total.values, data.frame(Run=runID.P1, Mean=mean(import_df$Importance), values))
+
+            # draw barchart
+            my.plots[[length(my.plots)+1]]<- make_bar_chart(import_df, nTree, nDepth)
         }
-    }else{
-        features <- colnames(training)
-        features <- features[-1]
+        
+        pdf(sprintf("%s/RF_S%d_nDeepth%d_run%02d_mean%.4f.pdf", OUTPUT_PATH, nSamples, nDepth, runID.P1, mean_import), width=7, height=5)
+        for(plot.item in my.plots){
+            print(plot.item)
+        }
+        dev.off()
     }
     
     # Print result
@@ -156,14 +172,17 @@ for(runID.P1 in nRuns.P1){
     ############################################################################
     cat("Learning logistic regression...\n")
     formula_str = get_formula_complex("result", features)
+    cat(sprintf("\tFormula: %s\n",formula_str))
     write(formula_str, file=sprintf("%s/formula_S%d_init", OUTPUT_PATH, nSamples))
+    
+    # stepwise function
     md <- glm(formula = formula_str, family = "binomial", data = training)
-    md2 <- stepAIC(md, direction = direction, trace=0) # trace=0, stop to print processing
+    # md2 <- stepAIC(md, direction = direction, trace=0) # trace=0, stop to print processing
     
     # Get formula
-    cl<- as.character(md2$formula)
-    cat(sprintf("\tFormula: %s\n",formula_str))
-    formula_str <- sprintf("%s %s %s", cl[2], cl[1], cl[3])
+    # cl<- as.character(md2$formula)
+    # formula_str <- sprintf("%s %s %s", cl[2], cl[1], cl[3])
+    # cat(sprintf("\t Reduced formula: %s\n",formula_str))
     
     # Save formula into R results folder
     formulaPath <- sprintf("%s/formula_S%d_final", OUTPUT_PATH, nSamples)
@@ -180,13 +199,16 @@ for(runID.P1 in nRuns.P1){
     }
     
     ################################################################################
-    # learning model with training data which is changed with UNIT
-    g<-get_WCETspace_plot(data=training, form=formula_str, xID=33, yID=30,
+    # learning model with training data which is changed with UNIT  (#xID=30, yID=33,)
+    taskID1 <- as.integer(substring(features[[1]], 2))
+    taskID2 <- as.integer(substring(features[[2]], 2))
+    g <- get_WCETspace_plot(data=training, form=formula_str, xID=taskID1, yID=taskID2, 
                           showTraining=TRUE, nSamples=0, probLines=c(), showThreshold=TRUE)
-
-    pdf(sprintf("%s/ModelLine_S%d_nDeepth%d_run%02d_mean%.4f.pdf", OUTPUT_PATH, nSamples, nDepth, runID.P1, mean_import), width=7, height=5)
-    print(g)
-    dev.off()
+    filepath <- sprintf("%s/ModelLine_S%d_nDeepth%d_run%02d_mean%.4f.pdf", OUTPUT_PATH, nSamples, nDepth, runID.P1, mean_import)
+    ggsave(filepath, g, width=7, height=5)
+    # pdf(filepath, width=7, height=5)
+    # print(g)
+    # dev.off()
     cat("Done.\n\n")
 }
 write.table(total.values, sprintf("%s/importances_result.csv", OUTPUT_PATH), append = FALSE, sep = ",", dec = ".",row.names = FALSE, col.names = TRUE)

@@ -13,23 +13,22 @@ cbPalette <- c( "#000000", "#AAAAAA", "#009E73", "#D55E00", "#0072B2", "#999999"
 ######################################################
 # loading resource
 ######################################################
-TIME_QUANTA<-0.1
-load_taskInfo <- function(filename){
+load_taskInfo <- function(filename, timeQuanta){
     info <- read.csv(file=filename, header = TRUE)
-    info <- data.frame(
-      ID = c(1:nrow(info)),
-      info
-    )
-    colnames(info)<- c("ID", "NAME", "TYPE", "PRIORITY", "WCET.MIN", "WCET.MAX", "PERIOD", "INTER.MIN", "INTER.MAX", "DEADLINE", "DEADLINE.TYPE")#,"RESULT.MIN", "RESULT.MAX")
-    info$WCET.MIN = as.integer(round(info$WCET.MIN/TIME_QUANTA))
-    info$WCET.MAX = as.integer(round(info$WCET.MAX/TIME_QUANTA))
-    info$PERIOD = as.integer(round(info$PERIOD/TIME_QUANTA))
-    info$INTER.MIN = as.integer(round(info$INTER.MIN/TIME_QUANTA))
-    info$INTER.MAX = as.integer(round(info$INTER.MAX/TIME_QUANTA))
-    info$DEADLINE = as.integer(round(info$DEADLINE/TIME_QUANTA))
+    # info <- data.frame(
+    #   ID = c(1:nrow(info)),
+    #   info
+    # )
+    colnames(info)<- c("ID", "NAME", "TYPE", "PRIORITY", "OFFSET", "WCET.MIN", "WCET.MAX", "PERIOD", "INTER.MIN", "INTER.MAX", "DEADLINE", "DEADLINE.TYPE")#,"RESULT.MIN", "RESULT.MAX")
+    info$WCET.MIN = as.integer(round(info$WCET.MIN/timeQuanta))
+    info$WCET.MAX = as.integer(round(info$WCET.MAX/timeQuanta))
+    info$PERIOD = as.integer(round(info$PERIOD/timeQuanta))
+    info$INTER.MIN = as.integer(round(info$INTER.MIN/timeQuanta))
+    info$INTER.MAX = as.integer(round(info$INTER.MAX/timeQuanta))
+    info$DEADLINE = as.integer(round(info$DEADLINE/timeQuanta))
     return (info)
 }
-TASK_INFO<-load_taskInfo(RESOURCE_FILE)
+
 
 ######################################################
 # settings
@@ -50,14 +49,21 @@ parsingParameters <- function(filepath) {
         if (length(result)<=1){
             next
         }
-        name<- str_trim(result[1])
-        value<- str_trim(result[2])
-        # print(sprintf("%s : %s", name, value))    
-        if (name=="GA_ITERATION") params["GA_ITERATION"] = as.integer(value)
-        if (name=="GA_POPULATION") params["GA_POPULATION"] = as.integer(value)
-        if (name=="N_SAMPLE_WCET") params["N_SAMPLE_WCET"] = as.integer(value)
-        if (name=="RUN_MAX") params["RUN_MAX"] = as.integer(value)
+        name <- str_trim(result[1])
+        valueT <- str_trim(str_replace_all(result[2], "\"", ""))
+        valueI <- as.integer(valueT)
+        valueD <- as.double(valueT)
+        if (is.na(valueI)==TRUE && is.na(valueD)==TRUE){
+          value <- valueT
+          # value <- ifelse(is.na(as.double(valueT))==TRUE, valueT, as.double(valueT))
+        } else{
+          value <- ifelse(valueI!=valueD, valueD, valueI)
+        }
+        if (tolower(value)=="false") value <- FALSE
+        if (tolower(value)=="true") value <- TRUE
+        params[[name]] = value
     }
     close(con)
     return(params)
 }
+library(gdata)

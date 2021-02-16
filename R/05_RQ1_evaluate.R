@@ -9,8 +9,7 @@ library(plotROC)
 library(progress)
 library(boot)
 
-BASE_PATH <- '~/projects/RTA_Expr'
-RESOURCE_FILE <- sprintf("%s/res/task_descriptions.csv", BASE_PATH)
+BASE_PATH <- '~/projects/RTA_SAFE'
 setwd(sprintf("%s/R", BASE_PATH))
 source("libs/conf.R")
 source("libs/lib_metrics.R")
@@ -18,9 +17,8 @@ source("libs/lib_evaluate.R")
 source("libs/lib_draw.R")
 
 #########################################################################################
+# Function definition
 #########################################################################################
-#########################################################################################
-
 calculate_p_value_byiter <- function(dataR, dataD, iterMax, colname){
     # dataR<-R
     # dataD<-D
@@ -51,6 +49,15 @@ calculate_p_value_byiter <- function(dataR, dataD, iterMax, colname){
     return (stat.table)
 }
 
+#########################################################################################
+# Settings
+#########################################################################################
+# load TASK_INFO (it is used in the library functions)
+TARGET_PATH <- sprintf("%s/results/SAFE_GASearch",BASE_PATH)
+params<- parsingParameters(sprintf("%s/settings.txt", TARGET_PATH))
+TIME_QUANTA <- params[['TIME_QUANTA']]
+TASK_INFO<-load_taskInfo(sprintf("%s/input.csv", TARGET_PATH), TIME_QUANTA)
+
 
 # first phase parameter ########################################
 nRuns.P1 <- c(1:50)
@@ -63,9 +70,8 @@ ApprTypes <- c("D", "R")
 
 {
     # Prepare path
-    SOURCE_PATH <- sprintf('%s/results/20191222_P1_1000_S20_GASearch', BASE_PATH)
     RQ2Folder <- sprintf('Updates%d',nModelUpdates)
-    EXTEND_PATH = sprintf('%s/refinements/%s', SOURCE_PATH, RQ2Folder)
+    EXTEND_PATH = sprintf('%s/refinements/%s', TARGET_PATH, RQ2Folder)
     OUTPUT_PATH <- sprintf("%s/analysis/05_evaluate_%d", BASE_PATH, nModelUpdates)
     if(dir.exists(OUTPUT_PATH)==FALSE) dir.create(OUTPUT_PATH, recursive = TRUE)
     
@@ -74,7 +80,7 @@ ApprTypes <- c("D", "R")
     total_model_results <- data.frame()
     for(runID.P1 in nRuns.P1){
         cat(sprintf("For the phase 1 run %02d...\n", runID.P1))
-        FORMULA_PATH <- sprintf("%s/formula/formula_run%02d", SOURCE_PATH, runID.P1)
+        FORMULA_PATH <- sprintf("%s/formula/formula_run%02d", TARGET_PATH, runID.P1)
         formula.Text =  toString(read.delim(FORMULA_PATH, header=FALSE)[1,])
         
         for (appType in ApprTypes){

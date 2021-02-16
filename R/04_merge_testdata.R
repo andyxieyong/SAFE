@@ -1,9 +1,7 @@
 # For merging the test data set
 #
-BASE_PATH <- '~/projects/RTA_Expr'
-RESOURCE_FILE <- sprintf("%s/res/task_descriptions.csv", BASE_PATH)
+BASE_PATH <- '~/projects/RTA_SAFE'
 setwd(sprintf("%s/R", BASE_PATH))
-
 source("libs/conf.R")
 library(stringr)
 
@@ -40,8 +38,11 @@ merge_testdata<-function(origin, target, runID){
 #########################################################################################
 #########################################################################################
 #########################################################################################
-TARGET_PATH <- sprintf("%s/results/20191222_P1_1000_S20_GASearch", BASE_PATH)
-nRuns.P1 = c (1:50)
+TARGET_PATH <- sprintf("%s/results/SAFE_GASearch",BASE_PATH)
+params<- parsingParameters(sprintf("%s/settings.txt", TARGET_PATH))
+RUN_MAX <- c(1:params[['RUN_MAX']])
+
+nRuns.P1 = c (1:RUN_MAX)
 
 for(runID.P1 in nRuns.P1){
     print(sprintf("working with run %d", runID.P1))
